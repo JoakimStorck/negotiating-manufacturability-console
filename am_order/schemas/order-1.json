@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "am-order/order-1",
+  "title": "The order",
+  "description": "A product's requirements: the customer needs and the metrics after Ulrich & Eppinger, each metric a row of the requirements list after Pahl & Beitz, the product's objects as the owner sees them, the mandate in each metric, and the binding of the objects to a design version's features. The schema holds the form; the checks (am_order/check.py) hold what a requirement as stated must be.",
+  "type": "object",
+  "required": ["schema", "lineage", "product", "needs", "objects", "metrics"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "order/1"},
+    "lineage": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "The product's id; it never changes"},
+    "title": {"type": "string", "description": "The product's title; it may change"},
+    "product": {
+      "type": "object", "required": ["name"], "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "purpose": {"type": "string", "description": "What the product is for, in words"},
+        "picture": {"oneOf": [
+          {"type": "null"},
+          {"type": "object", "required": ["source"], "additionalProperties": false,
+           "properties": {"source": {"const": "design"}}},
+          {"type": "object", "required": ["source", "sha256", "type"], "additionalProperties": false,
+           "properties": {"source": {"const": "owner"}, "sha256": {"$ref": "#/$defs/sha"},
+                          "type": {"enum": ["image/png", "image/jpeg"]}, "name": {"type": "string"}}}
+        ]}
+      }
+    },
+    "parent": {"oneOf": [{"type": "null"}, {"type": "object", "required": ["lineage", "version"], "additionalProperties": false,
+                                             "properties": {"lineage": {"type": "string"}, "version": {"$ref": "#/$defs/sha"}}}]},
+    "group": {"type": "string", "description": "The id of the group the product stands in (groups.json)"},
+    "tags": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "design": {"type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{0,63}@v[1-9][0-9]*$", "description": "The design version the order is bound to"},
+    "needs": {"type": "array", "items": {"$ref": "#/$defs/need"}},
+    "objects": {"type": "array", "items": {"$ref": "#/$defs/object"}},
+    "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+    "headings": {"type": "object", "additionalProperties": {"type": "string"},
+                 "description": "Per checklist heading with no metric, the owner's statement that nothing applies"},
+    "brief": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "text": {"type": "string"},
+        "objective": {"type": ["string", "null"]},
+        "quantity": {"type": ["integer", "null"], "minimum": 1, "description": "How many parts are ordered"},
+        "may_change": {"type": "array", "items": {"type": "string"}},
+        "may_relax": {"type": "array", "items": {"type": "string"}, "description": "Metric ids"}
+      }
+    },
+    "bindings": {"type": "array", "items": {"$ref": "#/$defs/binding"}},
+    "revision": {"type": "integer", "minimum": 1, "description": "Set by the home on save"},
+    "previous": {"type": ["string", "null"], "description": "The version saved before this one, by its hash; set by the home"},
+    "saved": {"type": "string", "description": "When the version was saved, ISO 8601 UTC; set by the home"}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "need": {
+      "type": "object", "required": ["id", "text"], "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^N[1-9][0-9]*$"},
+        "text": {"type": "string"},
+        "importance": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+        "group": {"type": "string", "description": "The primary need it stands under"},
+        "dropped": {"type": "boolean"}
+      }
+    },
+    "region": {
+      "type": "object", "minProperties": 1, "maxProperties": 1, "additionalProperties": false,
+      "properties": {
+        "box": {"type": "object", "required": ["min", "max"], "additionalProperties": false,
+                "properties": {"min": {"$ref": "#/$defs/vec3"}, "max": {"$ref": "#/$defs/vec3"}}},
+        "cylinder": {"type": "object", "required": ["point", "direction", "radius", "length"], "additionalProperties": false,
+                     "properties": {"point": {"$ref": "#/$defs/vec3", "description": "The centre of the base"},
+                                    "direction": {"$ref": "#/$defs/vec3"},
+                                    "radius": {"type": "number", "exclusiveMinimum": 0},
+                                    "length": {"type": "number", "exclusiveMinimum": 0}}}
+      }
+    },
+    "object": {
+      "type": "object", "required": ["id", "name", "kind"], "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^O[1-9][0-9]*$"},
+        "name": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["face", "hole", "slot", "edge", "wall", "part"]},
+        "count": {"type": "integer", "minimum": 1},
+        "datum": {"enum": ["A", "B", "C", null]},
+        "text": {"type": "string"},
+        "place": {"oneOf": [{"$ref": "#/$defs/region"}, {"type": "array", "items": {"$ref": "#/$defs/region"}, "minItems": 1}],
+                  "description": "Where the object lies in the part's coordinates (mm): one region, or one per instance"},
+        "dropped": {"type": "boolean"}
+      }
+    },
+    "value": {
+      "type": "object", "minProperties": 1, "additionalProperties": false,
+      "properties": {
+        "at_most": {"oneOf": [{"type": "number"}, {"$ref": "#/$defs/vec3"}]},
+        "at_least": {"type": "number"},
+        "band": {"type": "object", "required": ["lower", "upper"], "additionalProperties": false,
+                 "properties": {"nominal": {"type": "number"}, "lower": {"type": "number"}, "upper": {"type": "number"}}},
+        "equals": {"type": ["number", "string"]},
+        "holds": {"type": "string"}
+      }
+    },
+    "under": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "type": {"enum": ["force", "torque", "pressure"]},
+        "magnitude": {"type": "number"},
+        "unit": {"type": "string"},
+        "direction": {"$ref": "#/$defs/vec3"},
+        "at": {"type": "string", "description": "The object the load acts at"},
+        "held_by": {"type": "array", "items": {"type": "string"}, "description": "The objects that hold the part"},
+        "datums": {"type": "array", "items": {"type": "string"}, "description": "The objects the metric is referred to"},
+        "name": {"type": "string"},
+        "text": {"type": "string", "description": "Other conditions in words"}
+      }
+    },
+    "source": {
+      "type": "object", "required": ["kind"], "additionalProperties": false,
+      "properties": {"kind": {"enum": ["requester", "standard", "project", "reference"]}, "ref": {"type": "string"}}
+    },
+    "mandate": {
+      "type": "object", "required": ["form"], "additionalProperties": false,
+      "properties": {
+        "form": {"enum": ["held", "interval", "release"]},
+        "to": {"description": "The interval's far end: a value of the metric's form, or as_needed",
+               "oneOf": [{"type": "number"}, {"$ref": "#/$defs/vec3"}, {"const": "as_needed"},
+                         {"type": "object", "required": ["lower", "upper"], "additionalProperties": false,
+                          "properties": {"lower": {"type": "number"}, "upper": {"type": "number"}}}]}
+      }
+    },
+    "metric": {
+      "type": "object", "required": ["id"], "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^M[1-9][0-9]*$"},
+        "class": {"enum": ["demand", "wish", null]},
+        "heading": {"type": ["string", "null"]},
+        "text": {"type": "string"},
+        "object": {"type": ["string", "null"]},
+        "quantity": {"type": ["string", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "under": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/under"}]},
+        "value": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/value"}]},
+        "needs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "source": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+        "verified_by": {"type": ["string", "null"]},
+        "carried_by": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "description": "The objects that carry the metric"},
+        "mandate": {"$ref": "#/$defs/mandate"},
+        "dropped": {"type": "boolean"}
+      }
+    },
+    "binding": {
+      "type": "object", "required": ["object", "design", "features"], "additionalProperties": false,
+      "properties": {
+        "object": {"type": "string"},
+        "design": {"type": "string"},
+        "features": {"type": "array", "items": {
+          "type": "object", "required": ["name", "how", "confirmed"], "additionalProperties": false,
+          "properties": {"name": {"type": "string"}, "how": {"enum": ["declared", "matched", "proposed"]},
+                         "confirmed": {"type": "boolean"}, "from": {"type": "string", "description": "For matched: the earlier version's feature"}}}},
+        "rejected": {"type": "array", "items": {"type": "string"}, "description": "Features the owner rejected for the object; never proposed again"}
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+ "about": "The quantities a metric may state, with the units each admits and the value forms (comparators) it admits. Extensible: add a quantity here. Nothing in the table is particular to a process. `dims` is 3 for a quantity stated as a triple (length x width x height).",
+ "quantities": {
+  "envelope": {"text": "the part's outer size, length x width x height", "units": ["mm"], "values": ["at_most"], "dims": 3},
+  "length": {"text": "a length", "units": ["mm"], "values": ["at_most", "at_least", "band", "equals"]},
+  "width": {"text": "a width", "units": ["mm"], "values": ["at_most", "at_least", "band", "equals"]},
+  "height": {"text": "a height", "units": ["mm"], "values": ["at_most", "at_least", "band", "equals"]},
+  "depth": {"text": "a depth", "units": ["mm"], "values": ["at_most", "at_least", "band", "equals"]},
+  "distance": {"text": "a distance between two objects", "units": ["mm"], "values": ["at_most", "at_least", "band", "equals"]},
+  "span": {"text": "an unsupported span", "units": ["mm"], "values": ["at_most", "at_least", "band", "equals"]},
+  "diameter": {"text": "a diameter", "units": ["mm"], "values": ["band", "equals", "at_most", "at_least"]},
+  "thickness": {"text": "a wall's thickness", "units": ["mm"], "values": ["at_least", "band", "equals", "at_most"]},
+  "position": {"text": "the position error of the object to its datums", "units": ["mm"], "values": ["at_most"]},
+  "flatness": {"text": "the flatness of a face", "units": ["mm"], "values": ["at_most"]},
+  "straightness": {"text": "the straightness of an edge or an axis", "units": ["mm"], "values": ["at_most"]},
+  "cylindricity": {"text": "the cylindricity of a hole or a boss", "units": ["mm"], "values": ["at_most"]},
+  "roundness": {"text": "the roundness of a hole or a boss", "units": ["mm"], "values": ["at_most"]},
+  "perpendicularity": {"text": "the perpendicularity to a datum", "units": ["mm"], "values": ["at_most"]},
+  "parallelism": {"text": "the parallelism to a datum", "units": ["mm"], "values": ["at_most"]},
+  "roughness": {"text": "the surface roughness Ra", "units": ["µm"], "values": ["at_most"]},
+  "finish": {"text": "the face's finish as seen: no marks of making on it", "units": ["-"], "values": ["holds"]},
+  "utilisation": {"text": "the share of the strength the part uses under the stated load", "units": ["1"], "values": ["at_most"]},
+  "deflection": {"text": "the deflection under the stated load", "units": ["mm"], "values": ["at_most"]},
+  "mass": {"text": "the part's mass as made", "units": ["g", "kg"], "values": ["at_most", "at_least", "band"]},
+  "production_time": {"text": "the time to make one part", "units": ["s", "min", "h"], "values": ["at_most"]},
+  "material_used": {"text": "the material consumed to make one part", "units": ["g", "kg"], "values": ["at_most"]},
+  "material": {"text": "the material the part is made of", "units": ["-"], "values": ["equals", "holds"]},
+  "cost": {"text": "the cost of one part", "units": ["SEK", "EUR", "USD"], "values": ["at_most"]},
+  "service_temperature": {"text": "the temperature the part serves at", "units": ["°C"], "values": ["at_most", "at_least", "band"]}
+ },
+ "loads": {
+  "force": {"units": ["N", "kN"]},
+  "torque": {"units": ["N·m"]},
+  "pressure": {"units": ["MPa", "kPa"]}
+ }
+}

@@ -1,0 +1,22 @@
+{
+ "about": "The main headings of Pahl & Beitz's checklist for drawing up a requirements list (Pahl, Beitz, Feldhusen & Grote 2007, Engineering Design, 3rd ed., section 5.2). Every heading has a metric or the owner's statement that nothing applies.",
+ "headings": [
+  {"id": "geometry", "name": "Geometry", "covers": "size, height, breadth, length, diameter, space requirement, number, arrangement, connection, extension"},
+  {"id": "kinematics", "name": "Kinematics", "covers": "type of motion, direction of motion, velocity, acceleration"},
+  {"id": "forces", "name": "Forces", "covers": "direction of force, magnitude of force, frequency of force, weight, load, deformation, stiffness, elasticity, stability, resonance"},
+  {"id": "energy", "name": "Energy", "covers": "output, efficiency, loss, friction, ventilation, state variables such as pressure and temperature, heating, cooling, supply, storage, capacity, conversion"},
+  {"id": "material", "name": "Material", "covers": "physical and chemical properties of the initial and final product, auxiliary materials, prescribed materials"},
+  {"id": "signals", "name": "Signals", "covers": "inputs and outputs, form, display, control equipment"},
+  {"id": "safety", "name": "Safety", "covers": "direct safety principles, protective systems, operational, operator and environmental safety"},
+  {"id": "ergonomics", "name": "Ergonomics", "covers": "user interface, type of operation, clarity of layout, lighting, aesthetics"},
+  {"id": "production", "name": "Production", "covers": "factory limitations, maximum possible dimensions, preferred production methods, means of production, achievable quality and tolerances, wastage"},
+  {"id": "quality_control", "name": "Quality control", "covers": "possibilities of testing and measuring, application of special regulations and standards"},
+  {"id": "assembly", "name": "Assembly", "covers": "special regulations, installation, siting, foundations"},
+  {"id": "transport", "name": "Transport", "covers": "limitations due to lifting gear, clearance, means of transport (height and weight), nature and conditions of despatch"},
+  {"id": "operation", "name": "Operation", "covers": "quietness, wear, special uses, marketing area, destination"},
+  {"id": "maintenance", "name": "Maintenance", "covers": "servicing intervals, inspection, exchange and repair, painting, cleaning"},
+  {"id": "recycling", "name": "Recycling", "covers": "reuse, reprocessing, waste disposal, storage"},
+  {"id": "costs", "name": "Costs", "covers": "maximum permissible manufacturing costs, cost of tooling, investment and depreciation"},
+  {"id": "schedules", "name": "Schedules", "covers": "end date of development, project planning and control, delivery date"}
+ ]
+}

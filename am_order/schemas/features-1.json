@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "am-order/features-1",
+  "title": "The feature list of a design version",
+  "description": "What a design version offers to bind to: its features with their kind, location, labels and status, each feature's colour in the version's picture, the picture itself and the version's model as STL and 3MF beside the list, each named with its hash. A version never changes, so neither does its list.",
+  "type": "object",
+  "required": ["schema", "design", "lineage", "version", "units", "features", "picture", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "features/1"},
+    "design": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}@v[1-9][0-9]*$"},
+    "lineage": {"type": "string"},
+    "version": {"type": "integer", "minimum": 1},
+    "sha256": {"$ref": "#/$defs/sha", "description": "The design record's hash"},
+    "parent": {"type": ["string", "null"]},
+    "title": {"type": "string"},
+    "units": {"const": "mm"},
+    "material": {"type": ["string", "null"]},
+    "bbox": {"$ref": "#/$defs/box"},
+    "picture": {"$ref": "#/$defs/file"},
+    "models": {"type": "array", "items": {
+      "type": "object", "required": ["format", "file", "sha256"], "additionalProperties": false,
+      "properties": {"format": {"enum": ["stl", "3mf"]}, "file": {"type": "string"}, "sha256": {"$ref": "#/$defs/sha"}}}},
+    "features": {"type": "array", "items": {"$ref": "#/$defs/feature"}}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "line": {"type": "object", "required": ["point", "direction"], "additionalProperties": false,
+             "properties": {"point": {"$ref": "#/$defs/vec3"}, "direction": {"$ref": "#/$defs/vec3"}}},
+    "box": {"type": "object", "required": ["min", "max"], "additionalProperties": false,
+            "properties": {"min": {"$ref": "#/$defs/vec3"}, "max": {"$ref": "#/$defs/vec3"}}},
+    "file": {"type": "object", "required": ["file", "sha256"], "additionalProperties": false,
+             "properties": {"file": {"type": "string"}, "sha256": {"$ref": "#/$defs/sha"}}},
+    "feature": {
+      "type": "object", "required": ["name", "kind", "origin", "status", "centroid", "bbox", "labels", "colour"], "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "kind": {"type": "string", "description": "The design's own kind of feature (hole, boss, wall, rib, surface, edge, fillet, chamfer, bridge, overhang, zone)"},
+        "origin": {"enum": ["declared", "recognised"], "description": "Declared by the design's script, a declaration, a label or a review; or recognised in the geometry"},
+        "status": {"enum": ["proposed", "confirmed", "rejected"]},
+        "axis": {"$ref": "#/$defs/line"},
+        "normal": {"$ref": "#/$defs/line"},
+        "diameter": {"type": "number"},
+        "thickness": {"type": "number"},
+        "centroid": {"$ref": "#/$defs/vec3"},
+        "bbox": {"$ref": "#/$defs/box"},
+        "labels": {"type": "array", "items": {"type": "string"}, "description": "Labels the source carries, such as a dataset's feature class"},
+        "colour": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "The feature's colour in the picture"},
+        "requirements": {"type": "array", "items": {"type": "string"}, "description": "The kinds of requirement the design states on the feature"}
+      }
+    }
+  }
+}
