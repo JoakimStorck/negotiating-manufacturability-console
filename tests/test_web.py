@@ -165,7 +165,7 @@ def test_a_new_product_by_a_person(app, tmp_path, home_dir):
     order = Home(home_dir).load("artifact")
     assert order.binding("O4")["rejected"] == ["surface-6"] and order.features_of("O3") == ["lateral-hole-d3", "lateral-hole-d6"]
     # the interaction log, read back
-    log = [json.loads(line) for path in (tmp_path / "log").glob("*.jsonl") for line in path.read_text().splitlines()]
+    log = [json.loads(line) for path in (tmp_path / "log").glob("*.jsonl") for line in path.read_text(encoding="utf-8").splitlines()]
     assert len({e["session"] for e in log}) == 1 and all(set(e) >= {"time", "session", "page", "action", "refusals"} for e in log)
     actions = Counter(e["action"].split(" ")[0] for e in log)
     assert actions["save"] == 2 and actions["edit"] >= 8 and actions["confirm"] == 4 and actions["reject"] == 1

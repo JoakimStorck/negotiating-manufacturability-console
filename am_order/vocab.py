@@ -20,12 +20,12 @@ MANDATES = ("held", "interval", "release")
 
 @lru_cache(maxsize=1)
 def _headings() -> dict:
-    return json.loads((HERE / "headings.json").read_text())
+    return json.loads((HERE / "headings.json").read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=1)
 def _quantities() -> dict:
-    return json.loads((HERE / "quantities.json").read_text())
+    return json.loads((HERE / "quantities.json").read_text(encoding="utf-8"))
 
 
 def headings() -> list[dict]:

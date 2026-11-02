@@ -10,13 +10,13 @@ from conftest import EXAMPLES, REFERENCE
 def test_every_example_validates():
     for lineage in REFERENCE:
         folder = EXAMPLES / "own" / lineage
-        validate_order(json.loads((folder / "order.json").read_text()))
+        validate_order(json.loads((folder / "order.json").read_text(encoding="utf-8")))
         for version in (folder / "versions").glob("*.json"):
-            validate_order(json.loads(version.read_text()))
+            validate_order(json.loads(version.read_text(encoding="utf-8")))
     lists = sorted((EXAMPLES / "features").glob("*/features-1.json"))
     assert len(lists) >= 8
     for path in lists:
-        validate_features(json.loads(path.read_text()))
+        validate_features(json.loads(path.read_text(encoding="utf-8")))
 
 
 def test_a_document_out_of_form_is_refused():

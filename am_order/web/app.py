@@ -47,7 +47,7 @@ class Log:
                  "page": page, "action": action, "refusals": [r.to_dict() if hasattr(r, "to_dict") else r for r in (refusals or [])]}
         if detail:
             entry["detail"] = detail
-        with self.path.open("a") as f:
+        with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 

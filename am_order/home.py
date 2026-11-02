@@ -189,7 +189,7 @@ class Home:
 
     def changes(self, lineage: str) -> str:
         p = self._folder(lineage) / "changes.md"
-        return p.read_text() if p.exists() else ""
+        return p.read_text(encoding="utf-8") if p.exists() else ""
 
     # ------------------------------------------------------------------ saving
 
@@ -260,7 +260,7 @@ class Home:
 
     def _record(self, folder: Path, revision: int, version: str, saved: str, changes: list[dict], note: str) -> None:
         path = folder / "changes.md"
-        text = path.read_text() if path.exists() else f"# {folder.name}: the change record\n"
+        text = path.read_text(encoding="utf-8") if path.exists() else f"# {folder.name}: the change record\n"
         text += f"\n## Revision {revision}, {version[:12]}, {saved}\n\n"
         if note:
             text += f"{note}\n\n"
@@ -416,7 +416,7 @@ class Home:
 
     def groups(self) -> dict:
         p = self.root / "groups.json"
-        return json.loads(p.read_text())["groups"] if p.exists() else {}
+        return json.loads(p.read_text(encoding="utf-8"))["groups"] if p.exists() else {}
 
     def _write_groups(self, groups: dict) -> None:
         write_atomic(self.root / "groups.json", (json.dumps({"groups": groups}, indent=1, sort_keys=True, ensure_ascii=False) + "\n").encode())

@@ -23,7 +23,7 @@ class SchemaError(ValueError):
 
 @lru_cache(maxsize=None)
 def schema(name: str) -> dict:
-    return json.loads((HERE / name).read_text())
+    return json.loads((HERE / name).read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=None)
