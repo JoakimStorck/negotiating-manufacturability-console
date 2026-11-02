@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<h1>Products</h1>
+<form method="get" action="/">
+  <input name="find" placeholder="text" value="{{ filters.find }}">
+  <select name="tag"><option value="">any tag</option>{% for t in tags %}<option {% if t == filters.tag %}selected{% endif %}>{{ t }}</option>{% endfor %}</select>
+  <select name="state"><option value="">any state</option>{% for s in ["draft", "checked", "bound", "confirmed", "archived"] %}<option {% if s == filters.state %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+  <input name="material" placeholder="material" value="{{ filters.material }}">
+  <select name="design"><option value="">any design</option>{% for d in designs %}<option {% if d == filters.design %}selected{% endif %}>{{ d }}</option>{% endfor %}</select>
+  <button>Filter</button>
+</form>
+<ul class="tree">
+{% for g in tree %}
+  <li style="margin-left: {{ g.depth * 1.2 }}rem"><b>{{ g.name }}</b> <span class="muted">{{ g.path }}</span>
+    <ul>
+    {% for p in g.products %}
+      <li><a href="/?selected={{ p.lineage }}">{{ p.lineage }}</a> {{ p.title }}
+        <span class="badge">{{ p.state }}</span>{% if p.category != "user" %} <span class="badge">{{ p.category }}</span>{% endif %}
+        {% for t in p.tags %}<span class="badge">{{ t }}</span> {% endfor %}
+        <span class="muted">{{ p.demands }} demands, {{ p.wishes }} wishes, {{ p.mandates }} mandates not held{% if p.material %}, {{ p.material }}{% endif %}{% if p.design %}, {{ p.design }}{% endif %}</span></li>
+    {% endfor %}
+    </ul>
+  </li>
+{% endfor %}
+</ul>
+<h2>New product</h2>
+<form method="post" action="/products">
+  <input name="lineage" placeholder="id (lowercase, hyphens)"> <input name="name" placeholder="name">
+  <input name="purpose" placeholder="what it is for"> <input name="group" placeholder="group path" list="groups">
+  <button>Create</button>
+</form>
+<form method="post" action="/products" style="margin-top:.4rem">
+  from a design's feature list: <select name="from_design">{% for d in designs %}<option>{{ d }}</option>{% endfor %}</select>
+  <input name="lineage" placeholder="id"> <input name="group" placeholder="group path" list="groups"> <button>Make a skeleton</button>
+</form>
+<datalist id="groups">{% for g in group_paths %}<option>{{ g }}</option>{% endfor %}</datalist>
+<h2>Groups</h2>
+<form method="post" action="/groups"><input name="path" placeholder="a/b"> <button>Add a group</button></form>
+{% endblock %}
+{% block aside %}
+<aside>
+{% if chosen %}
+  <h2>{{ chosen_facets.title }}</h2>
+  {% if chosen_facets.state != "draft" or chosen.data.product.picture or chosen.data.design %}<img class="picture" src="/products/{{ selected }}/picture" alt="" onerror="this.remove()">{% endif %}
+  <p>{{ chosen.data.product.purpose }}</p>
+  <p><a href="/products/{{ selected }}">Open</a> · {{ chosen_facets.group }} · {{ chosen_facets.category }} · {{ chosen_facets.state }}</p>
+  <p class="muted">{{ chosen.needs()|length }} needs, {{ chosen.metrics()|length }} metrics, {{ chosen.objects()|length }} objects{% if chosen.data.design %}, bound to {{ chosen.data.design }}{% endif %}</p>
+  <form method="post" action="/products/{{ selected }}/derive"><input name="lineage" placeholder="new id"> <input name="name" placeholder="name"> <button>Derive into user</button></form>
+  <form method="post" action="/products/{{ selected }}/manage"><input type="hidden" name="action" value="move"><input name="group" placeholder="group path" list="groups"> <button class="quiet">Move</button></form>
+  <form method="post" action="/products/{{ selected }}/manage"><input type="hidden" name="action" value="tag"><input name="add" placeholder="add tags"> <input name="remove" placeholder="remove tags"> <button class="quiet">Tag</button></form>
+  <form method="post" action="/products/{{ selected }}/manage"><input type="hidden" name="action" value="archive"><button class="quiet">Archive</button></form>
+  <p><a href="/compare?a={{ selected }}">Compare with another</a></p>
+{% else %}<p class="muted">Choose a product to see its summary.</p>{% endif %}
+</aside>
+{% endblock %}

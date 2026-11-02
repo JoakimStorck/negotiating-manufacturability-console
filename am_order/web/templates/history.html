@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}History: {{ lineage }}{% endblock %}
+{% block content %}
+<h1>History</h1>
+<table><tr><th>Revision</th><th>Version</th><th>Saved</th></tr>
+{% for v in versions %}<tr><td>{{ v.revision }}</td><td><code>{{ v.version[:12] }}</code></td><td>{{ v.saved }}</td></tr>{% endfor %}</table>
+<form method="get"><select name="a">{% for v in versions %}<option value="{{ v.revision }}" {% if a == v.revision|string %}selected{% endif %}>{{ v.revision }}</option>{% endfor %}</select>
+  against <select name="b">{% for v in versions %}<option value="{{ v.revision }}" {% if b == v.revision|string or (not b and loop.last) %}selected{% endif %}>{{ v.revision }}</option>{% endfor %}</select> <button>Compare</button></form>
+{% if changes %}<h2>From revision {{ a }} to {{ b }}</h2><ul>{% for c in changes %}<li>{{ c.text }}</li>{% endfor %}</ul>
+{% include "_sides.html" with context %}{% endif %}
+<h2>The change record</h2>
+<pre style="white-space: pre-wrap">{{ record }}</pre>
+{% endblock %}

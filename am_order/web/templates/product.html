@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ order.data.title }}{% endblock %}
+{% block content %}
+<h1>{{ order.data.title }}</h1>
+<div class="grid2">
+  <div>
+    <img class="picture" src="/products/{{ lineage }}/picture" alt="no overview picture" onerror="this.replaceWith(document.createTextNode('No overview picture.'))">
+  </div>
+  <form method="post" action="/products/{{ lineage }}/product" hx-post="/products/{{ lineage }}/product" hx-target="body">
+    <div class="grid2">
+      <label>Title</label><input name="title" value="{{ order.data.title }}">
+      <label>Name</label><input name="name" value="{{ order.data.product.name }}">
+      <label>Purpose</label><textarea name="purpose" rows="2">{{ order.data.product.purpose }}</textarea>
+      <label>Brief</label><textarea name="brief_text" rows="3">{{ order.data.brief.text if order.data.brief else "" }}</textarea>
+      <label>Objective</label><input name="objective" value="{{ (order.data.brief or {}).objective or '' }}">
+      <label>Quantity</label><input name="quantity" value="{{ (order.data.brief or {}).quantity or '' }}">
+      <label>May change</label><input name="may_change" value="{{ ((order.data.brief or {}).may_change or [])|join(', ') }}">
+      <label>May relax</label><input name="may_relax" value="{{ ((order.data.brief or {}).may_relax or [])|join(', ') }}">
+      <span></span><button>Apply</button>
+    </div>
+  </form>
+</div>
+<h3>Overview picture</h3>
+<form method="post" action="/products/{{ lineage }}/picture" enctype="multipart/form-data" class="inline">
+  <input type="file" name="file" accept="image/png,image/jpeg"> <button class="quiet">Set the owner's picture</button></form>
+<form method="post" action="/products/{{ lineage }}/picture" class="inline"><input type="hidden" name="action" value="design"><button class="quiet">Take the design's</button></form>
+<form method="post" action="/products/{{ lineage }}/picture" class="inline"><input type="hidden" name="action" value="clear"><button class="quiet">Clear</button></form>
+<h2>Customer needs</h2>
+<table>
+<tr><th>#</th><th>Need</th><th>Importance</th><th>Primary need</th><th></th></tr>
+{% for n in order.data.needs %}
+<tr class="{{ 'dropped' if n.dropped }}">
+  <form method="post" action="/products/{{ lineage }}/needs/{{ n.id }}" hx-post="/products/{{ lineage }}/needs/{{ n.id }}" hx-target="body">
+  <td>{{ n.id }}</td><td><input name="text" value="{{ n.text }}" size="40"></td>
+  <td><select name="importance">{% for i in [1, 2, 3, 4, 5] %}<option {% if n.importance == i %}selected{% endif %}>{{ i }}</option>{% endfor %}</select></td>
+  <td><input name="group" value="{{ n.group }}"></td>
+  <td><button class="quiet" name="action" value="edit">Apply</button> {% if not n.dropped %}<button class="quiet" name="action" value="drop">Drop</button>{% endif %}
+    {% set item = n.id %}{% include "_refusals.html" with context %}</td>
+  </form>
+</tr>
+{% endfor %}
+</table>
+<form method="post" action="/products/{{ lineage }}/needs" hx-post="/products/{{ lineage }}/needs" hx-target="body">
+  <input name="text" placeholder="the need, in the customer's words" size="40">
+  <select name="importance">{% for i in [1, 2, 3, 4, 5] %}<option>{{ i }}</option>{% endfor %}</select>
+  <input name="group" placeholder="primary need"> <button>Add a need</button>
+</form>
+{% set item = "product" %}{% include "_refusals.html" with context %}
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Binding: {{ lineage }}{% endblock %}
+{% block content %}
+<h1>The binding</h1>
+<form method="post" action="/products/{{ lineage }}/binding" hx-post="/products/{{ lineage }}/binding" hx-target="body">
+  <input type="hidden" name="action" value="bind">
+  Design version: <select name="design">{% for d in designs %}<option {% if d == design %}selected{% endif %}>{{ d }}</option>{% endfor %}</select>
+  <button>Bind</button> <span class="muted">declared by name, matched from an earlier version, the rest proposed</span>
+</form>
+{% set item = "product" %}{% include "_refusals.html" with context %}
+{% if features %}
+<h2>{{ design }}</h2>
+<img class="picture" src="/features/{{ design }}/{{ features.picture.file }}" alt="{{ design }}">
+<p>The model: {% for mf in features.models %}<a href="/features/{{ design }}/{{ mf.file }}">{{ mf.format|upper }}</a> <span class="muted">({{ mf.sha256[:12] }})</span> {% endfor %}</p>
+<h3>Features</h3>
+<table>
+<tr><th></th><th>Feature</th><th>Kind</th><th>Location</th><th>Labels</th><th>Status</th></tr>
+{% for f in features.features %}
+<tr><td><span class="swatch" style="background: {{ f.colour }}"></span></td><td>{{ f.name }}</td><td>{{ f.kind }}{% if f.diameter %} Ø{{ f.diameter }}{% endif %}</td>
+  <td class="num">{{ (f.axis or f.normal or {"point": f.centroid}).point|map("round", 2)|join(", ") }}{% if f.axis %} axis {{ f.axis.direction|map("round", 3)|join(", ") }}{% elif f.normal %} normal {{ f.normal.direction|map("round", 3)|join(", ") }}{% endif %}</td>
+  <td>{{ f.labels|join(", ") }}</td><td>{{ f.origin }}, {{ f.status }}</td></tr>
+{% endfor %}
+</table>
+<h3>The objects and their features</h3>
+<table>
+<tr><th>Object</th><th>Bound to</th><th>Proposals</th></tr>
+{% for r in rows %}{% set o = r.object %}
+<tr><td>{{ o.id }} {{ o.name }} <span class="muted">({{ o.kind }}{% if o.count and o.count > 1 %} x{{ o.count }}{% endif %})</span>{% set item = o.id %}{% include "_refusals.html" with context %}</td>
+  <td>{% for f in r.binding.features %}<span class="swatch" style="background: {{ colour.get(f.name, '#ccc') }}"></span>{{ f.name }} <span class="muted">{{ f.how }}{% if f.confirmed %}, confirmed{% endif %}</span>
+      {% if not f.confirmed %}<form method="post" action="/products/{{ lineage }}/binding" hx-post="/products/{{ lineage }}/binding" hx-target="body" class="inline"><input type="hidden" name="action" value="confirm"><input type="hidden" name="object" value="{{ o.id }}"><input type="hidden" name="feature" value="{{ f.name }}"><button class="quiet">Confirm</button></form>{% endif %}
+      <form method="post" action="/products/{{ lineage }}/binding" hx-post="/products/{{ lineage }}/binding" hx-target="body" class="inline"><input type="hidden" name="action" value="reject"><input type="hidden" name="object" value="{{ o.id }}"><input type="hidden" name="feature" value="{{ f.name }}"><button class="quiet">Reject</button></form><br>{% endfor %}
+      {% if r.binding.rejected %}<span class="muted">rejected: {{ r.binding.rejected|join(", ") }}</span>{% endif %}</td>
+  <td>{% for p in proposals.get(o.id, []) %}<span class="swatch" style="background: {{ colour.get(p.name, '#ccc') }}"></span>{{ p.name }} <span class="muted">{{ p.score }}: {{ p.why }}</span>
+      <form method="post" action="/products/{{ lineage }}/binding" hx-post="/products/{{ lineage }}/binding" hx-target="body" class="inline"><input type="hidden" name="action" value="confirm"><input type="hidden" name="object" value="{{ o.id }}"><input type="hidden" name="feature" value="{{ p.name }}"><button class="quiet">Confirm</button></form>
+      <form method="post" action="/products/{{ lineage }}/binding" hx-post="/products/{{ lineage }}/binding" hx-target="body" class="inline"><input type="hidden" name="action" value="reject"><input type="hidden" name="object" value="{{ o.id }}"><input type="hidden" name="feature" value="{{ p.name }}"><button class="quiet">Reject</button></form><br>{% endfor %}</td></tr>
+{% endfor %}
+</table>
+<h3>Each metric with its features</h3>
+<table>
+<tr><th>Metric</th><th>Objects and features</th></tr>
+{% for m, named in carried %}
+<tr><td>{{ m.id }} {{ m.text }}</td><td>{% for oid, names in named %}{% set o = order.obj(oid) %}{{ oid }} {{ o.name if o else "?" }}: {% if o and o.kind == "part" %}the design{% else %}{% for n in names %}<span class="swatch" style="background: {{ colour.get(n, '#ccc') }}"></span>{{ n }} {% else %}<span class="muted">unbound</span>{% endfor %}{% endif %}<br>{% endfor %}</td></tr>
+{% endfor %}
+</table>
+{% else %}
+<p class="muted">{% if design %}The products home has no feature list of {{ design }}.{% else %}The order names no design: it is complete and unbound until one is bound.{% endif %}</p>
+{% endif %}
+{% endblock %}

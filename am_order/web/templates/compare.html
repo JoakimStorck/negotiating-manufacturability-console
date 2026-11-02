@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Compare{% endblock %}
+{% block mainclass %}wide{% endblock %}
+{% block content %}
+<h1>Compare</h1>
+<form method="get" action="/compare"><input name="a" value="{{ a }}" placeholder="PRODUCT or PRODUCT@revision" list="lineages">
+  against <input name="b" value="{{ b }}" placeholder="PRODUCT or PRODUCT@revision" list="lineages"> <button>Compare</button></form>
+<datalist id="lineages">{% for l in lineages %}<option>{{ l }}</option>{% endfor %}</datalist>
+{% if a and b and not message %}<h2>From {{ a }} to {{ b }}</h2>
+{% if changes %}<ul>{% for c in changes %}<li>{{ c.text }}</li>{% endfor %}</ul>{% else %}<p>No change.</p>{% endif %}
+{% include "_sides.html" with context %}{% endif %}
+{% endblock %}
+{% block aside %}{% endblock %}

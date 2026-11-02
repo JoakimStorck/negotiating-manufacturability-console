@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ m.id }}: {{ lineage }}{% endblock %}
+{% block content %}
+<h1>{{ m.id }} <span class="muted" style="font-weight:normal">{{ m.text }}</span></h1>
+{% set item = m.id %}{% include "_refusals.html" with context %}
+{% set value = m.value or {} %}{% set form = (value.keys()|list or [""])[0] %}{% set v = value.get(form) %}
+{% set u = m.under or {} %}{% set mandate = m.mandate or {"form": "held"} %}
+<form method="post" action="/products/{{ lineage }}/metrics/{{ m.id }}" hx-post="/products/{{ lineage }}/metrics/{{ m.id }}" hx-target="body">
+<div class="grid2">
+  <label>Class</label><select name="class"><option value="">(choose)</option>{% for c in ["demand", "wish"] %}<option {% if m["class"] == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+  <label>Heading</label><select name="heading"><option value="">(choose)</option>{% for h in V.headings() %}<option value="{{ h.id }}" {% if m.heading == h.id %}selected{% endif %}>{{ h.name }}</option>{% endfor %}</select>
+  <label>Requirement</label><input name="text" value="{{ m.text }}" size="60">
+  <label>Object</label><select name="object"><option value="">(choose)</option>{% for o in order.objects() %}<option value="{{ o.id }}" {% if m.object == o.id %}selected{% endif %}>{{ o.id }} {{ o.name }} ({{ o.kind }}{% if o.count and o.count > 1 %} x{{ o.count }}{% endif %})</option>{% endfor %}</select>
+  <label>Quantity</label><select name="quantity"><option value="">(choose)</option>{% for q, d in quantities.items() %}<option value="{{ q }}" {% if m.quantity == q %}selected{% endif %}>{{ q|replace("_", " ") }}: {{ d.text }}</option>{% endfor %}</select>
+  <label>Unit</label><select name="unit"><option value="">(none)</option>{% for un in quantities.values()|map(attribute="units")|sum(start=[])|unique %}<option {% if m.unit == un %}selected{% endif %}>{{ un }}</option>{% endfor %}</select>
+  <label>Ideal value</label>
+  <div><select name="comparator"><option value="">(choose)</option>{% for f in V.VALUE_FORMS %}<option value="{{ f }}" {% if form == f %}selected{% endif %}>{{ f|replace("_", " ") }}</option>{% endfor %}</select>
+    <input name="value" value="{% if form in ['at_most', 'at_least', 'equals', 'holds'] %}{{ v|join(', ') if v is iterable and v is not string else v }}{% endif %}" placeholder="value (three sizes for an envelope)">
+    band: <input name="lower" size="6" value="{{ v.lower if form == 'band' else '' }}" placeholder="lower">
+    <input name="nominal" size="6" value="{{ v.nominal if form == 'band' and v.nominal is not none else '' }}" placeholder="nominal">
+    <input name="upper" size="6" value="{{ v.upper if form == 'band' else '' }}" placeholder="upper"></div>
+  <label>Under a load</label>
+  <div><select name="load_type"><option value="">(none)</option>{% for t in loads %}<option {% if u.type == t %}selected{% endif %}>{{ t }}</option>{% endfor %}</select>
+    <input name="magnitude" size="7" value="{{ u.magnitude if u.magnitude is not none else '' }}" placeholder="magnitude">
+    <select name="load_unit"><option value="">(unit)</option>{% for t, d in loads.items() %}{% for un in d.units %}<option {% if u.unit == un %}selected{% endif %}>{{ un }}</option>{% endfor %}{% endfor %}</select>
+    direction <input name="direction" size="14" value="{{ (u.direction or [])|join(', ') }}" placeholder="x, y, z"><br>
+    acting at <select name="at"><option value="">(object)</option>{% for o in order.objects() %}<option value="{{ o.id }}" {% if u.at == o.id %}selected{% endif %}>{{ o.id }} {{ o.name }}</option>{% endfor %}</select>,
+    held by {% for o in order.objects() %}<label><input type="checkbox" name="held_by" value="{{ o.id }}" {% if o.id in (u.held_by or []) %}checked{% endif %}>{{ o.id }}</label> {% endfor %}<br>
+    name <input name="under_name" value="{{ u.name or '' }}" size="30"></div>
+  <label>Datums</label><div>{% for o in order.objects() if o.datum %}<label><input type="checkbox" name="datums" value="{{ o.id }}" {% if o.id in (u.datums or []) %}checked{% endif %}>{{ o.datum }}: {{ o.name }}</label> {% endfor %}</div>
+  <label>Other conditions</label><input name="under_text" value="{{ u.text or '' }}" size="60">
+  <label>Needs</label><div>{% for n in order.needs() %}<label><input type="checkbox" name="needs" value="{{ n.id }}" {% if n.id in m.needs %}checked{% endif %}>{{ n.id }} {{ n.text }}</label><br>{% endfor %}</div>
+  <label>Sources</label><textarea name="source" rows="2" placeholder="kind: reference, one per line (requester, standard, project, reference)">{{ sources_text(m.source) }}</textarea>
+  <label>Verified by</label><input name="verified_by" value="{{ m.verified_by or '' }}" size="50">
+  <label>Carried by</label><div>{% for o in order.objects() %}<label><input type="checkbox" name="carried_by" value="{{ o.id }}" {% if o.id in (m.carried_by or []) %}checked{% endif %}>{{ o.id }} {{ o.name }}</label> {% endfor %}</div>
+  <label>Mandate</label>
+  <div>{% for f in V.MANDATES %}<label><input type="radio" name="mandate" value="{{ f }}" {% if mandate.form == f %}checked{% endif %}>{{ f }}</label> {% endfor %}
+    far end <input name="far" value="{{ mandate.to|join(', ') if mandate.to is iterable and mandate.to is not string and mandate.to is not mapping else (mandate.to.lower ~ ', ' ~ mandate.to.upper) if mandate.to is mapping else mandate.to if mandate.to is not none else '' }}" placeholder="a value, lower, upper, or as_needed"></div>
+  <span></span><div><button>Apply</button> <button class="quiet" name="action" value="drop">Drop the metric</button></div>
+</div>
+</form>
+<p><a href="/products/{{ lineage }}/metrics">All metrics</a></p>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Specification: {{ lineage }}{% endblock %}
+{% block content %}
+<h1>The target specification</h1>
+<p>{% if mandate %}<a href="?mandate=0">Without the mandates</a>{% else %}<a href="?mandate=1">With the mandates</a>{% endif %}</p>
+<table><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr>
+{% for r in rows %}<tr>{% for c in r %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}</table>
+{% endblock %}

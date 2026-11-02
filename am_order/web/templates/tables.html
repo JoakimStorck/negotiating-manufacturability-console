@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Tables: {{ lineage }}{% endblock %}
+{% block mainclass %}wide{% endblock %}
+{% block content %}
+<h1>The tables</h1>
+<p><a href="?mandate={{ 0 if mandate else 1 }}">{{ "Without" if mandate else "With" }} the mandates</a> · <a href="/products/{{ lineage }}/export.xlsx">Workbook</a> · <a href="/products/{{ lineage }}/export.reqif">ReqIF</a></p>
+{% for title, cols, rows in shown %}
+<h2>{{ title }}</h2>
+<table><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr>{% for r in rows %}<tr>{% for c in r %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}</table>
+{% endfor %}
+{% endblock %}
+{% block aside %}{% endblock %}

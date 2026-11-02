@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Matrix: {{ lineage }}{% endblock %}
+{% block content %}
+<h1>The needs-metrics matrix</h1>
+<p class="muted">A tick says the metric measures the need. Click a cell to change it.</p>
+<table>
+<tr><th>Need</th>{% for m in order.metrics() %}<th class="cell" title="{{ name(order, m) }}"><a href="/products/{{ lineage }}/metrics/{{ m.id }}">{{ m.id }}</a></th>{% endfor %}</tr>
+{% for n in order.needs() %}
+<tr><td>{{ n.id }} {{ n.text }} <span class="muted">({{ n.importance or "–" }})</span>{% set item = n.id %}{% include "_refusals.html" with context %}</td>
+  {% for m in order.metrics() %}{% set on = n.id in m.needs %}
+  <td class="cell"><form method="post" action="/products/{{ lineage }}/matrix" hx-post="/products/{{ lineage }}/matrix" hx-target="body" class="inline">
+    <input type="hidden" name="need" value="{{ n.id }}"><input type="hidden" name="metric" value="{{ m.id }}"><input type="hidden" name="on" value="{{ '0' if on else '1' }}">
+    <button class="quiet" style="padding:0 .3rem" title="{{ n.id }} x {{ m.id }}">{{ "●" if on else "·" }}</button></form></td>
+  {% endfor %}
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
