@@ -1,6 +1,6 @@
 """The web app: the person's interface to the products home, served on 127.0.0.1 for one user, rendered on the server with htmx.
 
-    am-order serve [--home DIR] [--port 8765] [--log DIR] [--allow-own]
+    am-order serve [--home DIR] [--port 8770] [--log DIR] [--allow-own]
 
 Every page is a URL of its own. An edit goes to the product's draft and the page comes back with the checks' refusals beside what
 they concern; Save makes a version when no check fails, and a refused save keeps the draft. With `--log DIR` every action is one
@@ -153,6 +153,11 @@ def sources_from_text(text: str) -> list[dict]:
 
 def sources_text(sources) -> str:
     return "\n".join(s["kind"] + (f": {s['ref']}" if s.get("ref") else "") for s in sources or [])
+
+
+def picked(form, name: str) -> list[str]:
+    """The ticked values of a group of checkboxes, empty ones left out."""
+    return [v for v in form.getlist(name) if v]
 
 
 # -------------------------------------------------------------------- the app
@@ -441,19 +446,19 @@ def create_app(home: Home, log_dir: Path | None = None) -> FastAPI:
             under = {}
             if form.get("load_type"):
                 under = {"type": form["load_type"], "magnitude": _num(form.get("magnitude")), "unit": form.get("load_unit") or None,
-                         "direction": _vec(form.get("direction")), "at": form.get("at") or None, "held_by": form.getlist("held_by")}
-            if form.getlist("datums"):
-                under["datums"] = form.getlist("datums")
+                         "direction": _vec(form.get("direction")), "at": form.get("at") or None, "held_by": picked(form, "held_by")}
+            if picked(form, "datums"):
+                under["datums"] = picked(form, "datums")
             if form.get("under_name"):
                 under["name"] = form["under_name"]
             if form.get("under_text"):
                 under["text"] = form["under_text"]
             m["under"] = {k: v for k, v in under.items() if v not in (None, [], "")} or None
-            m["needs"] = form.getlist("needs")
+            m["needs"] = picked(form, "needs")
             o.sort_needs(m)
             m["source"] = sources_from_text(form.get("source") or "")
             m["verified_by"] = form.get("verified_by") or None
-            m["carried_by"] = form.getlist("carried_by")
+            m["carried_by"] = picked(form, "carried_by")
             m["mandate"] = mandate_from_form(form)
         return _metric_edit(request, lineage, mid, change, form)
 

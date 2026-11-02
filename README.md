@@ -23,7 +23,7 @@ python3.12 -m venv .venv
 ## Start
 
 ```bash
-.venv/bin/am-order --home examples serve            # http://127.0.0.1:8765/
+.venv/bin/am-order --home examples serve            # http://127.0.0.1:8770/
 .venv/bin/am-order --home examples serve --log logs # with the interaction log, one JSON line per action
 ```
 

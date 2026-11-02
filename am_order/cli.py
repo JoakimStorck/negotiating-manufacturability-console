@@ -17,7 +17,7 @@
     xlsx export PRODUCT FILE | xlsx import FILE       the workbook; an import comes in as a draft and is checked
     reqif export PRODUCT FILE
     features list | add DIR                           the feature lists in the home
-    serve [--port 8765] [--log DIR]                   the web app on 127.0.0.1
+    serve [--port 8770] [--log DIR]                   the web app on 127.0.0.1
 
 The home is `--home` or `AM_ORDER_HOME`. An own product opens read only unless `--allow-own` is given.
 """
@@ -111,7 +111,7 @@ def main(argv=None) -> int:
     fe.add_argument("what", choices=["list", "add"])
     fe.add_argument("dir", nargs="?")
     sv = sub.add_parser("serve")
-    sv.add_argument("--port", type=int, default=8765)
+    sv.add_argument("--port", type=int, default=8770)
     sv.add_argument("--log")
     args = ap.parse_args(argv)
 
