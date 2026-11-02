@@ -1,0 +1,1938 @@
+{
+ "schema": "features/1",
+ "design": "nist-am-artifact@v1",
+ "lineage": "nist-am-artifact",
+ "version": 1,
+ "sha256": "781c96be72552b73aff8e90725c071a7221241616c1873ff7dda5d373d45ee8e",
+ "parent": null,
+ "title": "NIST additive manufacturing test artifact, version 3b",
+ "units": "mm",
+ "material": "open",
+ "bbox": {
+  "min": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max": [
+   141.4214,
+   141.4214,
+   17.0
+  ]
+ },
+ "picture": {
+  "file": "picture.png",
+  "sha256": "c93a59c8face1747db6370af6bbff1a2c6ef6b4e9afe1aab80c751764af958f1"
+ },
+ "models": [
+  {
+   "format": "stl",
+   "file": "model.stl",
+   "sha256": "ce2f9c589871da79e1d96206a02683c91c7a04dd0beaf20c3d2ba1fe7dc2f9d1"
+  },
+  {
+   "format": "3mf",
+   "file": "model.3mf",
+   "sha256": "bc6ff7d4d8e273ba1ceeef52dd2a287f32a442e483e4b6f820161ad24ee0c8c5"
+  }
+ ],
+ "features": [
+  {
+   "name": "central-hole",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    70.7107,
+    70.7107,
+    8.4215
+   ],
+   "bbox": {
+    "min": [
+     64.7107,
+     64.7107,
+     0.0
+    ],
+    "max": [
+     76.7107,
+     76.7107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [
+    "size"
+   ],
+   "axis": {
+    "point": [
+     70.710678,
+     70.710678,
+     8.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 10.0
+  },
+  {
+   "name": "central-boss",
+   "kind": "boss",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    70.7147,
+    70.7066,
+    12.0089
+   ],
+   "bbox": {
+    "min": [
+     59.7107,
+     59.7107,
+     9.0
+    ],
+    "max": [
+     81.7107,
+     81.7107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.710678,
+     70.710678,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 15.0
+  },
+  {
+   "name": "lateral-hole-d3",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    65.2658,
+    132.7241,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     61.5789,
+     130.1683,
+     2.5
+    ],
+    "max": [
+     67.8216,
+     136.4109,
+     7.5
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [
+    "size"
+   ],
+   "axis": {
+    "point": [
+     64.70027,
+     133.289628,
+     5.0
+    ],
+    "direction": [
+     0.707106781,
+     -0.707106781,
+     0.0
+    ]
+   },
+   "diameter": 3.0
+  },
+  {
+   "name": "lateral-hole-d6",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    45.1298,
+    110.4337,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     39.3051,
+     106.4802,
+     1.0
+    ],
+    "max": [
+     49.0833,
+     116.2584,
+     9.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [
+    "size"
+   ],
+   "axis": {
+    "point": [
+     44.194174,
+     111.369318,
+     5.0
+    ],
+    "direction": [
+     0.707106781,
+     -0.707106781,
+     0.0
+    ]
+   },
+   "diameter": 6.0
+  },
+  {
+   "name": "pin-d4",
+   "kind": "boss",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    120.7107,
+    70.7107,
+    12.337
+   ],
+   "bbox": {
+    "min": [
+     117.7107,
+     67.7107,
+     9.0
+    ],
+    "max": [
+     123.7107,
+     73.7107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "axis": {
+    "point": [
+     120.710678,
+     70.710678,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "hole-1",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    10.7107,
+    70.7107,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     7.9107,
+     67.9107,
+     0.0
+    ],
+    "max": [
+     13.5107,
+     73.5107,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "axis": {
+    "point": [
+     10.711,
+     70.711,
+     5.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "hole-2",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    10.7107,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     7.9107,
+     0.0
+    ],
+    "max": [
+     73.5107,
+     13.5107,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     10.711,
+     5.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "hole-3",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    130.7107,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     127.9107,
+     0.0
+    ],
+    "max": [
+     73.5107,
+     133.5107,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     130.711,
+     5.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "hole-4",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    130.7107,
+    70.7107,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     127.9107,
+     67.9107,
+     0.0
+    ],
+    "max": [
+     133.5107,
+     73.5107,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "axis": {
+    "point": [
+     130.711,
+     70.711,
+     5.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "hole-5",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    77.7817,
+    113.1371,
+    8.5959
+   ],
+   "bbox": {
+    "min": [
+     76.8567,
+     112.2121,
+     7.2
+    ],
+    "max": [
+     78.7067,
+     114.0621,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "axis": {
+    "point": [
+     77.782,
+     113.137,
+     9.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 0.25
+  },
+  {
+   "name": "hole-6",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    81.3173,
+    109.6016,
+    8.5869
+   ],
+   "bbox": {
+    "min": [
+     80.2673,
+     108.5516,
+     7.2
+    ],
+    "max": [
+     82.3673,
+     110.6516,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "axis": {
+    "point": [
+     81.317,
+     109.602,
+     9.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 0.5
+  },
+  {
+   "name": "hole-7",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    84.8528,
+    106.066,
+    8.5639
+   ],
+   "bbox": {
+    "min": [
+     83.5528,
+     104.766,
+     7.2
+    ],
+    "max": [
+     86.1528,
+     107.366,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "axis": {
+    "point": [
+     84.853,
+     106.066,
+     9.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 1.0
+  },
+  {
+   "name": "hole-8",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    88.3883,
+    102.5305,
+    8.5396
+   ],
+   "bbox": {
+    "min": [
+     86.8383,
+     100.9805,
+     7.2
+    ],
+    "max": [
+     89.9383,
+     104.0805,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [],
+   "axis": {
+    "point": [
+     88.388,
+     102.53,
+     9.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 1.5
+  },
+  {
+   "name": "hole-9",
+   "kind": "hole",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    91.9239,
+    98.9949,
+    8.5164
+   ],
+   "bbox": {
+    "min": [
+     90.1239,
+     97.1949,
+     7.2
+    ],
+    "max": [
+     93.7239,
+     100.795,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "axis": {
+    "point": [
+     91.924,
+     98.995,
+     9.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 2.0
+  },
+  {
+   "name": "boss-1",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    98.9949,
+    91.9239,
+    10.1277
+   ],
+   "bbox": {
+    "min": [
+     97.1949,
+     90.1239,
+     9.2
+    ],
+    "max": [
+     100.795,
+     93.7239,
+     12.0
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "axis": {
+    "point": [
+     98.995,
+     91.924,
+     11.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 2.0
+  },
+  {
+   "name": "boss-2",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    102.5305,
+    88.3883,
+    10.0404
+   ],
+   "bbox": {
+    "min": [
+     100.9805,
+     86.8383,
+     9.2
+    ],
+    "max": [
+     104.0805,
+     89.9383,
+     12.0
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "axis": {
+    "point": [
+     102.53,
+     88.388,
+     11.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 1.5
+  },
+  {
+   "name": "boss-3",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    106.066,
+    84.8528,
+    9.9147
+   ],
+   "bbox": {
+    "min": [
+     104.766,
+     83.5528,
+     9.2
+    ],
+    "max": [
+     107.366,
+     86.1528,
+     12.0
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "axis": {
+    "point": [
+     106.066,
+     84.853,
+     11.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 1.0
+  },
+  {
+   "name": "boss-4",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    109.6016,
+    81.3173,
+    9.74
+   ],
+   "bbox": {
+    "min": [
+     108.5516,
+     80.2673,
+     9.2
+    ],
+    "max": [
+     110.6516,
+     82.3673,
+     12.0
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "axis": {
+    "point": [
+     109.602,
+     81.317,
+     11.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 0.5
+  },
+  {
+   "name": "boss-5",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    113.1371,
+    77.7817,
+    9.6484
+   ],
+   "bbox": {
+    "min": [
+     112.2121,
+     76.8567,
+     9.2
+    ],
+    "max": [
+     114.0621,
+     78.7067,
+     12.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "axis": {
+    "point": [
+     113.137,
+     77.782,
+     11.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 0.25
+  },
+  {
+   "name": "boss-6",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    20.7107,
+    70.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     17.9107,
+     67.9107,
+     9.2
+    ],
+    "max": [
+     23.5107,
+     73.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "axis": {
+    "point": [
+     20.711,
+     70.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-7",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    30.7107,
+    70.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     27.9107,
+     67.9107,
+     9.2
+    ],
+    "max": [
+     33.5107,
+     73.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "axis": {
+    "point": [
+     30.711,
+     70.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-8",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    40.7107,
+    70.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     37.9107,
+     67.9107,
+     9.2
+    ],
+    "max": [
+     43.5107,
+     73.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "axis": {
+    "point": [
+     40.711,
+     70.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-9",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    50.7107,
+    70.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     47.9107,
+     67.9107,
+     9.2
+    ],
+    "max": [
+     53.5107,
+     73.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [],
+   "axis": {
+    "point": [
+     50.711,
+     70.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-10",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    20.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     17.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     23.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     20.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-11",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    30.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     27.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     33.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     30.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-12",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    40.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     37.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     43.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     40.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-13",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    50.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     47.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     53.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     50.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-14",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    90.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     87.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     93.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     90.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-15",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    100.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     97.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     103.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     100.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-16",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    110.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     107.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     113.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     110.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-17",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    120.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     67.9107,
+     117.9107,
+     9.2
+    ],
+    "max": [
+     73.5107,
+     123.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     120.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-18",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    90.7107,
+    70.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     87.9107,
+     67.9107,
+     9.2
+    ],
+    "max": [
+     93.5107,
+     73.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "axis": {
+    "point": [
+     90.711,
+     70.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-19",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    100.7107,
+    70.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     97.9107,
+     67.9107,
+     9.2
+    ],
+    "max": [
+     103.5107,
+     73.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [],
+   "axis": {
+    "point": [
+     100.711,
+     70.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-20",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    110.7107,
+    70.7107,
+    12.6334
+   ],
+   "bbox": {
+    "min": [
+     107.9107,
+     67.9107,
+     9.2
+    ],
+    "max": [
+     113.5107,
+     73.5107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "axis": {
+    "point": [
+     110.711,
+     70.711,
+     13.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 4.0
+  },
+  {
+   "name": "boss-21",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    70.7107,
+    14.8658
+   ],
+   "bbox": {
+    "min": [
+     62.4107,
+     62.4107,
+     13.2
+    ],
+    "max": [
+     79.0107,
+     79.0107,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "axis": {
+    "point": [
+     70.711,
+     70.711,
+     15.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 15.0
+  },
+  {
+   "name": "surface-1",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    70.7107,
+    70.7107,
+    0.4
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "max": [
+     141.4214,
+     141.4214,
+     0.8
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "normal": {
+    "point": [
+     70.710678,
+     70.710678,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "surface-2",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    47.5421,
+    93.9168,
+    5.1084
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     69.9107,
+     0.0
+    ],
+    "max": [
+     71.5107,
+     141.4214,
+     10.8
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "normal": {
+    "point": [
+     35.256554,
+     105.967232,
+     5.0
+    ],
+    "direction": [
+     -0.707106781,
+     0.707106781,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-3",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    47.0608,
+    47.1897,
+    4.7793
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "max": [
+     71.5107,
+     71.5107,
+     10.8
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "normal": {
+    "point": [
+     35.355339,
+     35.355339,
+     5.0
+    ],
+    "direction": [
+     -0.707106781,
+     -0.707106781,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-4",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    94.132,
+    47.2893,
+    5.0487
+   ],
+   "bbox": {
+    "min": [
+     69.9107,
+     0.0,
+     0.0
+    ],
+    "max": [
+     141.4214,
+     71.5107,
+     10.8
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "normal": {
+    "point": [
+     106.066017,
+     35.355339,
+     5.0
+    ],
+    "direction": [
+     0.707106781,
+     -0.707106781,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-5",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    94.1609,
+    94.0829,
+    5.0165
+   ],
+   "bbox": {
+    "min": [
+     69.9107,
+     69.9107,
+     0.0
+    ],
+    "max": [
+     141.4214,
+     141.4214,
+     10.8
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "normal": {
+    "point": [
+     106.066017,
+     106.066017,
+     5.0
+    ],
+    "direction": [
+     0.707106781,
+     0.707106781,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-6",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    71.0835,
+    72.5373,
+    9.687
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     0.0,
+     9.2
+    ],
+    "max": [
+     141.4214,
+     141.4214,
+     10.8
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "normal": {
+    "point": [
+     72.732095,
+     70.698817,
+     10.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-1",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    16.8537,
+    82.1412,
+    6.1822
+   ],
+   "bbox": {
+    "min": [
+     10.8926,
+     78.0678,
+     4.2
+    ],
+    "max": [
+     20.9272,
+     88.1023,
+     7.8
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "normal": {
+    "point": [
+     15.909903,
+     83.085047,
+     6.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-2",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    65.1119,
+    132.878,
+    6.3905
+   ],
+   "bbox": {
+    "min": [
+     62.0896,
+     130.679,
+     5.2607
+    ],
+    "max": [
+     67.3109,
+     135.9003,
+     7.3
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [],
+   "normal": {
+    "point": [
+     64.70027,
+     133.289628,
+     6.28033
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-3",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    58.1416,
+    125.7061,
+    6.5793
+   ],
+   "bbox": {
+    "min": [
+     54.7079,
+     123.2972,
+     5.7
+    ],
+    "max": [
+     60.5505,
+     129.1399,
+     7.3
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "normal": {
+    "point": [
+     57.629203,
+     126.21856,
+     6.5
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-4",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    44.8239,
+    110.7396,
+    7.7288
+   ],
+   "bbox": {
+    "min": [
+     40.1264,
+     107.3016,
+     6.3213
+    ],
+    "max": [
+     48.2619,
+     115.4371,
+     8.8
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "normal": {
+    "point": [
+     44.194174,
+     111.369318,
+     7.56066
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-5",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    37.9605,
+    103.4609,
+    8.1074
+   ],
+   "bbox": {
+    "min": [
+     32.434,
+     99.6092,
+     7.2
+    ],
+    "max": [
+     41.8122,
+     108.9873,
+     8.8
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "normal": {
+    "point": [
+     37.123106,
+     104.29825,
+     8.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "wall-1",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    101.5836,
+    108.3211,
+    8.4808
+   ],
+   "bbox": {
+    "min": [
+     99.2129,
+     106.0708,
+     7.2065
+    ],
+    "max": [
+     105.2427,
+     111.7013,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "thickness": 1.05
+  },
+  {
+   "name": "wall-2",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    89.406,
+    119.5042,
+    8.5667
+   ],
+   "bbox": {
+    "min": [
+     86.7258,
+     116.2362,
+     7.2531
+    ],
+    "max": [
+     93.7398,
+     124.6931,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "thickness": 0.55
+  },
+  {
+   "name": "wall-3",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    97.2761,
+    113.8802,
+    8.5428
+   ],
+   "bbox": {
+    "min": [
+     96.1767,
+     112.5405,
+     7.2833
+    ],
+    "max": [
+     98.5228,
+     115.6147,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "thickness": 1.05
+  },
+  {
+   "name": "wall-4",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    118.7183,
+    89.6527,
+    10.0437
+   ],
+   "bbox": {
+    "min": [
+     115.1591,
+     86.2004,
+     9.2662
+    ],
+    "max": [
+     123.9503,
+     93.6442,
+     12.0
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "thickness": 0.25
+  }
+ ]
+}

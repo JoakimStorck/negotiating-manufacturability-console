@@ -1,0 +1,274 @@
+{
+ "schema": "features/1",
+ "design": "plate@v3",
+ "lineage": "plate",
+ "version": 3,
+ "sha256": "554e03ad255ab1bd96697dad42d2e8767fc237459b84a7f07cfa15d803233ff7",
+ "parent": "plate@v2",
+ "title": "The plate, the control case (cases/plate)",
+ "units": "mm",
+ "material": "open",
+ "bbox": {
+  "min": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max": [
+   60.0,
+   42.0,
+   4.0
+  ]
+ },
+ "picture": {
+  "file": "picture.png",
+  "sha256": "de3ec83c655e5735a642829bce8a4cc83da336ef17417318d06f42cba8cc9024"
+ },
+ "models": [
+  {
+   "format": "stl",
+   "file": "model.stl",
+   "sha256": "c84bf6ec3b7191625a7cb76147fcab7b58d8c6fc76e497b20656927b90880d5c"
+  },
+  {
+   "format": "3mf",
+   "file": "model.3mf",
+   "sha256": "ba17f043a796d02f79fc747a8cb2ef1927f005708efea0e3350428428b4cc471"
+  }
+ ],
+ "features": [
+  {
+   "name": "underside",
+   "kind": "surface",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    30.0,
+    21.0,
+    0.75
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "max": [
+     60.0,
+     42.0,
+     1.5
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [
+    "form",
+    "datum"
+   ],
+   "normal": {
+    "point": [
+     30.0,
+     21.0,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "edge-long",
+   "kind": "edge",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    30.0,
+    0.75,
+    0.75
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "max": [
+     60.0,
+     1.5,
+     1.5
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [
+    "datum"
+   ],
+   "axis": {
+    "point": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "direction": [
+     1.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "hole-1",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    14.5,
+    21.0,
+    2.0
+   ],
+   "bbox": {
+    "min": [
+     11.3,
+     17.8089,
+     0.0
+    ],
+    "max": [
+     17.7,
+     24.1911,
+     4.0
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [
+    "size",
+    "position"
+   ],
+   "axis": {
+    "point": [
+     14.5,
+     21.0,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 3.4
+  },
+  {
+   "name": "hole-2",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    45.5,
+    21.0,
+    2.0
+   ],
+   "bbox": {
+    "min": [
+     42.3,
+     17.8089,
+     0.0
+    ],
+    "max": [
+     48.7,
+     24.1911,
+     4.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [
+    "size",
+    "position"
+   ],
+   "axis": {
+    "point": [
+     45.5,
+     21.0,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "diameter": 3.4
+  },
+  {
+   "name": "top",
+   "kind": "surface",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    30.0,
+    21.0,
+    3.25
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     0.0,
+     2.5
+    ],
+    "max": [
+     60.0,
+     42.0,
+     4.0
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [
+    "surface",
+    "load_case"
+   ],
+   "normal": {
+    "point": [
+     30.0,
+     21.0,
+     4.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "body",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    30.0,
+    21.0,
+    2.0
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "max": [
+     60.0,
+     42.0,
+     4.0
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "thickness": 4.0
+  }
+ ]
+}

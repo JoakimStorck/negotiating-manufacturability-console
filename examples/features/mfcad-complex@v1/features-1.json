@@ -1,0 +1,719 @@
+{
+ "schema": "features/1",
+ "design": "mfcad-complex@v1",
+ "lineage": "mfcad-complex",
+ "version": 1,
+ "sha256": "45a602dfb8f58fd29b741d0237384c1f779b90da00fc2cb8ca172b74cfd2c749",
+ "parent": null,
+ "title": "MFCAD 0-0-2-3-14-23: stock with rectangular and triangular passages, a through slot and a chamfer",
+ "units": "mm",
+ "material": "open",
+ "bbox": {
+  "min": [
+   -0.0,
+   -0.0,
+   0.0
+  ],
+  "max": [
+   10.0,
+   10.0,
+   10.0
+  ]
+ },
+ "picture": {
+  "file": "picture.png",
+  "sha256": "9c7b1f8486d78442ca8c54fe7edf97c5995c3e02202e4f052d9b913f230abe7d"
+ },
+ "models": [
+  {
+   "format": "stl",
+   "file": "model.stl",
+   "sha256": "76872d25f05b9c13b1090f63697f8958a9860fde80dd46a08caaef19f87ee399"
+  },
+  {
+   "format": "3mf",
+   "file": "model.3mf",
+   "sha256": "5f87a3f610269f6d53789fdb34aed2dd6d0a787c206584af00d965e02d7df4bb"
+  }
+ ],
+ "features": [
+  {
+   "name": "rectangular-through-slot-1",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    1.3695,
+    8.6305,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     7.5702,
+     0.0
+    ],
+    "max": [
+     2.4298,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [
+    "mfcad:rectangular_through_slot"
+   ],
+   "colour": "#2ca02c",
+   "requirements": []
+  },
+  {
+   "name": "rectangular-through-slot-2",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    7.2154,
+    2.4294,
+    5.472
+   ],
+   "bbox": {
+    "min": [
+     5.57,
+     -0.0,
+     0.0
+    ],
+    "max": [
+     10.0,
+     4.43,
+     10.0
+    ]
+   },
+   "labels": [
+    "mfcad:rectangular_through_slot"
+   ],
+   "colour": "#1f77b4",
+   "requirements": []
+  },
+  {
+   "name": "triangular-passage-1",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    2.2592,
+    2.9299,
+    8.0259
+   ],
+   "bbox": {
+    "min": [
+     0.2784,
+     1.0564,
+     5.2604
+    ],
+    "max": [
+     4.2399,
+     4.9503,
+     10.0
+    ]
+   },
+   "labels": [
+    "mfcad:triangular_passage"
+   ],
+   "colour": "#17becf",
+   "requirements": []
+  },
+  {
+   "name": "chamfer-1",
+   "kind": "chamfer",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    7.1012,
+    8.1031,
+    2.3619
+   ],
+   "bbox": {
+    "min": [
+     5.0514,
+     6.6338,
+     0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     4.153
+    ]
+   },
+   "labels": [
+    "mfcad:chamfer"
+   ],
+   "colour": "#e6b800",
+   "requirements": []
+  },
+  {
+   "name": "rectangular-passage-1",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    4.6723,
+    4.581,
+    4.1305
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     0.614,
+     0.9218
+    ],
+    "max": [
+     10.0,
+     8.0887,
+     7.2604
+    ]
+   },
+   "labels": [
+    "mfcad:rectangular_passage"
+   ],
+   "colour": "#9467bd",
+   "requirements": []
+  },
+  {
+   "name": "triangular-passage-2",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    2.2592,
+    2.8662,
+    1.081
+   ],
+   "bbox": {
+    "min": [
+     0.2784,
+     1.0564,
+     0.0
+    ],
+    "max": [
+     4.2399,
+     4.9503,
+     2.9218
+    ]
+   },
+   "labels": [
+    "mfcad:triangular_passage"
+   ],
+   "colour": "#d62728",
+   "requirements": []
+  },
+  {
+   "name": "surface-1",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    4.5168,
+    4.8471,
+    0.4
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     -0.0,
+     0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     0.8
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "normal": {
+    "point": [
+     4.516826,
+     4.847062,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "surface-2",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    4.7404,
+    4.499,
+    1.6593
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     0.814,
+     1.1218
+    ],
+    "max": [
+     10.0,
+     7.8887,
+     2.7218
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "normal": {
+    "point": [
+     4.997508,
+     4.490279,
+     1.921816
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "surface-3",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    4.0051,
+    1.3946,
+    4.0911
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     0.814,
+     1.1218
+    ],
+    "max": [
+     8.984,
+     2.414,
+     7.0604
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "normal": {
+    "point": [
+     4.091987,
+     1.613967,
+     4.091088
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-4",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    4.8938,
+    7.3033,
+    4.1596
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     6.2887,
+     1.1218
+    ],
+    "max": [
+     10.0,
+     7.8887,
+     7.0604
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "normal": {
+    "point": [
+     5.0,
+     7.088662,
+     4.091088
+    ],
+    "direction": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-5",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    1.2801,
+    8.7199,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     7.7702,
+     0.0
+    ],
+    "max": [
+     2.2298,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "normal": {
+    "point": [
+     0.714915,
+     9.285085,
+     5.0
+    ],
+    "direction": [
+     -0.707106781,
+     0.707106781,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-6",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    3.4888,
+    0.4077,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     0.0,
+     -0.0,
+     0.0
+    ],
+    "max": [
+     7.37,
+     0.8,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "normal": {
+    "point": [
+     3.285003,
+     0.0,
+     5.0
+    ],
+    "direction": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-7",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    0.4081,
+    4.5373,
+    5.3274
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     0.0,
+     0.0
+    ],
+    "max": [
+     0.8,
+     9.3702,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [],
+   "normal": {
+    "point": [
+     0.0,
+     4.259692,
+     5.348488
+    ],
+    "direction": [
+     -1.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-8",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    5.1068,
+    9.5931,
+    5.5517
+   ],
+   "bbox": {
+    "min": [
+     0.6298,
+     9.2,
+     0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "normal": {
+    "point": [
+     5.322166,
+     10.0,
+     5.58186
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-9",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    9.5932,
+    6.7011,
+    5.9309
+   ],
+   "bbox": {
+    "min": [
+     9.2,
+     2.63,
+     0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "normal": {
+    "point": [
+     10.0,
+     6.890243,
+     5.943427
+    ],
+    "direction": [
+     1.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-10",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    4.8242,
+    4.5822,
+    6.5162
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     0.814,
+     5.4604
+    ],
+    "max": [
+     10.0,
+     7.8887,
+     7.0604
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "normal": {
+    "point": [
+     4.997508,
+     4.490279,
+     6.260359
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "surface-11",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    4.8791,
+    5.2569,
+    9.6
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     -0.0,
+     9.2
+    ],
+    "max": [
+     10.0,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "normal": {
+    "point": [
+     4.879092,
+     5.256915,
+     10.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-1",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    7.4216,
+    8.4052,
+    3.3572
+   ],
+   "bbox": {
+    "min": [
+     5.2514,
+     7.0887,
+     2.353
+    ],
+    "max": [
+     10.0,
+     10.0,
+     3.953
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "normal": {
+    "point": [
+     8.025721,
+     8.816895,
+     3.153048
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "wall-1",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    8.7402,
+    7.2495,
+    2.2107
+   ],
+   "bbox": {
+    "min": [
+     7.4805,
+     6.2887,
+     1.1437
+    ],
+    "max": [
+     10.0,
+     8.4338,
+     3.4824
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "thickness": 0.55
+  },
+  {
+   "name": "wall-2",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    6.9175,
+    1.1719,
+    4.1636
+   ],
+   "bbox": {
+    "min": [
+     6.0936,
+     0.0,
+     1.2969
+    ],
+    "max": [
+     8.9264,
+     2.414,
+     6.976
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "thickness": 0.21
+  }
+ ]
+}

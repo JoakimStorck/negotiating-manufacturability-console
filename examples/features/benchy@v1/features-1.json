@@ -1,0 +1,984 @@
+{
+ "schema": "features/1",
+ "design": "benchy@v1",
+ "lineage": "benchy",
+ "version": 1,
+ "sha256": "93c18f8c0cbd53cdee1b956eee67d20671fe1e58902331d77b7ac4d492f8ef3f",
+ "parent": null,
+ "title": "3DBenchy, the whole boat with its parts as regions (the mesh-only case)",
+ "units": "mm",
+ "material": "open",
+ "bbox": {
+  "min": [
+   -0.0,
+   -0.0,
+   0.0
+  ],
+  "max": [
+   60.001,
+   31.004,
+   48.0
+  ]
+ },
+ "picture": {
+  "file": "picture.png",
+  "sha256": "4f4437930f4c5d5f1f42f69a024c68fe359eaa9821904a481e140b01132b0448"
+ },
+ "models": [
+  {
+   "format": "stl",
+   "file": "model.stl",
+   "sha256": "359b224b7455b0b697a31711be1bdf966bd413257fff9b78fe50b6f8c2509af3"
+  },
+  {
+   "format": "3mf",
+   "file": "model.3mf",
+   "sha256": "16979da70344bed805e597b2955febcced92b9d5d1f706a5d51ea164dbbf5f18"
+  }
+ ],
+ "features": [
+  {
+   "name": "chimney",
+   "kind": "boss",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    25.1571,
+    15.5012,
+    42.2372
+   ],
+   "bbox": {
+    "min": [
+     22.156,
+     12.482,
+     37.0
+    ],
+    "max": [
+     28.196,
+     18.52,
+     47.998
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "axis": {
+    "point": [
+     25.176,
+     15.501,
+     42.499001
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "bridge-roof",
+   "kind": "bridge",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    32.5657,
+    15.5001,
+    37.682
+   ],
+   "bbox": {
+    "min": [
+     20.23,
+     5.644,
+     34.486
+    ],
+    "max": [
+     43.334,
+     25.354,
+     40.276
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "normal": {
+    "point": [
+     31.782001,
+     15.499,
+     37.381001
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "cargo-box",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    16.8249,
+    15.4995,
+    11.6727
+   ],
+   "bbox": {
+    "min": [
+     11.176,
+     9.502,
+     6.494
+    ],
+    "max": [
+     22.174,
+     21.5,
+     15.496
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": []
+  },
+  {
+   "name": "fishing-rod-holder",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    3.3084,
+    15.4972,
+    7.7338
+   ],
+   "bbox": {
+    "min": [
+     0.384,
+     13.548,
+     3.164
+    ],
+    "max": [
+     6.316,
+     17.446,
+     12.932
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "axis": {
+    "point": [
+     3.349999,
+     15.497,
+     8.048
+    ],
+    "direction": [
+     -0.357034813,
+     0.0,
+     0.934091078
+    ]
+   }
+  },
+  {
+   "name": "hawsepipe-port",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    54.5117,
+    21.1922,
+    20.684
+   ],
+   "bbox": {
+    "min": [
+     52.054,
+     18.656,
+     17.842
+    ],
+    "max": [
+     56.946,
+     23.728,
+     23.37
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": []
+  },
+  {
+   "name": "window",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    41.357,
+    15.4952,
+    29.408
+   ],
+   "bbox": {
+    "min": [
+     39.438,
+     8.75,
+     23.114
+    ],
+    "max": [
+     42.608,
+     22.246,
+     35.626
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "normal": {
+    "point": [
+     41.023001,
+     15.498,
+     29.370002
+    ],
+    "direction": [
+     1.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "stern-window",
+   "kind": "hole",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    22.1419,
+    15.4991,
+    27.2501
+   ],
+   "bbox": {
+    "min": [
+     21.228,
+     9.502,
+     21.232
+    ],
+    "max": [
+     23.8,
+     21.5,
+     33.236
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "normal": {
+    "point": [
+     22.514,
+     15.501,
+     27.234
+    ],
+    "direction": [
+     -1.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "boss-1",
+   "kind": "boss",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    36.0475,
+    15.502,
+    19.67
+   ],
+   "bbox": {
+    "min": [
+     34.9,
+     13.452,
+     17.605
+    ],
+    "max": [
+     37.195,
+     17.552,
+     21.735
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "axis": {
+    "point": [
+     36.047324,
+     15.501991,
+     19.669468
+    ],
+    "direction": [
+     0.9969183937153157,
+     -5.471920127158022e-07,
+     -0.07844562621188914
+    ]
+   },
+   "diameter": 2.498
+  },
+  {
+   "name": "surface-1",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    19.5075,
+    15.502,
+    8.502
+   ],
+   "bbox": {
+    "min": [
+     2.545,
+     4.048,
+     7.7
+    ],
+    "max": [
+     36.47,
+     26.956,
+     9.304
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "normal": {
+    "point": [
+     20.739474,
+     15.502189,
+     8.5
+    ],
+    "direction": [
+     -3.9e-08,
+     4.2e-08,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "surface-2",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    31.9115,
+    15.502,
+    36.614
+   ],
+   "bbox": {
+    "min": [
+     22.641,
+     7.957,
+     35.814
+    ],
+    "max": [
+     41.182,
+     23.047,
+     37.414
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "normal": {
+    "point": [
+     32.123224,
+     15.502,
+     36.613998
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-1",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    7.2155,
+    15.4665,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     4.262,
+     11.575,
+     -0.5
+    ],
+    "max": [
+     10.169,
+     19.358,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "normal": {
+    "point": [
+     7.215501,
+     15.4665,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-2",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    12.7765,
+    15.4635,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     9.596,
+     11.715,
+     -0.5
+    ],
+    "max": [
+     15.957,
+     19.212,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "normal": {
+    "point": [
+     12.7765,
+     15.4635,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-3",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    17.957,
+    15.4655,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     15.402,
+     11.572,
+     -0.5
+    ],
+    "max": [
+     20.512,
+     19.359,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [],
+   "normal": {
+    "point": [
+     17.957001,
+     15.4655,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-4",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    23.357,
+    15.4775,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     20.293,
+     11.736,
+     -0.5
+    ],
+    "max": [
+     26.421,
+     19.219,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "normal": {
+    "point": [
+     23.357,
+     15.4775,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-5",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    26.7685,
+    17.8665,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     24.969,
+     16.067,
+     -0.5
+    ],
+    "max": [
+     28.568,
+     19.666,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "normal": {
+    "point": [
+     26.768501,
+     17.8665,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-6",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    30.147,
+    16.2925,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     27.799,
+     13.182,
+     -0.5
+    ],
+    "max": [
+     32.495,
+     19.403,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "normal": {
+    "point": [
+     30.147001,
+     16.2925,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-7",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    34.309,
+    17.5545,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     31.486,
+     13.185,
+     -0.5
+    ],
+    "max": [
+     37.132,
+     21.924,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "normal": {
+    "point": [
+     34.309001,
+     17.5545,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-8",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    38.8685,
+    16.2925,
+    0.3
+   ],
+   "bbox": {
+    "min": [
+     36.397,
+     13.18,
+     -0.5
+    ],
+    "max": [
+     41.34,
+     19.405,
+     1.1
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "normal": {
+    "point": [
+     38.868501,
+     16.2925,
+     0.3
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "overhang-9",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    6.0635,
+    12.885,
+    2.415
+   ],
+   "bbox": {
+    "min": [
+     2.151,
+     8.753,
+     1.43
+    ],
+    "max": [
+     9.976,
+     17.017,
+     3.4
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "normal": {
+    "point": [
+     6.0635,
+     12.885,
+     2.415
+    ],
+    "direction": [
+     -0.000369705,
+     0.007924828,
+     -0.99996853
+    ]
+   }
+  },
+  {
+   "name": "overhang-10",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    35.8385,
+    15.502,
+    15.4225
+   ],
+   "bbox": {
+    "min": [
+     34.606,
+     11.131,
+     13.845
+    ],
+    "max": [
+     37.071,
+     19.873,
+     17.0
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "normal": {
+    "point": [
+     35.8385,
+     15.502,
+     15.422501
+    ],
+    "direction": [
+     -0.078612474,
+     -2e-09,
+     -0.996905251
+    ]
+   }
+  },
+  {
+   "name": "overhang-11",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    21.6685,
+    15.502,
+    22.1465
+   ],
+   "bbox": {
+    "min": [
+     20.695,
+     10.402,
+     20.435
+    ],
+    "max": [
+     22.642,
+     20.602,
+     23.858
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "normal": {
+    "point": [
+     21.6685,
+     15.502,
+     22.146501
+    ],
+    "direction": [
+     0.025911925,
+     1e-09,
+     -0.99966423
+    ]
+   }
+  },
+  {
+   "name": "overhang-12",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    36.284,
+    15.502,
+    22.6765
+   ],
+   "bbox": {
+    "min": [
+     35.197,
+     12.287,
+     21.375
+    ],
+    "max": [
+     37.371,
+     18.717,
+     23.978
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "normal": {
+    "point": [
+     36.284001,
+     15.502,
+     22.676499
+    ],
+    "direction": [
+     -0.07839658,
+     0.0,
+     -0.996922252
+    ]
+   }
+  },
+  {
+   "name": "overhang-13",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    41.4825,
+    15.502,
+    23.1905
+   ],
+   "bbox": {
+    "min": [
+     40.528,
+     8.12,
+     22.316
+    ],
+    "max": [
+     42.437,
+     22.884,
+     24.065
+    ]
+   },
+   "labels": [],
+   "colour": "#17becf",
+   "requirements": [],
+   "normal": {
+    "point": [
+     41.482501,
+     15.502,
+     23.190499
+    ],
+    "direction": [
+     -0.076798744,
+     0.0,
+     -0.997046615
+    ]
+   }
+  },
+  {
+   "name": "overhang-14",
+   "kind": "overhang",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    41.3345,
+    15.502,
+    34.049
+   ],
+   "bbox": {
+    "min": [
+     39.376,
+     9.62,
+     33.186
+    ],
+    "max": [
+     43.293,
+     21.384,
+     34.912
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "normal": {
+    "point": [
+     41.334501,
+     15.502,
+     34.049
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "wall-1",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    26.1233,
+    23.1613,
+    22.6813
+   ],
+   "bbox": {
+    "min": [
+     24.566,
+     22.2564,
+     19.6212
+    ],
+    "max": [
+     27.6806,
+     24.0663,
+     25.7413
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "thickness": 1.45
+  },
+  {
+   "name": "wall-2",
+   "kind": "wall",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    41.5497,
+    16.7951,
+    24.5542
+   ],
+   "bbox": {
+    "min": [
+     40.5633,
+     15.0739,
+     23.6974
+    ],
+    "max": [
+     42.536,
+     18.5163,
+     25.411
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "thickness": 0.67
+  }
+ ]
+}

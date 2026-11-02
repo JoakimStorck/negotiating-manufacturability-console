@@ -1,0 +1,645 @@
+{
+ "bindings": [
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "mount-face"
+    }
+   ],
+   "object": "O2",
+   "rejected": []
+  },
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "mount-edge"
+    }
+   ],
+   "object": "O3",
+   "rejected": []
+  },
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-1"
+    },
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-2"
+    }
+   ],
+   "object": "O4",
+   "rejected": []
+  },
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "shaft-hole"
+    }
+   ],
+   "object": "O5",
+   "rejected": []
+  },
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "thrust-face"
+    }
+   ],
+   "object": "O6",
+   "rejected": []
+  },
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "mount-leg"
+    }
+   ],
+   "object": "O7",
+   "rejected": []
+  },
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "leg"
+    }
+   ],
+   "object": "O8",
+   "rejected": []
+  },
+  {
+   "design": "angle-bracket@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "fillet-root"
+    }
+   ],
+   "object": "O9",
+   "rejected": []
+  }
+ ],
+ "brief": {
+  "may_change": [],
+  "may_relax": [],
+  "objective": "time",
+  "quantity": 10,
+  "text": "An angle bracket that holds the end of a lead screw to a frame. Its mounting leg is bolted to the frame by two M5 bolts and must sit flat on it; its other leg carries the screw in a hole at its end, and the screw's thrust pushes that leg outwards. The bracket is made as drawn: its shape and sizes are fixed by the frame and the screw. Printed in PLA on the lab's CORE One+ in a small series; print time matters most."
+ },
+ "design": "angle-bracket@v1",
+ "group": "G2",
+ "headings": {
+  "assembly": "The interfaces to the frame stand under Geometry; the part is fitted with standard fasteners.",
+  "costs": "The time and the material per part stand under Production; nothing else is asked.",
+  "energy": "Nothing applies: the part takes no energy and serves at room temperature.",
+  "ergonomics": "Nothing applies: the part is fitted once and not handled in use.",
+  "kinematics": "Nothing applies: the part has no moving parts and moves only with the frame it is fixed to.",
+  "maintenance": "Nothing applies: the part needs no servicing.",
+  "operation": "Nothing applies beyond the loads under Forces.",
+  "quality_control": "Every demand names how it is verified; the inspection plan is cases/l-bracket/README.md, its section on inspection.",
+  "recycling": "Nothing applies beyond the material under Material.",
+  "safety": "Nothing applies beyond the loads it carries, which stand under Forces.",
+  "schedules": "Nothing applies: the order is not bound to a date.",
+  "signals": "Nothing applies: the part carries no signals and shows nothing.",
+  "transport": "Nothing applies: the part is small and light enough for any parcel."
+ },
+ "lineage": "l-bracket",
+ "metrics": [
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M1",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N3"
+   ],
+   "object": "O1",
+   "quantity": "envelope",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/l-bracket/README.md 3 #1"
+    }
+   ],
+   "text": "Envelope",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "at_most": [
+     50,
+     30,
+     50
+    ]
+   },
+   "verified_by": "calliper"
+  },
+  {
+   "carried_by": [
+    "O5"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M2",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N1"
+   ],
+   "object": "O5",
+   "quantity": "diameter",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/l-bracket/README.md 3 #2"
+    }
+   ],
+   "text": "The screw's hole through the standing leg, 38 mm above the mounting face",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "band": {
+     "lower": 8,
+     "nominal": 8.3,
+     "upper": 8.6
+    }
+   },
+   "verified_by": "pin gauge"
+  },
+  {
+   "carried_by": [
+    "O4"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M3",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N2"
+   ],
+   "object": "O4",
+   "quantity": "diameter",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/l-bracket/README.md 3 #3"
+    }
+   ],
+   "text": "Two clearance holes for M5 through the mounting leg",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "band": {
+     "lower": 5.1,
+     "nominal": 5.5,
+     "upper": 5.9
+    }
+   },
+   "verified_by": "pin gauge"
+  },
+  {
+   "carried_by": [
+    "O4"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M4",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N3"
+   ],
+   "object": "O4",
+   "quantity": "position",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/l-bracket/README.md 3 #4"
+    }
+   ],
+   "text": "The bolt holes' spacing to the frame, 20 mm",
+   "under": {
+    "datums": [
+     "O2",
+     "O3"
+    ],
+    "text": "the 20 mm spacing"
+   },
+   "unit": "mm",
+   "value": {
+    "at_most": 0.3
+   },
+   "verified_by": "calliper against datums A and B"
+  },
+  {
+   "carried_by": [
+    "O2"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M5",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N4"
+   ],
+   "object": "O2",
+   "quantity": "flatness",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/l-bracket/README.md 3 #5"
+    }
+   ],
+   "text": "The mounting face flat against the frame",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "at_most": 0.2
+   },
+   "verified_by": "surface plate"
+  },
+  {
+   "carried_by": [
+    "O6",
+    "O8",
+    "O9"
+   ],
+   "class": "demand",
+   "heading": "forces",
+   "id": "M6",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N5"
+   ],
+   "object": "O6",
+   "quantity": "utilisation",
+   "source": [
+    {
+     "kind": "project",
+     "ref": "cases/l-bracket/README.md 3 #6, #7; cases/l-bracket/loads.md"
+    }
+   ],
+   "text": "No permanent deformation under the screw's thrust, the part held at its mounting face",
+   "under": {
+    "at": "O6",
+    "direction": [
+     -1,
+     0,
+     0
+    ],
+    "held_by": [
+     "O2"
+    ],
+    "magnitude": 98,
+    "name": "the screw's thrust, outwards",
+    "type": "force",
+    "unit": "N"
+   },
+   "unit": "1",
+   "value": {
+    "at_most": 0.6
+   },
+   "verified_by": "load test to the onset of permanent deformation"
+  },
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "material",
+   "id": "M7",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [],
+   "object": "O1",
+   "quantity": "material",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "the brief"
+    },
+    {
+     "kind": "project",
+     "ref": "the brief's material; the thrust (req-8) was sized in PLA (cases/l-bracket/loads.md)"
+    }
+   ],
+   "text": "The part's material",
+   "under": null,
+   "unit": "-",
+   "value": {
+    "equals": "Prusament PLA"
+   },
+   "verified_by": "the filament's label"
+  },
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "production",
+   "id": "M8",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N6"
+   ],
+   "object": "O1",
+   "quantity": "production_time",
+   "source": [
+    {
+     "kind": "project",
+     "ref": "the brief's bound: 20 % over the plan that resolves the case at its step"
+    }
+   ],
+   "text": "The time to print one part",
+   "under": null,
+   "unit": "s",
+   "value": {
+    "at_most": 2100
+   },
+   "verified_by": "the plan's time and the print's log"
+  },
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "production",
+   "id": "M9",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N6"
+   ],
+   "object": "O1",
+   "quantity": "material_used",
+   "source": [
+    {
+     "kind": "project",
+     "ref": "the brief's bound: 20 % over the plan that resolves the case at its step"
+    }
+   ],
+   "text": "The material to print one part",
+   "under": null,
+   "unit": "g",
+   "value": {
+    "at_most": 14
+   },
+   "verified_by": "the plan's material and the part weighed"
+  }
+ ],
+ "needs": [
+  {
+   "group": "Holds the screw",
+   "id": "N1",
+   "importance": 5,
+   "text": "Carries the screw"
+  },
+  {
+   "group": "Fits the frame",
+   "id": "N2",
+   "importance": 5,
+   "text": "Takes the bolts"
+  },
+  {
+   "group": "Fits the frame",
+   "id": "N3",
+   "importance": 5,
+   "text": "Meets the frame"
+  },
+  {
+   "group": "Fits the frame",
+   "id": "N4",
+   "importance": 4,
+   "text": "Sits flat"
+  },
+  {
+   "group": "Holds the screw",
+   "id": "N5",
+   "importance": 5,
+   "text": "Holds the thrust"
+  },
+  {
+   "group": "Quick to make",
+   "id": "N6",
+   "importance": 4,
+   "text": "Quick"
+  }
+ ],
+ "objects": [
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O1",
+   "kind": "part",
+   "name": "bracket",
+   "place": {
+    "box": {
+     "max": [
+      50,
+      30,
+      50
+     ],
+     "min": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "text": "the part as a whole"
+  },
+  {
+   "count": 1,
+   "datum": "A",
+   "id": "O2",
+   "kind": "face",
+   "name": "mount face",
+   "place": {
+    "box": {
+     "max": [
+      50,
+      30,
+      1.5
+     ],
+     "min": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "text": "sits flat on the frame"
+  },
+  {
+   "count": 1,
+   "datum": "B",
+   "id": "O3",
+   "kind": "edge",
+   "name": "mount edge",
+   "place": {
+    "box": {
+     "max": [
+      50,
+      1.5,
+      1.5
+     ],
+     "min": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "text": "the mounting leg's long edge"
+  },
+  {
+   "count": 2,
+   "datum": null,
+   "id": "O4",
+   "kind": "hole",
+   "name": "bolt hole",
+   "place": [
+    {
+     "cylinder": {
+      "direction": [
+       0,
+       0,
+       1
+      ],
+      "length": 6,
+      "point": [
+       22,
+       15,
+       0
+      ],
+      "radius": 2.75
+     }
+    },
+    {
+     "cylinder": {
+      "direction": [
+       0,
+       0,
+       1
+      ],
+      "length": 6,
+      "point": [
+       42,
+       15,
+       0
+      ],
+      "radius": 2.75
+     }
+    }
+   ],
+   "text": "clearance holes for M5 through the mounting leg"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O5",
+   "kind": "hole",
+   "name": "shaft hole",
+   "place": {
+    "cylinder": {
+     "direction": [
+      1,
+      0,
+      0
+     ],
+     "length": 6,
+     "point": [
+      0,
+      15,
+      38
+     ],
+     "radius": 4.15
+    }
+   },
+   "text": "the screw's hole through the standing leg"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O6",
+   "kind": "face",
+   "name": "thrust face",
+   "text": "where the screw's collar pushes the standing leg outwards"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O7",
+   "kind": "wall",
+   "name": "mount leg",
+   "text": "the leg bolted to the frame"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O8",
+   "kind": "wall",
+   "name": "leg",
+   "text": "the standing leg, bent by the thrust"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O9",
+   "kind": "edge",
+   "name": "fillet root",
+   "text": "the corner the thrust opens"
+  }
+ ],
+ "parent": null,
+ "previous": null,
+ "product": {
+  "name": "The L-bracket",
+  "picture": null,
+  "purpose": "An angle bracket that holds the end of a lead screw to a frame, made as drawn"
+ },
+ "revision": 1,
+ "saved": "2026-11-02T12:21:03.966421Z",
+ "schema": "order/1",
+ "tags": [],
+ "title": "The L-bracket"
+}

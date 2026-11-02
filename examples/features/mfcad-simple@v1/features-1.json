@@ -1,0 +1,467 @@
+{
+ "schema": "features/1",
+ "design": "mfcad-simple@v1",
+ "lineage": "mfcad-simple",
+ "version": 1,
+ "sha256": "cd3c2d5b1f672c4cc87df7f38dfbe446de9bddfaad4e452341b6f987ddfb98e9",
+ "parent": null,
+ "title": "MFCAD 0-0-0-13-19: stock with a rectangular through slot and a hexagonal pocket",
+ "units": "mm",
+ "material": "open",
+ "bbox": {
+  "min": [
+   -0.0,
+   -0.0,
+   -0.0
+  ],
+  "max": [
+   10.0,
+   10.0,
+   10.0
+  ]
+ },
+ "picture": {
+  "file": "picture.png",
+  "sha256": "cd32884cbdd7f8abebf3412532ff6967d9e18930f081d6673f922dd98b4d8448"
+ },
+ "models": [
+  {
+   "format": "stl",
+   "file": "model.stl",
+   "sha256": "0ee8e91a65fb830e0f27f8fdc83ef632fa753b46f0d7fee5c22ee7007209bb96"
+  },
+  {
+   "format": "3mf",
+   "file": "model.3mf",
+   "sha256": "73769e94018f10b15521265a5f04af349af68e813765d9b44c13067c08929c59"
+  }
+ ],
+ "features": [
+  {
+   "name": "rectangular-through-slot-1",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    5.4278,
+    5.3183,
+    2.2997
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     -0.0,
+     -0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     4.1041
+    ]
+   },
+   "labels": [
+    "mfcad:rectangular_through_slot"
+   ],
+   "colour": "#2ca02c",
+   "requirements": []
+  },
+  {
+   "name": "rectangular-through-slot-2",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    8.6353,
+    8.6353,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     7.5777,
+     7.5777,
+     0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [
+    "mfcad:rectangular_through_slot"
+   ],
+   "colour": "#1f77b4",
+   "requirements": []
+  },
+  {
+   "name": "6sides-pocket-1",
+   "kind": "zone",
+   "origin": "declared",
+   "status": "confirmed",
+   "centroid": [
+    3.0735,
+    5.4538,
+    6.6467
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     1.323,
+     4.3521
+    ],
+    "max": [
+     5.1563,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [
+    "mfcad:6sides_pocket"
+   ],
+   "colour": "#17becf",
+   "requirements": []
+  },
+  {
+   "name": "surface-1",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    6.2861,
+    6.1165,
+    0.4146
+   ],
+   "bbox": {
+    "min": [
+     2.3041,
+     1.9711,
+     -0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     0.8
+    ]
+   },
+   "labels": [],
+   "colour": "#e6b800",
+   "requirements": [],
+   "normal": {
+    "point": [
+     6.490456,
+     6.32053,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  },
+  {
+   "name": "surface-2",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    5.4522,
+    2.118,
+    2.2483
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     -0.0,
+     -0.0
+    ],
+    "max": [
+     10.0,
+     3.5711,
+     3.5711
+    ]
+   },
+   "labels": [],
+   "colour": "#9467bd",
+   "requirements": [],
+   "normal": {
+    "point": [
+     5.820626,
+     1.308295,
+     1.462841
+    ],
+    "direction": [
+     0.0,
+     -0.707106781,
+     -0.707106781
+    ]
+   }
+  },
+  {
+   "name": "surface-3",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    2.3392,
+    5.2847,
+    2.4577
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     -0.0,
+     -0.0
+    ],
+    "max": [
+     3.9041,
+     10.0,
+     3.9041
+    ]
+   },
+   "labels": [],
+   "colour": "#d62728",
+   "requirements": [],
+   "normal": {
+    "point": [
+     1.463354,
+     5.575388,
+     1.640738
+    ],
+    "direction": [
+     -0.707106781,
+     0.0,
+     -0.707106781
+    ]
+   }
+  },
+  {
+   "name": "surface-4",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    5.1115,
+    9.5929,
+    4.8111
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     9.2,
+     -0.0
+    ],
+    "max": [
+     9.3777,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#ff7f0e",
+   "requirements": [],
+   "normal": {
+    "point": [
+     4.902055,
+     10.0,
+     4.800466
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-5",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    8.7248,
+    8.7248,
+    5.0
+   ],
+   "bbox": {
+    "min": [
+     7.7777,
+     7.7777,
+     0.0
+    ],
+    "max": [
+     10.0,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#8c564b",
+   "requirements": [],
+   "normal": {
+    "point": [
+     9.288852,
+     9.288852,
+     5.0
+    ],
+    "direction": [
+     0.707106781,
+     0.707106781,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-6",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    9.5938,
+    4.6512,
+    5.1821
+   ],
+   "bbox": {
+    "min": [
+     9.2,
+     -0.0,
+     -0.0
+    ],
+    "max": [
+     10.0,
+     9.3777,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#e377c2",
+   "requirements": [],
+   "normal": {
+    "point": [
+     10.0,
+     4.446543,
+     5.191015
+    ],
+    "direction": [
+     1.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-7",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    0.4242,
+    4.082,
+    5.1272
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     -0.0,
+     2.3041
+    ],
+    "max": [
+     0.8,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#bcbd22",
+   "requirements": [],
+   "normal": {
+    "point": [
+     0.0,
+     3.754591,
+     5.34681
+    ],
+    "direction": [
+     -1.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-8",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    5.0183,
+    0.4065,
+    6.1963
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     -0.0,
+     1.9711
+    ],
+    "max": [
+     10.0,
+     0.8,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#2ca02c",
+   "requirements": [],
+   "normal": {
+    "point": [
+     5.003752,
+     0.0,
+     6.388256
+    ],
+    "direction": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "name": "surface-9",
+   "kind": "surface",
+   "origin": "recognised",
+   "status": "proposed",
+   "centroid": [
+    6.2271,
+    4.4494,
+    9.5948
+   ],
+   "bbox": {
+    "min": [
+     -0.0,
+     0.0,
+     9.2
+    ],
+    "max": [
+     10.0,
+     10.0,
+     10.0
+    ]
+   },
+   "labels": [],
+   "colour": "#1f77b4",
+   "requirements": [],
+   "normal": {
+    "point": [
+     6.32159,
+     4.379269,
+     10.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  }
+ ]
+}

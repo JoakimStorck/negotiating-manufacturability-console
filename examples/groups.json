@@ -1,0 +1,16 @@
+{
+ "groups": {
+  "G1": {
+   "name": "reference cases",
+   "parent": null
+  },
+  "G2": {
+   "name": "H1",
+   "parent": "G1"
+  },
+  "G3": {
+   "name": "library",
+   "parent": null
+  }
+ }
+}
