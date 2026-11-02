@@ -467,7 +467,7 @@
      "O2"
     ],
     "magnitude": 108,
-    "name": "load case 1, vertical, downward",
+    "name": "vertical, downward",
     "type": "force",
     "unit": "N"
    },
@@ -517,7 +517,7 @@
      "O2"
     ],
     "magnitude": 115,
-    "name": "load case 2, horizontal, along L",
+    "name": "horizontal, along L",
     "type": "force",
     "unit": "N"
    },
@@ -567,7 +567,7 @@
      "O2"
     ],
     "magnitude": 128,
-    "name": "load case 3, 42 degrees from vertical in the L-H plane",
+    "name": "42 degrees from vertical in the L-H plane",
     "type": "force",
     "unit": "N"
    },
@@ -617,7 +617,7 @@
      "O2"
     ],
     "magnitude": 0.68,
-    "name": "load case 4, torque about the pin's axis",
+    "name": "torque about the pin's axis",
     "type": "torque",
     "unit": "N·m"
    },
@@ -1010,16 +1010,16 @@
       1,
       0
      ],
-     "length": 60,
+     "length": 12,
      "point": [
       86,
-      0,
+      24,
       28
      ],
      "radius": 4.15
     }
    },
-   "text": "a through hole for the pin, its axis across the part"
+   "text": "a through hole for the pin, its axis across the part, through the lug"
   },
   {
    "count": 1,
@@ -1056,16 +1056,16 @@
  ],
  "parent": {
   "lineage": "bracket-ge",
-  "version": "ed5c481d45e9eb57984578e79ab0543dfbf72fb112e73240210cf4356bfecbd5"
+  "version": "062d2957e32aa985884692504ce8df21c2e9ea6365ab099e675574849eec2ff5"
  },
- "previous": "4344e4617323adee257172475bfc1b459203ca64bc74d80f4b269a4c854564fd",
+ "previous": "e6011872895f9bf153a3212614ca9d28f0174f80f5de362a3aa67fb537f1c465",
  "product": {
   "name": "The engine bracket with a mass demand",
   "picture": null,
   "purpose": "The engine bracket on a frame that moves, where every gram counts: as printed it weighs at most the mass demand, every other requirement as first given"
  },
  "revision": 2,
- "saved": "2026-11-02T12:21:04.013695Z",
+ "saved": "2026-11-02T12:31:40.458736Z",
  "schema": "order/1",
  "tags": [
   "engine bracket"

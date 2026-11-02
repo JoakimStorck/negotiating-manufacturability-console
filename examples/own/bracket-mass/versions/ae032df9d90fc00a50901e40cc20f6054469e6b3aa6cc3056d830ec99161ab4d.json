@@ -110,20 +110,132 @@
    ],
    "object": "O9",
    "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "mount-face"
+    }
+   ],
+   "object": "O2",
+   "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "mount-edge"
+    }
+   ],
+   "object": "O3",
+   "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-1"
+    },
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-2"
+    },
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-3"
+    },
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-4"
+    }
+   ],
+   "object": "O4",
+   "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "pin-hole"
+    }
+   ],
+   "object": "O5",
+   "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "lug"
+    }
+   ],
+   "object": "O6",
+   "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "lug-underside"
+    }
+   ],
+   "object": "O7",
+   "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "web"
+    }
+   ],
+   "object": "O8",
+   "rejected": []
+  },
+  {
+   "design": "bracket-mass@v1",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "fillet-lug-mount"
+    }
+   ],
+   "object": "O9",
+   "rejected": []
   }
  ],
  "brief": {
   "may_change": [
    "lug_thickness",
    "fillet_radius",
-   "underside_angle"
+   "underside_angle",
+   "shape"
   ],
   "may_relax": [],
   "objective": "time",
   "quantity": 10,
-  "text": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame. It is loaded in four ways during handling, each for a short time. It is printed in PLA on the lab's Prusa CORE One+ in a small series. The mounting face must sit flat against the frame and the bolt holes must meet the frame's pattern. Low mass is wanted but strength comes first."
+  "text": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame. It is loaded in four ways during handling, each for a short time. It is printed in PLA in a small series on the printers available. The mounting face must sit flat against the frame and the bolt holes must meet the frame's pattern. The bracket goes on a frame that moves, where every gram counts: as printed it may weigh no more than the mass requirement of the design says, with every other requirement as first given. Its shape is free within the envelope, the interfaces kept; print time is the objective once the requirements are met."
  },
- "design": "bracket-ge@v4",
+ "design": "bracket-mass@v1",
  "group": "G2",
  "headings": {
   "assembly": "The interfaces to the frame stand under Geometry; the part is fitted with standard fasteners.",
@@ -140,7 +252,7 @@
   "signals": "Nothing applies: the part carries no signals and shows nothing.",
   "transport": "Nothing applies: the part is small and light enough for any parcel."
  },
- "lineage": "bracket-ge",
+ "lineage": "bracket-mass",
  "metrics": [
   {
    "carried_by": [
@@ -325,7 +437,8 @@
    "heading": "forces",
    "id": "M6",
    "mandate": {
-    "form": "held"
+    "form": "interval",
+    "to": 0.85
    },
    "needs": [
     "N1"
@@ -354,7 +467,7 @@
      "O2"
     ],
     "magnitude": 108,
-    "name": "load case 1, vertical, downward",
+    "name": "vertical, downward",
     "type": "force",
     "unit": "N"
    },
@@ -374,7 +487,8 @@
    "heading": "forces",
    "id": "M7",
    "mandate": {
-    "form": "held"
+    "form": "interval",
+    "to": 0.85
    },
    "needs": [
     "N1"
@@ -403,7 +517,7 @@
      "O2"
     ],
     "magnitude": 115,
-    "name": "load case 2, horizontal, along L",
+    "name": "horizontal, along L",
     "type": "force",
     "unit": "N"
    },
@@ -423,7 +537,8 @@
    "heading": "forces",
    "id": "M8",
    "mandate": {
-    "form": "held"
+    "form": "interval",
+    "to": 0.85
    },
    "needs": [
     "N1"
@@ -452,7 +567,7 @@
      "O2"
     ],
     "magnitude": 128,
-    "name": "load case 3, 42 degrees from vertical in the L-H plane",
+    "name": "42 degrees from vertical in the L-H plane",
     "type": "force",
     "unit": "N"
    },
@@ -472,7 +587,8 @@
    "heading": "forces",
    "id": "M9",
    "mandate": {
-    "form": "held"
+    "form": "interval",
+    "to": 0.85
    },
    "needs": [
     "N1"
@@ -501,7 +617,7 @@
      "O2"
     ],
     "magnitude": 0.68,
-    "name": "load case 4, torque about the pin's axis",
+    "name": "torque about the pin's axis",
     "type": "torque",
     "unit": "N·m"
    },
@@ -606,11 +722,11 @@
    "carried_by": [
     "O1"
    ],
-   "class": "wish",
+   "class": "demand",
    "heading": "forces",
    "id": "M13",
    "mandate": {
-    "form": "release"
+    "form": "held"
    },
    "needs": [
     "N7"
@@ -619,19 +735,15 @@
    "quantity": "mass",
    "source": [
     {
-     "kind": "reference",
-     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
-    },
-    {
-     "kind": "reference",
-     "ref": "cases/bracket-ge/README.md 2 #15, 3"
+     "kind": "requester",
+     "ref": "cases/bracket-mass/README.md 2 #15, 7"
     }
    ],
-   "text": "Low mass",
+   "text": "The part's mass as printed",
    "under": null,
    "unit": "g",
    "value": {
-    "at_most": 40
+    "at_most": 16
    },
    "verified_by": "the part weighed to 0.01 g"
   },
@@ -660,7 +772,7 @@
    "under": null,
    "unit": "s",
    "value": {
-    "at_most": 4380
+    "at_most": 4560
    },
    "verified_by": "the plan's time and the print's log"
   },
@@ -689,7 +801,7 @@
    "under": null,
    "unit": "g",
    "value": {
-    "at_most": 23
+    "at_most": 25
    },
    "verified_by": "the plan's material and the part weighed"
   }
@@ -898,16 +1010,16 @@
       1,
       0
      ],
-     "length": 60,
+     "length": 12,
      "point": [
       86,
-      0,
+      24,
       28
      ],
      "radius": 4.15
     }
    },
-   "text": "a through hole for the pin, its axis across the part"
+   "text": "a through hole for the pin, its axis across the part, through the lug"
   },
   {
    "count": 1,
@@ -942,18 +1054,21 @@
    "text": "the corner where the lug meets the mounting plate"
   }
  ],
- "parent": null,
- "previous": null,
- "product": {
-  "name": "The engine bracket",
-  "picture": null,
-  "purpose": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame: the GE aircraft engine bracket challenge scaled to a polymer part"
+ "parent": {
+  "lineage": "bracket-ge",
+  "version": "062d2957e32aa985884692504ce8df21c2e9ea6365ab099e675574849eec2ff5"
  },
- "revision": 1,
- "saved": "2026-11-02T12:21:03.975592Z",
+ "previous": "e6011872895f9bf153a3212614ca9d28f0174f80f5de362a3aa67fb537f1c465",
+ "product": {
+  "name": "The engine bracket with a mass demand",
+  "picture": null,
+  "purpose": "The engine bracket on a frame that moves, where every gram counts: as printed it weighs at most the mass demand, every other requirement as first given"
+ },
+ "revision": 2,
+ "saved": "2026-11-02T12:31:40.458736Z",
  "schema": "order/1",
  "tags": [
   "engine bracket"
  ],
- "title": "The engine bracket"
+ "title": "The engine bracket with a mass demand"
 }

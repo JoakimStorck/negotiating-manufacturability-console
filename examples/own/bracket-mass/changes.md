@@ -1,8 +1,8 @@
 # bracket-mass: the change record
 
-## Revision 1, 4344e4617323, 2026-11-02T12:21:03.992286Z
+## Revision 1, e6011872895f, 2026-11-02T12:31:40.437764Z
 
-- created from bracket-ge@ed5c481d45e9
+- created from bracket-ge@062d2957e32a
 - product name: 'The engine bracket' -> 'The engine bracket with a mass demand'
 - product purpose: 'A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame: the GE aircraft engine bracket challenge scaled to a polymer part' -> 'The engine bracket on a frame that moves, where every gram counts: as printed it weighs at most the mass demand, every other requirement as first given'
 - design: bracket-ge@v4 -> bracket-mass@v1
@@ -26,7 +26,7 @@
 - binding O8 in bracket-mass@v1: +web (declared, confirmed)
 - binding O9 in bracket-mass@v1: +fillet-lug-mount (declared, confirmed)
 
-## Revision 2, efe6d8f10c1e, 2026-11-02T12:21:04.013695Z
+## Revision 2, ae032df9d90f, 2026-11-02T12:31:40.458736Z
 
 the held case: the mass demand held (experiments/h1-bracket-mass-held.json)
 

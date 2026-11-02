@@ -286,7 +286,6 @@
      "O4"
     ],
     "magnitude": 500,
-    "name": "the load spread over the top",
     "type": "force",
     "unit": "N"
    },
@@ -572,7 +571,7 @@
   "purpose": "A flat mounting plate screwed to a frame by its underside, carrying a light, evenly spread load on its visible top: the control case"
  },
  "revision": 1,
- "saved": "2026-11-02T12:21:03.958646Z",
+ "saved": "2026-11-02T12:31:40.404388Z",
  "schema": "order/1",
  "tags": [],
  "title": "The plate"

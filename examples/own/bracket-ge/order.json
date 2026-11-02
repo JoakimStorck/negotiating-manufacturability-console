@@ -354,7 +354,7 @@
      "O2"
     ],
     "magnitude": 108,
-    "name": "load case 1, vertical, downward",
+    "name": "vertical, downward",
     "type": "force",
     "unit": "N"
    },
@@ -403,7 +403,7 @@
      "O2"
     ],
     "magnitude": 115,
-    "name": "load case 2, horizontal, along L",
+    "name": "horizontal, along L",
     "type": "force",
     "unit": "N"
    },
@@ -452,7 +452,7 @@
      "O2"
     ],
     "magnitude": 128,
-    "name": "load case 3, 42 degrees from vertical in the L-H plane",
+    "name": "42 degrees from vertical in the L-H plane",
     "type": "force",
     "unit": "N"
    },
@@ -501,7 +501,7 @@
      "O2"
     ],
     "magnitude": 0.68,
-    "name": "load case 4, torque about the pin's axis",
+    "name": "torque about the pin's axis",
     "type": "torque",
     "unit": "N·m"
    },
@@ -898,16 +898,16 @@
       1,
       0
      ],
-     "length": 60,
+     "length": 12,
      "point": [
       86,
-      0,
+      24,
       28
      ],
      "radius": 4.15
     }
    },
-   "text": "a through hole for the pin, its axis across the part"
+   "text": "a through hole for the pin, its axis across the part, through the lug"
   },
   {
    "count": 1,
@@ -950,7 +950,7 @@
   "purpose": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame: the GE aircraft engine bracket challenge scaled to a polymer part"
  },
  "revision": 1,
- "saved": "2026-11-02T12:21:03.975592Z",
+ "saved": "2026-11-02T12:31:40.421143Z",
  "schema": "order/1",
  "tags": [
   "engine bracket"
