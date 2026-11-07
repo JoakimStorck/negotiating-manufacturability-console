@@ -27,6 +27,8 @@ from ..export import export
 from ..home import Home, HomeError, ReadOnly, Refused
 from ..order import Order
 from ..render import TABLES, TITLES, metric_name, table
+from .. import runs as R
+from ..picture import overview
 
 HERE = Path(__file__).parent
 
@@ -162,7 +164,7 @@ def picked(form, name: str) -> list[str]:
 
 # -------------------------------------------------------------------- the app
 
-def create_app(home: Home, log_dir: Path | None = None) -> FastAPI:
+def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None = None) -> FastAPI:
     app = FastAPI(title="am-order", docs_url=None, redoc_url=None, openapi_url=None)
     templates = Jinja2Templates(directory=str(HERE / "templates"))
     templates.env.globals.update(value_text=value_text, mandate_text=mandate_text, heading_name=V.heading_name, place_text=place_text,
@@ -170,6 +172,7 @@ def create_app(home: Home, log_dir: Path | None = None) -> FastAPI:
     app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
     log = Log(log_dir)
     app.state.home, app.state.log = home, log
+    app.state.runs_root = Path(runs_root).resolve() if runs_root else None
 
     def features_of(order: Order):
         return home.features(order.data["design"]) if order.data.get("design") else None
@@ -631,6 +634,48 @@ def create_app(home: Home, log_dir: Path | None = None) -> FastAPI:
                 message = str(e)
         return page(request, "history.html", lineage, "view", message, order=order, versions=versions, record=home.changes(lineage),
                     a=a, b=b, changes=changes, sides=sides)
+
+    # ---------------------------------------------------------------- the runs of am-llm, read only
+
+    @app.get("/runs", response_class=HTMLResponse)
+    def runs_page(request: Request, experiment: str = "", product: str = ""):
+        root = app.state.runs_root
+        experiments = R.catalogue(root) if root else []
+        if product:
+            experiments = [x for x in experiments if product in x.lineages]
+        for x in experiments:
+            if x.name == experiment:
+                for r in x.runs:
+                    r.decision_makers = R.decision_makers(root / r.id)
+        outcomes = {}
+        for x in experiments:
+            counts = {}
+            for r in x.runs:
+                key = r.outcome or r.status
+                counts[key] = counts.get(key, 0) + 1
+            outcomes[x.name] = sorted(counts.items(), key=lambda kv: -kv[1])
+        lineages = sorted({l for x in (R.catalogue(root) if root and product else experiments) for l in x.lineages})
+        return page(request, "runs.html", None, "runs", root=root, experiments=experiments, experiment=experiment, product=product,
+                    outcomes=outcomes, lineages=lineages, total=sum(len(x.runs) for x in experiments))
+
+    @app.get("/runs/{run_id:path}/picture/{design}")
+    def run_picture(run_id: str, design: str):
+        root = app.state.runs_root
+        run = R.read(root, run_id) if root else None
+        path = R.picture_of(run, design) if run else None
+        if path is None:
+            raise HTTPException(404, "no picture of this version beside the run")
+        return FileResponse(path)
+
+    @app.get("/runs/{run_id:path}", response_class=HTMLResponse)
+    def run_page(request: Request, run_id: str, at: str | None = None):
+        root = app.state.runs_root
+        run = R.read(root, run_id) if root else None
+        if run is None:
+            raise HTTPException(404, f"{run_id} is not a run under the runs root")
+        st = R.state(run, R.parse_at(run, at))
+        pic = overview(run, st)
+        return page(request, "run.html", None, "run", run=run, state=st, pic=pic, picture=R.picture_of(run, st.design) is not None)
 
     return app
 

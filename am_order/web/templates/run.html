@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ run.entry.experiment }} / {{ run.entry.condition }}{% endblock %}
+{% block mainclass %}wide{% endblock %}
+{% block content %}
+<style>
+.overview { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1rem; }
+.overview svg { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
+.controls a, .controls span.off { display: inline-block; margin-right: .6rem; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; }
+.controls span.off { color: var(--muted); }
+.events li { list-style: none; margin: .2rem 0; padding-left: .6rem; border-left: 3px solid var(--line); }
+.events ul { padding: 0; margin: 0; }
+.events .clock { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: .4rem; }
+.events .decision { font-weight: 600; }
+.facts dt { color: var(--muted); font-size: .85rem; margin-top: .4rem; } .facts dd { margin: 0; }
+.legend span { margin-right: .7rem; white-space: nowrap; }
+</style>
+<p class="muted"><a href="/runs">Runs</a> › <a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a> › {{ run.entry.condition }}</p>
+<h1>{{ run.entry.lineages|join(", ") or run.entry.condition }} <span class="muted">· {{ run.entry.negotiation or "" }} negotiation{% if run.entry.held and run.entry.held != "off" %}, held {{ run.entry.held }}{% endif %}{% if run.live %}, running{% endif %}</span></h1>
+<div class="overview">
+<div>
+<svg viewBox="0 0 {{ pic.width }} {{ pic.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker>
+  </defs>
+  {% for e in pic.edges %}
+  <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" stroke="{{ e.stroke }}" stroke-width="{{ 3.5 if e.bold else 1.5 }}" marker-end="url(#arrow)" {% if not e.bold %}opacity=".7"{% endif %}/>
+  {% if e.words %}<text x="{{ e.label_x }}" y="{{ e.label_y }}" text-anchor="{{ e.anchor }}" fill="#5f6b76" font-size="12">{{ e.words }}</text>{% endif %}
+  {% endfor %}
+  {% for n in pic.nodes %}
+  <g>
+    <rect x="{{ n.x }}" y="{{ n.y }}" width="{{ n.w }}" height="{{ n.h }}" rx="6" fill="{{ n.fill }}" stroke="{{ n.stroke }}" stroke-width="{{ 3 if n.mode in ('awake', 'waiting') else 1.5 }}"/>
+    <text x="{{ n.x + 12 }}" y="{{ n.y + 24 }}" font-weight="600" font-size="16" fill="#1d2125">{{ n.title }}</text>
+    <text x="{{ n.x + 12 }}" y="{{ n.y + 44 }}" fill="#5f6b76" font-size="12">{{ n.maker }}</text>
+    <text x="{{ n.x + 12 }}" y="{{ n.y + 62 }}" fill="{{ n.stroke if n.mode in ('awake', 'waiting') else '#5f6b76' }}" font-size="12">{{ n.note }}</text>
+  </g>
+  {% endfor %}
+  {# the time axis #}
+  {% set ax = pic.axis %}
+  {% if ax.marks is defined and ax.ticks %}
+  <line x1="{{ ax.x0 }}" y1="{{ ax.y }}" x2="{{ ax.x1 }}" y2="{{ ax.y }}" stroke="#1d2125" stroke-width="1"/>
+  {% for t in ax.ticks %}<line x1="{{ t.x }}" y1="{{ ax.y }}" x2="{{ t.x }}" y2="{{ ax.y + 6 }}" stroke="#1d2125"/><text x="{{ t.x }}" y="{{ ax.y + 20 }}" text-anchor="middle" font-size="11" fill="#5f6b76">{{ t.label }}</text>{% endfor %}
+  {% for m in ax.marks %}<line x1="{{ m.x }}" y1="{{ ax.y - m.h }}" x2="{{ m.x }}" y2="{{ ax.y }}" stroke="{{ m.colour }}" stroke-width="{{ 2.5 if m.h > 20 else 1.5 }}" {% if m.dashed %}stroke-dasharray="2 2"{% endif %} {% if not m.past %}opacity=".35"{% endif %}><title>{{ m.title }}</title></line>{% endfor %}
+  <line x1="{{ ax.head }}" y1="{{ ax.y - 40 }}" x2="{{ ax.head }}" y2="{{ ax.y + 8 }}" stroke="#b3261e" stroke-width="2"/>
+  <polygon points="{{ ax.head - 6 }},{{ ax.y - 48 }} {{ ax.head + 6 }},{{ ax.y - 48 }} {{ ax.head }},{{ ax.y - 40 }}" fill="#b3261e"/>
+  <text x="{{ ax.head }}" y="{{ ax.y - 54 }}" text-anchor="middle" font-size="13" font-weight="600" fill="#b3261e">{{ ax.clock }}</text>
+  <text x="{{ ax.x0 }}" y="{{ ax.y + 38 }}" font-size="11" fill="#5f6b76">{{ ax.start }}</text>
+  <text x="{{ ax.x1 }}" y="{{ ax.y + 38 }}" text-anchor="end" font-size="11" fill="#5f6b76">{% if ax.live %}now{% else %}{{ ax.end }}{% endif %}</text>
+  {% if ax.next %}<text x="{{ ax.x1 }}" y="{{ ax.y - 54 }}" text-anchor="end" font-size="13" fill="#5f6b76">next in {{ ax.next.in }} · {{ ax.next.what }}</text>
+  {% elif pic.outcome %}<text x="{{ ax.x1 }}" y="{{ ax.y - 54 }}" text-anchor="end" font-size="13" font-weight="600" fill="#1d2125">{{ pic.outcome }}</text>{% endif %}
+  {% endif %}
+</svg>
+<p class="controls">
+  {% for key, word in [("start", "⏮ start"), ("previous", "◀ previous event"), ("next", "next event ▶"), ("next_decision", "next decision ▶▶"), ("end", "end ⏭")] %}
+  {% if pic.jumps[key] is not none %}<a href="/runs/{{ run.entry.id }}?at={{ pic.jumps[key] }}">{{ word }}</a>{% else %}<span class="off">{{ word }}</span>{% endif %}
+  {% endfor %}
+</p>
+<p class="legend">{% for name, c in pic.legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %}</p>
+<div class="events">
+<h2>What happened last</h2>
+<ul>
+{% for s in pic.sentences %}
+<li style="border-color: {{ s.colour }}"><span class="clock">{{ s.clock }}</span><span class="{% if s.decision %}decision{% endif %}">{{ s.head }}</span>{% if s.text %} <span class="muted">— {{ s.text }}</span>{% endif %}</li>
+{% endfor %}
+</ul>
+</div>
+</div>
+<aside style="border:0;padding:0">
+  {% if pic.design %}
+  <h2>{{ pic.design }}</h2>
+  {% if picture %}<img class="picture" src="/runs/{{ run.entry.id }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}
+  {% else %}<h2>No design yet</h2>{% endif %}
+  <dl class="facts">
+    <dt>Experiment</dt><dd>{{ run.entry.experiment }} / {{ run.entry.condition }}</dd>
+    {% if run.order %}<dt>Order</dt><dd>{{ run.order[0] }}@{{ run.order[1] }}</dd>{% endif %}
+    <dt>Decision makers</dt><dd>{% for role, who in run.decision_makers.items() %}{{ role.replace("_", " ") }}: {{ who }}<br>{% else %}none woke{% endfor %}</dd>
+    {% if run.accepted_plan %}<dt>Accepted plan</dt><dd>{{ run.accepted_plan }}</dd>{% endif %}
+    <dt>Outcome</dt><dd>{{ run.entry.outcome or run.entry.status }}{% if run.entry.reason %} ({{ run.entry.reason }}){% endif %}</dd>
+    <dt>Events</dt><dd>{{ state.seen }} of {{ run.events|length }} at this time</dd>
+  </dl>
+</aside>
+</div>
+{% endblock %}
+{% block aside %}{% endblock %}

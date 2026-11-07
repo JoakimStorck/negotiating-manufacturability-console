@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Runs{% endblock %}
+{% block mainclass %}wide{% endblock %}
+{% block content %}
+<h1>Runs</h1>
+{% if not root %}
+<p class="muted">No runs root is set. Start the server with <code>--runs DIR</code>, the folder am-llm writes its runs under.</p>
+{% else %}
+<p class="muted">{{ root }} · {{ experiments|length }} experiments, {{ total }} runs</p>
+<form method="get" action="/runs">
+  <select name="product"><option value="">any product</option>{% for l in lineages %}<option {% if l == product %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <button>Filter</button>
+</form>
+<table>
+<thead><tr><th>Experiment</th><th>Started</th><th>Products</th><th class="num">Runs</th><th>Outcomes</th></tr></thead>
+<tbody>
+{% for x in experiments %}
+<tr>
+  <td><a href="/runs?experiment={{ x.name }}{% if product %}&amp;product={{ product }}{% endif %}">{{ x.name }}</a></td>
+  <td>{{ x.started.strftime("%Y-%m-%d %H:%M") if x.started else "" }}</td>
+  <td>{{ x.lineages|join(", ") }}</td>
+  <td class="num">{{ x.runs|length }}</td>
+  <td>{% for o, n in outcomes[x.name] %}<span class="badge">{{ n }} {{ o }}</span> {% endfor %}</td>
+</tr>
+{% if x.name == experiment %}
+<tr><td colspan="5">
+  <table>
+  <thead><tr><th>Condition</th><th>Products</th><th>Negotiation</th><th>Held</th><th>Decision makers</th><th>Started</th><th class="num">Minutes</th><th>Status</th><th>Outcome</th></tr></thead>
+  <tbody>
+  {% for r in x.runs %}
+  <tr>
+    <td><a href="/runs/{{ r.id }}">{{ r.condition }}</a></td>
+    <td>{{ r.lineages|join(", ") }}</td>
+    <td>{{ r.negotiation or "" }}</td>
+    <td>{{ r.held or "" }}</td>
+    <td>{% for role, who in r.decision_makers.items() %}<span class="badge" title="{{ role }}">{{ role.replace("_", " ") }}: {{ who }}</span> {% endfor %}</td>
+    <td>{{ r.started.strftime("%Y-%m-%d %H:%M") if r.started else "" }}</td>
+    <td class="num">{{ "%.0f"|format(r.minutes) if r.minutes is not none else "" }}</td>
+    <td>{{ r.status }}</td>
+    <td>{{ r.outcome or "" }}{% if r.reason %} <span class="muted">({{ r.reason }})</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+</td></tr>
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% endblock %}
+{% block aside %}{% endblock %}

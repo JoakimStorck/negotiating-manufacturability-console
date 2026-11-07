@@ -25,9 +25,12 @@ python3.12 -m venv .venv
 ```bash
 .venv/bin/am-order --home examples serve            # http://127.0.0.1:8770/
 .venv/bin/am-order --home examples serve --log logs # with the interaction log, one JSON line per action
+.venv/bin/am-order --home examples serve --runs ../am-llm/runs/experiments   # with am-llm's recorded runs to look at
 ```
 
 The web app listens on 127.0.0.1 only and serves one user. Every page is a URL of its own: the products with their groups and filters; a product with its overview picture and its needs; the metrics heading by heading; a metric with its object, value, conditions, needs and mandate; the matrix, edited by its cells; the target specification; the objects with their places; the binding with the design's picture, its model to download and its features; the history and the comparison of two versions or two products. An edit goes to the product's draft and the page comes back with the checks' refusals beside what they concern; Save makes a version when every check passes.
+
+With `--runs DIR`, the folder am-llm writes its runs under, the Runs page catalogues the recorded runs by experiment and condition (product, negotiation, decision makers per role, when, how long, outcome), and a run opens as the overview of the organisation at a time in it: the roles as cells with their decision makers, which is awake and which waits, the traffic between them, the design version at that time with its picture, and the time axis with every event marked and the clock's position on it. The time is chosen with `?at=` in seconds from the run's start, and the page links to the previous and next event, the next decision, the start and the end. The record is read directly and read only; the tool never imports am-llm, and a run that is still being written is read the same way, up to the last row it holds.
 
 The same is available from the command line and from Python:
 

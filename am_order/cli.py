@@ -17,7 +17,7 @@
     xlsx export PRODUCT FILE | xlsx import FILE       the workbook; an import comes in as a draft and is checked
     reqif export PRODUCT FILE
     features list | add DIR                           the feature lists in the home
-    serve [--port 8770] [--log DIR]                   the web app on 127.0.0.1
+    serve [--port 8770] [--log DIR] [--runs DIR]      the web app on 127.0.0.1
 
 The home is `--home` or `AM_ORDER_HOME`. An own product opens read only unless `--allow-own` is given.
 """
@@ -113,6 +113,7 @@ def main(argv=None) -> int:
     sv = sub.add_parser("serve")
     sv.add_argument("--port", type=int, default=8770)
     sv.add_argument("--log")
+    sv.add_argument("--runs", help="the folder am-llm writes its runs under, read only, for the runs pages")
     args = ap.parse_args(argv)
 
     try:
@@ -250,7 +251,7 @@ def _run(args, home: Home, ap) -> int:
     if cmd == "serve":
         import uvicorn
         from .web.app import create_app
-        app = create_app(home, Path(args.log) if args.log else None)
+        app = create_app(home, Path(args.log) if args.log else None, Path(args.runs) if args.runs else None)
         print(f"am-order on http://127.0.0.1:{args.port}/ (home {home.root}, session {app.state.log.session})")
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
         return 0
