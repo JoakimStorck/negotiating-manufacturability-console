@@ -14,8 +14,9 @@ WIDTH = 1200
 BOX_W, BOX_H = 230, 74
 AXIS_X0, AXIS_X1 = 150, 1130
 LANE_H = 24                      # a role's activity line, parallel to the time axis above it
-ACT_COLOURS = {"read": "#b9c7d6", "analyse": "#7aa7d9", "make": "#f2b05e", "other": "#c9c9c9"}
-ACT_WORDS = (("reading", "read"), ("analysing", "analyse"), ("reshaping, planning", "make"))
+# thinking has one colour on every line, apart from the calls' colours; the calls are what the model chose, the thinking is the model
+ACT_COLOURS = {"think": "#b9a7e2", "read": "#b9c7d6", "analyse": "#7aa7d9", "make": "#f2b05e", "other": "#c9c9c9"}
+ACT_WORDS = (("thinking", "think"), ("reading", "read"), ("analysing", "analyse"), ("reshaping, planning", "make"))
 COLOURS = {"assignment": "#2a78d6", "proposal": "#eb6834", "query": "#1baf7a", "answer": "#eda100", "report": "#e87ba4",
            "escalation": "#008300", "status": "#6250d6", "dialogue": "#52514e", "design": "#0b0b0b", "refused": "#e34948",
            "woke": "#b9c2cc", "slept": "#b9c2cc", "plan": "#8a8f94"}
@@ -51,9 +52,18 @@ def ranks(run: Run) -> list[int]:
     return sorted({RANK.get(r, 3) for r in run.roles})
 
 
+def diagram_width(run: Run) -> float:
+    """The block diagram's width: the widest rank's cells, with room beside them for the arrows' labels."""
+    by_rank: dict[int, int] = {}
+    for r in run.roles:
+        by_rank[RANK.get(r, 3)] = by_rank.get(RANK.get(r, 3), 0) + 1
+    widest = max(by_rank.values(), default=1)
+    return widest * BOX_W + (widest - 1) * 60 + 2 * 270
+
+
 def lanes_top(run: Run) -> float:
-    """The activity lines start below the last row of cells, with room above them for the clock and "next in"."""
-    return 36 + len(ranks(run)) * 150 + 30
+    """The activity lines start at the top of the time picture, with room above them for the clock and "next in"."""
+    return 36
 
 
 def axis_y(run: Run) -> float:
@@ -67,12 +77,13 @@ def nodes(run: Run, st: State) -> list[dict]:
     for r in run.roles:
         by_rank.setdefault(RANK.get(r, 3), []).append(r)
     rows = {rank: 36 + i * 150 for i, rank in enumerate(ranks(run))}
+    width = diagram_width(run)
     out = []
     for rank, roles in by_rank.items():
         n = len(roles)
         gap = 60
         total = n * BOX_W + (n - 1) * gap
-        x0 = (WIDTH - total) / 2
+        x0 = (width - total) / 2
         for i, role in enumerate(roles):
             if role in st.awake:
                 mode = "awake"
@@ -201,7 +212,7 @@ def lanes(run: Run, st: State, x_of, end: datetime) -> list[dict]:
                 acts.append({"x1": x_of(a.start), "x2": max(x_of(a.end), x_of(a.start) + 1.5), "colour": ACT_COLOURS[a.family],
                              "past": a.start <= st.at, "now": a.start <= st.at <= a.end,
                              "title": f"{_clock(a.start, start)}–{_clock(a.end, start)} {a.word}" + (f" ×{a.count}" if a.count > 1 else "")
-                             + (f" · {a.detail}" if a.detail else "")})
+                             + (f" · {a.detail}" if a.detail else "") + (f" · {_span(a.end - a.start)}" if a.family == "think" else "")})
         marks = [{"x": x_of(e.time), "colour": colour(e), "past": e.time <= st.at, "decision": e.decision, "dashed": not e.valid,
                   "title": f"{_clock(e.time, start)} {e.type}" + (f": {e.text}" if e.text else "")}
                  for e in run.events if e.sender == role and e.kind in ("message", "dialogue", "design")]
@@ -232,10 +243,15 @@ def jumps(run: Run, st: State) -> dict:
     after = [e for e in run.events if e.time > st.at + here]
     decisions_before = [e for e in before if e.decision]
     decisions_after = [e for e in after if e.decision]
+    # a turn's end is where the model's choice is known: the thinking done, the calls chosen
+    ends = sorted(t.end for b in run.bars for t in b.turns)
+    turns_before = [t for t in ends if t < st.at - here]
+    turns_after = [t for t in ends if t > st.at + here]
     return {"start": "0", "end": s(run.end) if run.end else None,
             "previous": s(before[-1].time) if before else None, "next": s(after[0].time) if after else None,
             "previous_decision": s(decisions_before[-1].time) if decisions_before else None,
             "next_decision": s(decisions_after[0].time) if decisions_after else None,
+            "previous_turn": s(turns_before[-1]) if turns_before else None, "next_turn": s(turns_after[0]) if turns_after else None,
             "here": s(st.at)}
 
 
@@ -258,10 +274,36 @@ def sentences(st: State, start: datetime | None) -> list[dict]:
     return out
 
 
+def wakings(run: Run, st: State) -> list[dict]:
+    """What each awake role is doing, for the reader to inspect: what woke it, its turns so far (the thinking, the calls), and
+    where it stands at the clock. A turn is shown when it has ended, since that is when the record writes it."""
+    start = run.start
+    out = []
+    for role, b in st.awake.items():
+        done = [t for t in b.turns if t.end <= st.at]
+        turns = [{"n": i, "clock": _clock(t.end, start), "seconds": f"{t.seconds:.0f} s", "thinking": t.thinking, "text": t.text,
+                  "acts": [{"word": a.word, "count": a.count, "detail": a.detail, "seconds": f"{(a.start - start).total_seconds():.6f}",
+                            "clock": _clock(a.start, start), "future": a.start > st.at} for a in t.acts]}
+                 for i, t in enumerate(done, 1)]
+        current = next((t for t in b.turns if t.start <= st.at < t.end), None)
+        if current is not None:
+            now = f"turn {b.turns.index(current) + 1}: thinking, {_span(st.at - current.start)} so far"
+        elif done and done[-1].results_end and st.at < done[-1].results_end:
+            now = f"turn {len(done)}: the tools answer"
+        else:
+            last_end = (done[-1].results_end or done[-1].end) if done else b.start
+            now = f"at work for {_span(st.at - last_end)}, nothing written yet" if st.at > last_end else None
+        out.append({"role": role, "title": TITLES.get(role, role), "since": _clock(b.start, start), "model": b.model, "prompt": b.prompt,
+                    "turns": turns, "now": now})
+    return out
+
+
 def overview(run: Run, st: State) -> dict:
     cells = nodes(run, st)
-    return {"width": WIDTH, "height": axis_y(run) + 60, "nodes": cells, "edges": edges(run, st, cells), "axis": axis(run, st),
+    return {"width": WIDTH, "height": axis_y(run) + 60, "diagram": {"width": diagram_width(run), "height": 36 + len(ranks(run)) * 150 - 40},
+            "nodes": cells, "edges": edges(run, st, cells), "axis": axis(run, st),
             "jumps": jumps(run, st), "sentences": sentences(st, run.start), "design": st.design, "outcome": st.outcome,
+            "wakings": wakings(run, st),
             "legend": [(t, COLOURS[t]) for t in ("assignment", "report", "status", "query", "answer", "proposal", "escalation")]
             + [("dialogue", COLOURS["dialogue"]), ("design version", COLOURS["design"]), ("refused", COLOURS["refused"])],
             "act_legend": [(w, ACT_COLOURS[f]) for w, f in ACT_WORDS]}

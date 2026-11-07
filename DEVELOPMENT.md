@@ -58,9 +58,14 @@ it. It is one picture with two uses, the system operator's console and the demon
   position on it, and "next in …" beside it. In playback the axis is there from the start; live it grows, and nothing is known
   beyond now. Jumps (next event, next decision, a click on the axis) move the clock without bending it.
 - **The activity lines**, one per role parallel to the axis, show what happens between the events: each waking as a bar, within
-  it the work the role did (reading, analysing, reshaping or planning, from the tool calls the record keeps per waking), and on
-  it every word the role said. The cell says the same in words at the clock's time. The lines are what makes a long silence
-  legible: who is working, on what, and who is waiting.
+  it the model's turns (thinking in one colour on every line, then the calls it chose: reading, analysing, reshaping or planning,
+  from the record's turns and tool calls per waking), and on it every word the role said. The cell says the same in words at
+  the clock's time. The lines are what makes a long silence legible: who is working, on what, and who is waiting.
+- **The turns** are the third step beside events and decisions: a step lands where a turn ends, which is when the record writes
+  it and the model's choice is known. The panel beside the block diagram shows the awake role's waking: what woke it, each
+  ended turn with the model's own summary of its thinking and the calls it made (a click puts the clock there), and where it
+  stands now (thinking for so long, the tools answering, or nothing written yet). The summary is the model's summary, not its
+  thinking, and the panel says what a call was about, not its result; the result is a level deeper and am-llm's console's.
 - **The catalogue** lists the recorded runs by product, experiment and condition (negotiation, decision makers, when, how long,
   outcome). It reads the folders am-llm leaves today; when the requester stands and registers runs on the shared surface, it
   becomes a view of that contract and shows running runs beside finished ones.
@@ -102,8 +107,8 @@ Done:
 
 Next, independent of the open decisions:
 
-2. **The overview playing.** The clock in the page, speeds, pause, jumps both ways between events and between decisions,
-   keyboard; the activity lines; the same page following a running run.
+2. **The overview playing.** The clock in the page, speeds, pause, jumps both ways between events, turns and decisions,
+   keyboard; the activity lines with the thinking and the calls; the turns panel; the same page following a running run.
 
 On am-llm's side, as soon as the review is read, in parallel with the builds here; it depends on the brief's form and on where the
 mandate becomes the reservation, and on nothing else that is open:

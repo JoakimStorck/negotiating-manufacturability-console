@@ -6,10 +6,12 @@
      data-live="{{ '1' if ax.live else '' }}" data-start-epoch="{{ ax.start_epoch if ax.start_epoch is defined else 0 }}"
      data-x0="{{ ax.x0 if ax.x0 is defined else 0 }}" data-x1="{{ ax.x1 if ax.x1 is defined else 1 }}"
      data-previous="{{ pic.jumps.previous if pic.jumps.previous is not none else '' }}" data-next-event="{{ pic.jumps.next if pic.jumps.next is not none else '' }}"
+     data-previous-turn="{{ pic.jumps.previous_turn if pic.jumps.previous_turn is not none else '' }}" data-next-turn="{{ pic.jumps.next_turn if pic.jumps.next_turn is not none else '' }}"
      data-previous-decision="{{ pic.jumps.previous_decision if pic.jumps.previous_decision is not none else '' }}"
      data-next-decision="{{ pic.jumps.next_decision if pic.jumps.next_decision is not none else '' }}">
 <div>
-<svg id="picture" viewBox="0 0 {{ pic.width }} {{ pic.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
+<div class="top">
+<svg id="diagram" viewBox="0 0 {{ pic.diagram.width }} {{ pic.diagram.height }}" width="{{ pic.diagram.width * 0.72 }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker>
   </defs>
@@ -25,6 +27,27 @@
     <text x="{{ n.x + 12 }}" y="{{ n.y + 62 }}" fill="{{ n.stroke if n.mode in ('awake', 'waiting') else '#5f6b76' }}" font-size="12">{{ n.note }}</text>
   </g>
   {% endfor %}
+</svg>
+<div class="wakings">
+{% for w in pic.wakings %}
+<h2>{{ w.title }} at work <span class="muted">since {{ w.since }}{% if w.model %} · {{ w.model }}{% endif %}</span></h2>
+{% if w.prompt %}<p class="muted">Woken by: {{ w.prompt }}</p>{% endif %}
+<ol class="turns">
+{% for t in w.turns %}
+<li><span class="clock">{{ t.clock }}</span><b>turn {{ t.n }}</b> <span class="muted">· thought {{ t.seconds }}</span>
+{% if t.thinking %}<p class="thinking">{{ t.thinking }}</p>{% endif %}{% if t.text %}<p>{{ t.text }}</p>{% endif %}
+{% if t.acts %}<p class="acts">{% for a in t.acts %}<a href="/runs/{{ run.entry.id }}?at={{ a.seconds }}" data-seconds="{{ a.seconds }}" {% if a.future %}class="future"{% endif %}>{{ a.word }}{% if a.count > 1 %} ×{{ a.count }}{% endif %}{% if a.detail %} <span class="muted">{{ a.detail }}</span>{% endif %}</a>{% endfor %}</p>{% endif %}
+</li>
+{% endfor %}
+{% if w.now %}<li class="now"><span class="clock">{{ ax.clock }}</span>{{ w.now }}</li>{% endif %}
+</ol>
+{% else %}
+<h2>Nobody at work</h2>
+<p class="muted">{% if pic.outcome %}The run has ended.{% else %}The roles sleep; a message or an answer wakes the next.{% endif %}</p>
+{% endfor %}
+</div>
+</div>
+<svg id="picture" viewBox="0 0 {{ pic.width }} {{ pic.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
   {% if ax.marks is defined and ax.ticks %}
   <g id="axis">
   <rect x="{{ ax.x0 }}" y="{{ ax.top - 26 }}" width="{{ ax.x1 - ax.x0 }}" height="{{ ax.y + 10 - (ax.top - 26) }}" fill="transparent" style="cursor: pointer"/>
@@ -45,12 +68,12 @@
   <text id="clock" x="{{ ax.head }}" y="{{ ax.top - 18 }}" text-anchor="middle" font-size="13" font-weight="600" fill="#b3261e">{{ ax.clock }}</text>
   <text x="{{ ax.x0 }}" y="{{ ax.y + 38 }}" font-size="11" fill="#5f6b76">{{ ax.start }}</text>
   <text x="{{ ax.x1 }}" y="{{ ax.y + 38 }}" text-anchor="end" font-size="11" fill="#5f6b76">{% if ax.live %}now{% else %}{{ ax.end }}{% endif %}</text>
-  <text id="next-in" x="{{ ax.x1 }}" y="{{ ax.top - 18 }}" text-anchor="end" font-size="13" fill="#5f6b76" {% if pic.outcome and not ax.next %}font-weight="600" fill="#1d2125"{% endif %}>{% if ax.next %}next in {{ ax.next.in }} · {{ ax.next.what }}{% elif pic.outcome %}{{ pic.outcome }}{% elif ax.live %}following{% endif %}</text>
+  <text id="next-in" x="{{ (ax.x0 + ax.x1) / 2 }}" y="{{ ax.y + 38 }}" text-anchor="middle" font-size="13" fill="#5f6b76" {% if pic.outcome and not ax.next %}font-weight="600" fill="#1d2125"{% endif %}>{% if ax.next %}next in {{ ax.next.in }} · {{ ax.next.what }}{% elif pic.outcome %}{{ pic.outcome }}{% elif ax.live %}following{% endif %}</text>
   </g>
   {% endif %}
 </svg>
 <p class="controls">
-  {% for key, word in [("start", "⏮ start"), ("previous_decision", "◀◀ previous decision"), ("previous", "◀ previous event"), ("next", "next event ▶"), ("next_decision", "next decision ▶▶"), ("end", "end ⏭")] %}
+  {% for key, word in [("start", "⏮ start"), ("previous_decision", "◀◀ decision"), ("previous", "◀ event"), ("previous_turn", "‹ turn"), ("next_turn", "turn ›"), ("next", "event ▶"), ("next_decision", "decision ▶▶"), ("end", "end ⏭")] %}
   {% if pic.jumps[key] is not none %}<a href="/runs/{{ run.entry.id }}?at={{ pic.jumps[key] }}" data-seconds="{{ pic.jumps[key] }}">{{ word }}</a>{% else %}<span class="off">{{ word }}</span>{% endif %}
   {% endfor %}
 </p>

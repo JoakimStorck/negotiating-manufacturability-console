@@ -230,6 +230,19 @@ class Act:
 
 
 @dataclass
+class Turn:
+    """One of the model's turns in a waking: it thinks from `start` to `end` and the calls it chose follow, then the results."""
+    seq: int
+    start: datetime               # the end less the model's seconds, never before the turn before
+    end: datetime                 # when the model's turn ended, as the record writes it
+    seconds: float
+    thinking: str                 # the model's summary of its thinking, where it gives one
+    text: str                     # what the model said in words, where it did
+    acts: list = field(default_factory=list)
+    results_end: datetime | None = None   # when the last of its calls had answered
+
+
+@dataclass
 class Bar:
     role: str
     actor: str
@@ -237,7 +250,9 @@ class Bar:
     start: datetime
     end: datetime | None
     id: str | None = None
-    acts: list = field(default_factory=list)
+    acts: list = field(default_factory=list)      # thinking and calls, in time order, for the activity line
+    turns: list = field(default_factory=list)
+    prompt: str = ""              # what woke it
 
     def act_at(self, at: datetime) -> Act | None:
         return next((a for a in self.acts if a.start <= at <= a.end), None)
@@ -358,31 +373,56 @@ def read(root: Path, run_id: str) -> Run | None:
                         if m and order is None:
                             order = (m.group(1), int(m.group(2)))
         if "run" in tables:
-            for r in conn.execute("SELECT id, role, actor, model, started, ended FROM run WHERE started IS NOT NULL ORDER BY started"):
+            for r in conn.execute("SELECT id, role, actor, model, prompt, started, ended FROM run WHERE started IS NOT NULL ORDER BY started"):
                 label = _short(r["model"], r["actor"])
                 makers[r["role"]] = label
-                bars.append(Bar(r["role"], r["actor"], label, _time(r["started"]), _time(r["ended"]), r["id"]))
+                try:
+                    prompt = json.loads(r["prompt"] or "{}")
+                except ValueError:
+                    prompt = {}
+                bars.append(Bar(r["role"], r["actor"], label, _time(r["started"]), _time(r["ended"]), r["id"],
+                                prompt=_cut((prompt.get("text") if isinstance(prompt, dict) else str(prompt)) or "", 240)))
                 events.append(Event(_time(r["started"]), "woke", r["role"], None, "woke", f"{TITLES.get(r['role'], r['role'])} wakes"))
                 if r["ended"]:
                     events.append(Event(_time(r["ended"]), "slept", r["role"], None, "slept", f"{TITLES.get(r['role'], r['role'])} sleeps"))
-        if "call" in tables and bars:
+        if bars:
             by_id = {b.id: b for b in bars}
-            for r in conn.execute("SELECT run_id, tool, time, seconds, inputs FROM call WHERE run_id IS NOT NULL ORDER BY time, rowid"):
-                bar, act = by_id.get(r["run_id"]), act_of(r["tool"])
-                if bar is None or act is None:
-                    continue
-                t = _time(r["time"])
-                end = t + timedelta(seconds=r["seconds"] or 0)
-                try:
-                    inputs = json.loads(r["inputs"] or "{}")
-                except ValueError:
-                    inputs = {}
-                detail = str(inputs.get("design") or inputs.get("plan") or "")
-                if bar.acts and bar.acts[-1].word == act[1]:
-                    last = bar.acts[-1]
-                    last.end, last.count, last.detail = max(last.end, end), last.count + 1, detail or last.detail
-                else:
-                    bar.acts.append(Act(t, end, act[0], act[1], 1, detail))
+            if "turn" in tables:
+                for r in conn.execute("SELECT run_id, seq, kind, time, seconds, text, thinking FROM turn ORDER BY run_id, seq"):
+                    bar = by_id.get(r["run_id"])
+                    if bar is None:
+                        continue
+                    t = _time(r["time"])
+                    if r["kind"] == "model":
+                        floor = bar.turns[-1].results_end or bar.turns[-1].end if bar.turns else bar.start
+                        start = max(floor, t - timedelta(seconds=r["seconds"] or 0))
+                        bar.turns.append(Turn(r["seq"], start, t, r["seconds"] or 0, _cut(r["thinking"] or "", 600), _cut(r["text"] or "", 600)))
+                    elif r["kind"] == "results" and bar.turns:
+                        bar.turns[-1].results_end = t
+            if "call" in tables:
+                for r in conn.execute("SELECT run_id, turn, tool, time, seconds, inputs FROM call WHERE run_id IS NOT NULL ORDER BY time, rowid"):
+                    bar, act = by_id.get(r["run_id"]), act_of(r["tool"])
+                    if bar is None or act is None:
+                        continue
+                    t = _time(r["time"])
+                    end = t + timedelta(seconds=r["seconds"] or 0)
+                    try:
+                        inputs = json.loads(r["inputs"] or "{}")
+                    except ValueError:
+                        inputs = {}
+                    detail = str(inputs.get("design") or inputs.get("plan") or "")
+                    turn = next((x for x in bar.turns if x.seq == r["turn"]), None)
+                    acts = turn.acts if turn is not None else bar.acts
+                    if acts and acts[-1].word == act[1]:
+                        last = acts[-1]
+                        last.end, last.count, last.detail = max(last.end, end), last.count + 1, detail or last.detail
+                    else:
+                        acts.append(Act(t, end, act[0], act[1], 1, detail))
+            for bar in bars:
+                for turn in bar.turns:
+                    bar.acts.append(Act(turn.start, turn.end, "think", "thinking", 1, ""))
+                    bar.acts.extend(turn.acts)
+                bar.acts.sort(key=lambda a: a.start)
         if "call" in tables:
             marks = ",".join("?" * len(DIALOGUE))
             for r in conn.execute(f"SELECT id, time, tool, inputs, result FROM call WHERE tool IN ({marks}) AND error = 0 ORDER BY time, rowid",

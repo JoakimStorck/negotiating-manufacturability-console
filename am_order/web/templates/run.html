@@ -3,8 +3,11 @@
 {% block mainclass %}wide{% endblock %}
 {% block content %}
 <style>
-.overview { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1rem; }
-.overview svg { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
+.overview { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1rem; }
+.overview svg#picture { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
+.top { display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: .6rem; }
+.top svg { height: auto; max-width: 100%; flex: none; }
+.wakings { flex: 1 1 18rem; min-width: 0; }
 .controls a, .controls span.off, .player button { display: inline-block; margin-right: .6rem; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; }
 .controls span.off { color: var(--muted); }
 .player { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: .4rem 0 .6rem; }
@@ -13,8 +16,15 @@
 .player .speed { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: center; }
 .player .keys { color: var(--muted); font-size: .85rem; margin-left: auto; }
 .events li { list-style: none; margin: .2rem 0; padding-left: .6rem; border-left: 3px solid var(--line); }
+.wakings h2 { margin-top: 0; } .wakings h2 .muted { font-weight: normal; font-size: .85rem; }
+.turns { padding: 0; margin: 0; max-height: 21rem; overflow-y: auto; font-size: .9rem; }
+.turns li { list-style: none; margin: .3rem 0; padding-left: .6rem; border-left: 3px solid #b9a7e2; }
+.turns li.now { border-left-style: dashed; color: var(--muted); }
+.turns .thinking { margin: .15rem 0; color: #4a4a6a; font-size: .9rem; } .turns p { margin: .15rem 0; }
+.turns .acts a { display: inline-block; margin: 0 .5rem .15rem 0; padding: 0 .35rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; font-size: .85rem; }
+.turns .acts a.future { opacity: .45; }
 .events ul { padding: 0; margin: 0; }
-.events .clock { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: .4rem; }
+.events .clock, .turns .clock { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: .4rem; }
 .events .decision { font-weight: 600; }
 .facts dt { color: var(--muted); font-size: .85rem; margin-top: .4rem; } .facts dd { margin: 0; }
 .legend span { margin-right: .7rem; white-space: nowrap; }
@@ -46,9 +56,10 @@
     const d = document.getElementById("overview").dataset;
     P.at = num(d.at) || 0; P.next = num(d.next); P.end = num(d.end) || 0; P.span = num(d.span) || 1;
     P.live = d.live === "1"; P.epoch = num(d.startEpoch) || 0; P.x0 = num(d.x0) || 0; P.x1 = num(d.x1) || 1;
-    for (const a of document.querySelectorAll("#overview .controls a[data-seconds]")) {
+    for (const a of document.querySelectorAll("#overview a[data-seconds]")) {
       a.addEventListener("click", function (ev) { ev.preventDefault(); goTo(parseFloat(a.dataset.seconds)); });
     }
+    for (const t of document.querySelectorAll("#overview .turns")) t.scrollTop = t.scrollHeight;
     const axis = document.getElementById("axis");
     if (axis) axis.addEventListener("click", function (ev) {
       const svg = document.getElementById("picture");
@@ -136,6 +147,8 @@
     else if (k === "ArrowLeft") { ev.preventDefault(); step("previous"); }
     else if (k === "d") step("nextDecision");
     else if (k === "D") step("previousDecision");
+    else if (k === "t") step("nextTurn");
+    else if (k === "T") step("previousTurn");
     else if (k === "+" || k === "=") faster(true);
     else if (k === "-") faster(false);
     else if (k === "Home") goTo(0);
@@ -145,7 +158,7 @@
 
   readData(); paint(); requestAnimationFrame(tick);
   // written last, so that the hint shows only when the player is up
-  document.getElementById("keys").textContent = "space play · ← → event · d D decision · + − speed · Home End" + (follow ? " · l now" : "") + " · click the axis";
+  document.getElementById("keys").textContent = "space play · ← → event · t T turn · d D decision · + − speed · Home End" + (follow ? " · l now" : "") + " · click the axis";
 })();
 </script>
 {% endblock %}

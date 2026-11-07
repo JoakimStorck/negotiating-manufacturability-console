@@ -28,6 +28,8 @@ CREATE TABLE call (id TEXT PRIMARY KEY, tool TEXT, inputs TEXT, result TEXT, err
     turn INTEGER, cites TEXT, cache TEXT);
 CREATE TABLE run (id TEXT PRIMARY KEY, role TEXT, actor TEXT, model TEXT, settings TEXT, prompt TEXT, case_id TEXT, started TEXT, ended TEXT,
     outcome TEXT, usage TEXT, context_sha256 TEXT);
+CREATE TABLE turn (run_id TEXT, seq INTEGER, kind TEXT, time TEXT, model TEXT, text TEXT, thinking TEXT, usage TEXT, cost REAL, seconds REAL,
+    body TEXT DEFAULT '{}', PRIMARY KEY (run_id, seq));
 CREATE TABLE design (id TEXT PRIMARY KEY, lineage TEXT, version INTEGER, parent TEXT, made_by_role TEXT, made_by_actor TEXT, time TEXT,
     content_sha256 TEXT, record TEXT, model_sha256 TEXT, source TEXT, material TEXT, parameters TEXT, brief_call TEXT);
 CREATE TABLE plan (id TEXT PRIMARY KEY, lineage TEXT, version INTEGER, run_id TEXT, case_id TEXT, design_id TEXT, machine_class TEXT,
@@ -61,12 +63,18 @@ def make_run(folder: Path, *, running: bool = False, decision_free: bool = False
     db.execute("INSERT INTO message (id, case_id, type, from_level, from_role, from_actor, to_level, to_role, time, body, validation, received) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                ("msg-1", "case-1", "assignment", "design", "design_engineer", "operator", "coordination", "process_planner", at(1),
                 json.dumps({"goal": "Plan the bracket", "basis": {"design": "bracket-mass@v1"}, "requirements": requirements}), "valid", at(1)))
-    db.execute("INSERT INTO run (id, role, actor, model, started, ended, outcome) VALUES (?,?,?,?,?,?,?)",
-               ("run-1", "process_planner", "agent", model, at(2), at(120), "done"))
-    for cid, tool, t, secs, inputs in (("call-r1", "read_design", 3, 0.2, {"design": "bracket-mass@v1"}), ("call-a1", "analyse", 10, 2, {"plan": "plan-1@v1"}),
-                                       ("call-a2", "analyse", 12, 2, {"plan": "plan-1@v2"}), ("call-a3", "analyse", 14, 2, {"plan": "plan-1@v3"}),
-                                       ("call-p1", "plan_candidate", 40, 3, {"design": "bracket-mass@v1", "orientation": "-Z"})):
-        db.execute("INSERT INTO call (id, tool, inputs, result, time, seconds, run_id) VALUES (?,?,?,?,?,?,?)", (cid, tool, json.dumps(inputs), "{}", at(t), secs, "run-1"))
+    db.execute("INSERT INTO run (id, role, actor, model, prompt, started, ended, outcome) VALUES (?,?,?,?,?,?,?,?)",
+               ("run-1", "process_planner", "agent", model, json.dumps({"text": "New in case-1: msg-1 (assignment from design_engineer)"}), at(2), at(120), "done"))
+    # the model's turns: it thinks, then its calls follow, then the results; the record writes a turn as it ends
+    for seq, kind, t, secs, thinking in ((1, "model", 3, 1, "Read the design first."), (2, "results", 3.2, 0.2, None),
+                                         (3, "model", 10, 6, "Three plans to compare on time."), (4, "results", 16, 6, None),
+                                         (5, "model", 40, 20, "The -Z orientation is the candidate."), (6, "results", 43, 3, None),
+                                         (7, "model", 100, 50, "Report the binding constraint."), (8, "results", 100.1, 0.1, None)):
+        db.execute("INSERT INTO turn (run_id, seq, kind, time, seconds, thinking) VALUES (?,?,?,?,?,?)", ("run-1", seq, kind, at(t), secs, thinking))
+    for cid, tool, t, secs, turn, inputs in (("call-r1", "read_design", 3, 0.2, 1, {"design": "bracket-mass@v1"}), ("call-a1", "analyse", 10, 2, 3, {"plan": "plan-1@v1"}),
+                                             ("call-a2", "analyse", 12, 2, 3, {"plan": "plan-1@v2"}), ("call-a3", "analyse", 14, 2, 3, {"plan": "plan-1@v3"}),
+                                             ("call-p1", "plan_candidate", 40, 3, 5, {"design": "bracket-mass@v1", "orientation": "-Z"})):
+        db.execute("INSERT INTO call (id, tool, inputs, result, time, seconds, run_id, turn) VALUES (?,?,?,?,?,?,?,?)", (cid, tool, json.dumps(inputs), "{}", at(t), secs, "run-1", turn))
     db.execute("INSERT INTO message (id, case_id, type, from_level, from_role, from_actor, to_level, to_role, time, body, validation, reasons, received) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                ("msg-2", "case-1", "report", "coordination", "process_planner", "agent", "design", "design_engineer", at(100),
                 json.dumps({"binding_constraint": {"description": "mass binds"}}), "refused", json.dumps([{"rule": 4, "name": "quantities"}]), at(100)))
@@ -217,8 +225,10 @@ def test_the_activity_lines_show_what_a_role_does_between_its_words(root, client
     run = R.read(root, "h1-bracket-mass-20261103T044650Z/open-01")
     planner = next(b for b in run.bars if b.role == "process_planner")
     # consecutive calls of one word are one act, from the first call to the end of the last
-    assert [(a.word, a.count) for a in planner.acts] == [("reading", 1), ("analysing", 3), ("planning", 1)]
-    assert planner.acts[1].start == T0 + timedelta(seconds=10) and planner.acts[1].end == T0 + timedelta(seconds=16)
+    assert [(a.word, a.count) for a in planner.acts] == [("thinking", 1), ("reading", 1), ("thinking", 1), ("analysing", 3), ("thinking", 1), ("planning", 1), ("thinking", 1)]
+    assert planner.acts[3].start == T0 + timedelta(seconds=10) and planner.acts[3].end == T0 + timedelta(seconds=16)
+    assert planner.acts[2].start == T0 + timedelta(seconds=4) and planner.acts[2].end == T0 + timedelta(seconds=10)   # the model's six seconds
+    assert planner.acts[0].start == T0 + timedelta(seconds=2)                                                      # not before the waking
     # the state at a time knows the act, and the cell says it
     st = R.state(run, T0 + timedelta(seconds=12))
     assert st.activity["process_planner"].word == "analysing"
@@ -226,16 +236,43 @@ def test_the_activity_lines_show_what_a_role_does_between_its_words(root, client
     cells = {n["role"]: n for n in pic["nodes"]}
     assert cells["process_planner"]["note"] == "analysing"
     assert overview(run, R.state(run, T0 + timedelta(seconds=150.5)))["nodes"][1]["note"] == "reshaping the design bracket-mass@v1"
-    assert overview(run, R.state(run, T0 + timedelta(seconds=30)))["nodes"][2]["note"] == "awake"
+    assert overview(run, R.state(run, T0 + timedelta(seconds=30)))["nodes"][2]["note"] == "thinking"
+    assert overview(run, R.state(run, T0 + timedelta(seconds=45)))["nodes"][2]["note"] == "awake"
     # one line per role above the axis: the planner's waking as a bar, its acts on it, and the three messages it sent as marks
     lanes = {l["role"]: l for l in pic["axis"]["lanes"]}
     assert list(lanes) == ["requester", "design_engineer", "process_planner"]
-    assert len(lanes["process_planner"]["bars"]) == 1 and len(lanes["process_planner"]["acts"]) == 3 and len(lanes["process_planner"]["marks"]) == 3
+    assert len(lanes["process_planner"]["bars"]) == 1 and len(lanes["process_planner"]["acts"]) == 7 and len(lanes["process_planner"]["marks"]) == 3
     assert lanes["process_planner"]["awake"] and not lanes["requester"]["awake"]
-    assert [a["past"] for a in lanes["process_planner"]["acts"]] == [True, True, False]
+    assert [a["past"] for a in lanes["process_planner"]["acts"]] == [True, True, True, True, False, False, False]
+    assert {a["colour"] for a in lanes["process_planner"]["acts"] if "thinking" in a["title"]} == {"#b9a7e2"}
     assert all(l["y"] < pic["axis"]["y"] for l in pic["axis"]["lanes"]) and pic["axis"]["top"] < pic["axis"]["lanes"][0]["y"] + 1
     page = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=12")
     assert 'class="lane"' in page.text and "0:00:10–0:00:16 analysing ×3 · plan-1@v3" in page.text and "reshaping, planning" in page.text
+    assert "0:00:04–0:00:10 thinking · 6 s" in page.text
+
+
+def test_the_turns_can_be_stepped_and_inspected(root, client):
+    run = R.read(root, "h1-bracket-mass-20261103T044650Z/open-01")
+    planner = next(b for b in run.bars if b.role == "process_planner")
+    assert [t.seq for t in planner.turns] == [1, 3, 5, 7] and planner.turns[1].thinking == "Three plans to compare on time."
+    assert [a.word for a in planner.turns[1].acts] == ["analysing"] and planner.turns[1].results_end == T0 + timedelta(seconds=16)
+    assert planner.prompt == "New in case-1: msg-1 (assignment from design_engineer)"
+    # stepping lands on the turns' ends, where the model's choice is known
+    j = overview(run, R.state(run, T0 + timedelta(seconds=12)))["jumps"]
+    assert j["previous_turn"] == "10.000000" and j["next_turn"] == "40.000000"
+    # the panel at a time: the turns ended by then, and where the role stands
+    at = lambda s: overview(run, R.state(run, T0 + timedelta(seconds=s)))["wakings"]
+    w = at(12)[0]
+    assert w["role"] == "process_planner" and [t["n"] for t in w["turns"]] == [1, 2] and w["now"] == "turn 2: the tools answer"
+    assert w["turns"][1]["acts"][0]["word"] == "analysing" and w["turns"][1]["acts"][0]["count"] == 3
+    assert at(30)[0]["now"] == "turn 3: thinking, 10 s so far"
+    assert at(45)[0]["now"] == "at work for 2 s, nothing written yet"
+    assert at(3.1)[0]["now"] == "turn 1: the tools answer"
+    assert at(400) == []
+    page = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=12")
+    assert "Process planner at work" in page.text and "Three plans to compare on time." in page.text and 'data-next-turn="40.000000"' in page.text
+    assert "Woken by: New in case-1" in page.text and "the tools answer" in page.text
+    assert "Nobody at work" in client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=400").text
 
 
 def test_parse_at_takes_seconds_or_a_time_and_defaults_to_the_end(root):
@@ -264,7 +301,7 @@ def test_runs_pages(client, root):
     assert 'src="/runs/h1-bracket-mass-20261103T044650Z/open-01/picture/bracket-mass@v2"' in run.text
     assert "next in 1 s · woke" in run.text          # the requester wakes at 301
     end = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01").text
-    assert ">accepted<" in end and "next event ▶</span>" in end                            # at the end there is no next event
+    assert ">accepted<" in end and "event ▶</span>" in end                            # at the end there is no next event
     assert client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01/picture/bracket-mass@v2").headers["content-type"] == "image/png"
     assert client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01/picture/bracket-mass@v1").status_code == 404
     assert client.get("/runs/h1-bracket-mass-20261103T044650Z").status_code == 404
