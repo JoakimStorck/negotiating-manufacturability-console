@@ -36,6 +36,22 @@ DIALOGUE = {"brief": (True, "brief"), "ask_requester": (False, "question"), "ans
 # what counts as a decision: the orderer's side of the dialogue, a plan accepted, an order declined, a mandate changed
 DECISIONS = {"answer", "acceptance", "order declined", "consent", "accepted", "extended mandate", "relaxed"}
 ORDER_NOTE = re.compile(r"\border ([a-z0-9][a-z0-9-]*)@(\d+)\b")
+# what a role does between its words, from the tools it calls while awake: a family for the colour and a word for the reader;
+# the tools that say something (send_*, the dialogue) are events and are not activities
+ACTS = {"analyse": ("analyse", "analysing"), "sensitivity": ("analyse", "analysing"), "survey_orientations": ("analyse", "analysing"),
+        "design_constraints": ("analyse", "analysing"), "brief_bounds": ("analyse", "analysing"),
+        "reshape": ("make", "reshaping the design"), "plan_candidate": ("make", "planning"), "restore_plans": ("make", "restoring plans")}
+
+
+def act_of(tool: str) -> tuple[str, str] | None:
+    """The family and the word of a tool call, None for a call that is an event instead."""
+    if tool in ACTS:
+        return ACTS[tool]
+    if tool.startswith("read_"):
+        return "read", "reading"
+    if tool.startswith("send_") or tool in DIALOGUE:
+        return None
+    return "other", tool.replace("_", " ")
 
 
 def _time(s: str | None) -> datetime | None:
@@ -203,12 +219,28 @@ class Event:
 
 
 @dataclass
+class Act:
+    """A stretch of one kind of work within a waking: consecutive calls of the same word, from the first call to the last's end."""
+    start: datetime
+    end: datetime
+    family: str                   # read, analyse, make, other
+    word: str
+    count: int = 1
+    detail: str = ""              # the design or plan the calls name, when they name one
+
+
+@dataclass
 class Bar:
     role: str
     actor: str
     model: str
     start: datetime
     end: datetime | None
+    id: str | None = None
+    acts: list = field(default_factory=list)
+
+    def act_at(self, at: datetime) -> Act | None:
+        return next((a for a in self.acts if a.start <= at <= a.end), None)
 
 
 @dataclass
@@ -326,13 +358,31 @@ def read(root: Path, run_id: str) -> Run | None:
                         if m and order is None:
                             order = (m.group(1), int(m.group(2)))
         if "run" in tables:
-            for r in conn.execute("SELECT role, actor, model, started, ended FROM run WHERE started IS NOT NULL ORDER BY started"):
+            for r in conn.execute("SELECT id, role, actor, model, started, ended FROM run WHERE started IS NOT NULL ORDER BY started"):
                 label = _short(r["model"], r["actor"])
                 makers[r["role"]] = label
-                bars.append(Bar(r["role"], r["actor"], label, _time(r["started"]), _time(r["ended"])))
+                bars.append(Bar(r["role"], r["actor"], label, _time(r["started"]), _time(r["ended"]), r["id"]))
                 events.append(Event(_time(r["started"]), "woke", r["role"], None, "woke", f"{TITLES.get(r['role'], r['role'])} wakes"))
                 if r["ended"]:
                     events.append(Event(_time(r["ended"]), "slept", r["role"], None, "slept", f"{TITLES.get(r['role'], r['role'])} sleeps"))
+        if "call" in tables and bars:
+            by_id = {b.id: b for b in bars}
+            for r in conn.execute("SELECT run_id, tool, time, seconds, inputs FROM call WHERE run_id IS NOT NULL ORDER BY time, rowid"):
+                bar, act = by_id.get(r["run_id"]), act_of(r["tool"])
+                if bar is None or act is None:
+                    continue
+                t = _time(r["time"])
+                end = t + timedelta(seconds=r["seconds"] or 0)
+                try:
+                    inputs = json.loads(r["inputs"] or "{}")
+                except ValueError:
+                    inputs = {}
+                detail = str(inputs.get("design") or inputs.get("plan") or "")
+                if bar.acts and bar.acts[-1].word == act[1]:
+                    last = bar.acts[-1]
+                    last.end, last.count, last.detail = max(last.end, end), last.count + 1, detail or last.detail
+                else:
+                    bar.acts.append(Act(t, end, act[0], act[1], 1, detail))
         if "call" in tables:
             marks = ",".join("?" * len(DIALOGUE))
             for r in conn.execute(f"SELECT id, time, tool, inputs, result FROM call WHERE tool IN ({marks}) AND error = 0 ORDER BY time, rowid",
@@ -383,6 +433,7 @@ def read(root: Path, run_id: str) -> Run | None:
 class State:
     at: datetime
     awake: dict                   # role -> Bar for the roles awake at `at`
+    activity: dict                # role -> the Act an awake role is in at `at`, for those in one
     waiting: dict                 # role -> what it waits for, in words (the requester's side when a question stands)
     latest: dict                  # role -> the last event the role sent at or before `at`
     design: str | None            # the latest design version made at or before `at`
@@ -397,6 +448,7 @@ def state(run: Run, at: datetime, recent: int = 6) -> State:
     before = [e for e in run.events if e.time <= at]
     after = [e for e in run.events if e.time > at]
     awake = {b.role: b for b in run.bars if b.start <= at and (b.end is None or b.end > at)}
+    activity = {role: a for role, b in awake.items() if (a := b.act_at(at)) is not None}
     latest: dict = {}
     traffic: dict = {}
     for e in before:
@@ -428,7 +480,7 @@ def state(run: Run, at: datetime, recent: int = 6) -> State:
     outcome = None
     if run.end and at >= run.end and run.entry.status == "done":
         outcome = run.entry.outcome + (f" ({run.entry.reason})" if run.entry.reason else "") if run.entry.outcome else "ended"
-    return State(at, awake, waiting, latest, design, traffic, before[-recent:], len(before), after[0] if after else None, outcome)
+    return State(at, awake, activity, waiting, latest, design, traffic, before[-recent:], len(before), after[0] if after else None, outcome)
 
 
 def picture_of(run: Run, design: str | None) -> Path | None:

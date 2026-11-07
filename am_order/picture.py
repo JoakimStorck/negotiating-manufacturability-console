@@ -12,7 +12,10 @@ from .runs import DIALOGUE, RANK, TITLES, Event, Run, State
 
 WIDTH = 1200
 BOX_W, BOX_H = 230, 74
-AXIS_X0, AXIS_X1 = 70, 1130
+AXIS_X0, AXIS_X1 = 150, 1130
+LANE_H = 24                      # a role's activity line, parallel to the time axis above it
+ACT_COLOURS = {"read": "#b9c7d6", "analyse": "#7aa7d9", "make": "#f2b05e", "other": "#c9c9c9"}
+ACT_WORDS = (("reading", "read"), ("analysing", "analyse"), ("reshaping, planning", "make"))
 COLOURS = {"assignment": "#2a78d6", "proposal": "#eb6834", "query": "#1baf7a", "answer": "#eda100", "report": "#e87ba4",
            "escalation": "#008300", "status": "#6250d6", "dialogue": "#52514e", "design": "#0b0b0b", "refused": "#e34948",
            "woke": "#b9c2cc", "slept": "#b9c2cc", "plan": "#8a8f94"}
@@ -48,9 +51,14 @@ def ranks(run: Run) -> list[int]:
     return sorted({RANK.get(r, 3) for r in run.roles})
 
 
+def lanes_top(run: Run) -> float:
+    """The activity lines start below the last row of cells, with room above them for the clock and "next in"."""
+    return 36 + len(ranks(run)) * 150 + 30
+
+
 def axis_y(run: Run) -> float:
-    """The time axis sits below the last row of cells, however many rows there are."""
-    return 36 + len(ranks(run)) * 150 + 70
+    """The time axis sits below the activity lines, one per role, with room for the marks that stand on it."""
+    return lanes_top(run) + len(run.roles) * LANE_H + 40
 
 
 def nodes(run: Run, st: State) -> list[dict]:
@@ -79,8 +87,15 @@ def nodes(run: Run, st: State) -> list[dict]:
                         "w": BOX_W, "h": BOX_H, "mode": mode, "fill": FILLS[mode], "stroke": STROKES[mode],
                         "maker": {"operator": "a person", "none": "no decision maker", "scripted": "the scripted policy"}.get(maker, maker)
                         if maker else "not woken in this run",
-                        "note": st.waiting.get(role) or ("awake" if mode == "awake" else "")})
+                        "note": st.waiting.get(role) or (_doing(st.activity.get(role)) if mode == "awake" else "")})
     return out
+
+
+def _doing(act) -> str:
+    """What an awake role does, for its cell: the act's word, else just awake."""
+    if act is None:
+        return "awake"
+    return act.word + (f" {act.detail}" if act.detail and act.word in ("reshaping the design", "planning") else "")
 
 
 def _anchor(a: dict, b: dict) -> tuple[float, float]:
@@ -133,6 +148,8 @@ def axis(run: Run, st: State) -> dict:
     if start is None or end is None:
         return {"marks": [], "ticks": [], "head": AXIS_X0, "start": "", "end": "", "clock": "", "next": None, "live": run.live}
     y = axis_y(run)
+    if run.live and st.at > end:
+        end = st.at                     # live, the clock at now is the axis's right end
     span = max((end - start).total_seconds(), 1.0)
 
     def x_of(t: datetime) -> float:
@@ -158,10 +175,39 @@ def axis(run: Run, st: State) -> dict:
         t += step
     nxt = None
     if st.next is not None:
-        nxt = {"in": _span(st.next.time - st.at), "what": st.next.type, "at": st.next.time.isoformat()}
+        nxt = {"in": _span(st.next.time - st.at), "what": st.next.type, "at": st.next.time.isoformat(),
+               "seconds": (st.next.time - start).total_seconds()}
     return {"marks": marks, "ticks": ticks, "head": x_of(st.at), "start": start.strftime("%Y-%m-%d %H:%M:%SZ"),
             "end": end.strftime("%H:%M:%SZ"), "clock": _clock(st.at, start), "next": nxt, "live": run.live,
-            "x0": AXIS_X0, "x1": AXIS_X1, "y": y, "seconds": (st.at - start).total_seconds(), "span": span}
+            "x0": AXIS_X0, "x1": AXIS_X1, "y": y, "top": lanes_top(run), "seconds": (st.at - start).total_seconds(), "span": span,
+            "end_seconds": (end - start).total_seconds(), "start_epoch": start.timestamp(), "lanes": lanes(run, st, x_of, end)}
+
+
+def lanes(run: Run, st: State, x_of, end: datetime) -> list[dict]:
+    """One activity line per role, parallel to the axis: its wakings as bars, within them what it did (the acts, coloured by
+    family), and on it every event the role sent. What lies after the clock is drawn faint; live, nothing does."""
+    start = run.start
+    out = []
+    for i, role in enumerate(run.roles):
+        y = lanes_top(run) + i * LANE_H
+        bars, acts = [], []
+        for b in run.bars:
+            if b.role != role:
+                continue
+            b_end = b.end or (st.at if st.at > b.start else end)
+            bars.append({"x1": x_of(b.start), "x2": max(x_of(b_end), x_of(b.start) + 1), "past": b.start <= st.at,
+                         "title": f"{_clock(b.start, start)}–{_clock(b_end, start) if b.end else '…'} awake" + (f" · {b.model}" if b.model else "")})
+            for a in b.acts:
+                acts.append({"x1": x_of(a.start), "x2": max(x_of(a.end), x_of(a.start) + 1.5), "colour": ACT_COLOURS[a.family],
+                             "past": a.start <= st.at, "now": a.start <= st.at <= a.end,
+                             "title": f"{_clock(a.start, start)}–{_clock(a.end, start)} {a.word}" + (f" ×{a.count}" if a.count > 1 else "")
+                             + (f" · {a.detail}" if a.detail else "")})
+        marks = [{"x": x_of(e.time), "colour": colour(e), "past": e.time <= st.at, "decision": e.decision, "dashed": not e.valid,
+                  "title": f"{_clock(e.time, start)} {e.type}" + (f": {e.text}" if e.text else "")}
+                 for e in run.events if e.sender == role and e.kind in ("message", "dialogue", "design")]
+        out.append({"role": role, "title": TITLES.get(role, role), "y": y, "h": LANE_H, "bars": bars, "acts": acts, "marks": marks,
+                    "awake": role in st.awake})
+    return out
 
 
 def _tick_step(span: float) -> float:
@@ -172,19 +218,23 @@ def _tick_step(span: float) -> float:
 
 
 def jumps(run: Run, st: State) -> dict:
-    """Where the page can go from here: the previous and next event, the next decision, the start, the end; as seconds."""
+    """Where the page can go from here: the previous and next event, the previous and next decision, the start, the end; as
+    seconds from the start with the record's microseconds, so that a jump lands on the event and the next jump leaves it."""
     start = run.start
     if start is None:
         return {}
 
     def s(t: datetime) -> str:
-        return f"{(t - start).total_seconds():.3f}"
+        return f"{(t - start).total_seconds():.6f}"
 
-    before = [e for e in run.events if e.time < st.at]
-    after = [e for e in run.events if e.time > st.at]
+    here = timedelta(microseconds=500)   # an event this close to the clock is the one the clock stands on
+    before = [e for e in run.events if e.time < st.at - here]
+    after = [e for e in run.events if e.time > st.at + here]
+    decisions_before = [e for e in before if e.decision]
     decisions_after = [e for e in after if e.decision]
     return {"start": "0", "end": s(run.end) if run.end else None,
             "previous": s(before[-1].time) if before else None, "next": s(after[0].time) if after else None,
+            "previous_decision": s(decisions_before[-1].time) if decisions_before else None,
             "next_decision": s(decisions_after[0].time) if decisions_after else None,
             "here": s(st.at)}
 
@@ -213,4 +263,5 @@ def overview(run: Run, st: State) -> dict:
     return {"width": WIDTH, "height": axis_y(run) + 60, "nodes": cells, "edges": edges(run, st, cells), "axis": axis(run, st),
             "jumps": jumps(run, st), "sentences": sentences(st, run.start), "design": st.design, "outcome": st.outcome,
             "legend": [(t, COLOURS[t]) for t in ("assignment", "report", "status", "query", "answer", "proposal", "escalation")]
-            + [("dialogue", COLOURS["dialogue"]), ("design version", COLOURS["design"]), ("refused", COLOURS["refused"])]}
+            + [("dialogue", COLOURS["dialogue"]), ("design version", COLOURS["design"]), ("refused", COLOURS["refused"])],
+            "act_legend": [(w, ACT_COLOURS[f]) for w, f in ACT_WORDS]}

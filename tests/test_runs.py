@@ -63,6 +63,10 @@ def make_run(folder: Path, *, running: bool = False, decision_free: bool = False
                 json.dumps({"goal": "Plan the bracket", "basis": {"design": "bracket-mass@v1"}, "requirements": requirements}), "valid", at(1)))
     db.execute("INSERT INTO run (id, role, actor, model, started, ended, outcome) VALUES (?,?,?,?,?,?,?)",
                ("run-1", "process_planner", "agent", model, at(2), at(120), "done"))
+    for cid, tool, t, secs, inputs in (("call-r1", "read_design", 3, 0.2, {"design": "bracket-mass@v1"}), ("call-a1", "analyse", 10, 2, {"plan": "plan-1@v1"}),
+                                       ("call-a2", "analyse", 12, 2, {"plan": "plan-1@v2"}), ("call-a3", "analyse", 14, 2, {"plan": "plan-1@v3"}),
+                                       ("call-p1", "plan_candidate", 40, 3, {"design": "bracket-mass@v1", "orientation": "-Z"})):
+        db.execute("INSERT INTO call (id, tool, inputs, result, time, seconds, run_id) VALUES (?,?,?,?,?,?,?)", (cid, tool, json.dumps(inputs), "{}", at(t), secs, "run-1"))
     db.execute("INSERT INTO message (id, case_id, type, from_level, from_role, from_actor, to_level, to_role, time, body, validation, reasons, received) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                ("msg-2", "case-1", "report", "coordination", "process_planner", "agent", "design", "design_engineer", at(100),
                 json.dumps({"binding_constraint": {"description": "mass binds"}}), "refused", json.dumps([{"rule": 4, "name": "quantities"}]), at(100)))
@@ -71,6 +75,8 @@ def make_run(folder: Path, *, running: bool = False, decision_free: bool = False
                 json.dumps({"binding_constraint": {"description": "mass binds at the time-best settings"}}), "valid", at(110)))
     db.execute("INSERT INTO run (id, role, actor, model, started, ended, outcome) VALUES (?,?,?,?,?,?,?)",
                ("run-2", "design_engineer", "agent", model, at(121), at(300), "done"))
+    db.execute("INSERT INTO call (id, tool, inputs, result, time, seconds, run_id) VALUES (?,?,?,?,?,?,?)",
+               ("call-reshape", "reshape", json.dumps({"design": "bracket-mass@v1", "lug_thickness": 4}), "{}", at(150), 1.0, "run-2"))
     db.execute("INSERT INTO call (id, tool, inputs, result, time, run_id) VALUES (?,?,?,?,?,?)",
                ("call-ask", "ask_requester", json.dumps({"design": "bracket-mass@v2", "question": "May the mass demand be raised?"}), "{}", at(250), "run-2"))
     db.execute("INSERT INTO run (id, role, actor, model, started, ended, outcome) VALUES (?,?,?,?,?,?,?)",
@@ -181,10 +187,55 @@ def test_the_overview_has_a_cell_per_role_the_traffic_and_the_axis(root):
     ax = pic["axis"]
     assert len(ax["marks"]) == len(run.events) and ax["clock"] == "0:05:00" and ax["next"]["what"] == "woke"
     assert ax["x0"] < ax["head"] < ax["x1"]
-    assert pic["jumps"]["next_decision"] == "320.000" and pic["jumps"]["start"] == "0"
+    assert pic["jumps"]["next_decision"] == "320.000000" and pic["jumps"]["previous_decision"] is None and pic["jumps"]["start"] == "0"
     assert "Design engineer → Requester: question" in [s["head"] for s in pic["sentences"]]
     assert R.picture_of(run, "bracket-mass@v2") == root / "h1-bracket-mass-20261103T044650Z" / "pictures" / "bracket-mass-v2-open-01.png"
     assert R.picture_of(run, "bracket-mass@v1") is None
+
+
+def test_the_jumps_step_through_every_event_and_between_decisions(root):
+    run = R.read(root, "h1-bracket-mass-20261103T044650Z/open-01")
+    # walking "next" from the start, as the links and the arrow keys do, visits every event time and never stands still
+    at, visited = run.start - timedelta(seconds=1), []
+    while (j := overview(run, R.state(run, at))["jumps"])["next"] is not None:
+        at = R.parse_at(run, j["next"])
+        visited.append(at)
+    assert visited == sorted({e.time for e in run.events})
+    # the clock a fraction of a millisecond before an event stands on it: the event is neither previous nor next
+    answer = next(e for e in run.events if e.type == "answer")
+    j = overview(run, R.state(run, answer.time - timedelta(microseconds=300)))["jumps"]
+    assert R.parse_at(run, j["next"]) > answer.time and R.parse_at(run, j["previous"]) < answer.time
+    # decisions both ways: at the acceptance the previous decision is the accept_design, at the answer there is none before
+    accepted = next(e for e in run.events if e.type == "status")
+    j = overview(run, R.state(run, accepted.time))["jumps"]
+    assert j["previous_decision"] == "500.000000" and j["next_decision"] is None
+    j = overview(run, R.state(run, answer.time))["jumps"]
+    assert j["previous_decision"] is None and j["next_decision"] == "500.000000"
+
+
+def test_the_activity_lines_show_what_a_role_does_between_its_words(root, client):
+    run = R.read(root, "h1-bracket-mass-20261103T044650Z/open-01")
+    planner = next(b for b in run.bars if b.role == "process_planner")
+    # consecutive calls of one word are one act, from the first call to the end of the last
+    assert [(a.word, a.count) for a in planner.acts] == [("reading", 1), ("analysing", 3), ("planning", 1)]
+    assert planner.acts[1].start == T0 + timedelta(seconds=10) and planner.acts[1].end == T0 + timedelta(seconds=16)
+    # the state at a time knows the act, and the cell says it
+    st = R.state(run, T0 + timedelta(seconds=12))
+    assert st.activity["process_planner"].word == "analysing"
+    pic = overview(run, st)
+    cells = {n["role"]: n for n in pic["nodes"]}
+    assert cells["process_planner"]["note"] == "analysing"
+    assert overview(run, R.state(run, T0 + timedelta(seconds=150.5)))["nodes"][1]["note"] == "reshaping the design bracket-mass@v1"
+    assert overview(run, R.state(run, T0 + timedelta(seconds=30)))["nodes"][2]["note"] == "awake"
+    # one line per role above the axis: the planner's waking as a bar, its acts on it, and the three messages it sent as marks
+    lanes = {l["role"]: l for l in pic["axis"]["lanes"]}
+    assert list(lanes) == ["requester", "design_engineer", "process_planner"]
+    assert len(lanes["process_planner"]["bars"]) == 1 and len(lanes["process_planner"]["acts"]) == 3 and len(lanes["process_planner"]["marks"]) == 3
+    assert lanes["process_planner"]["awake"] and not lanes["requester"]["awake"]
+    assert [a["past"] for a in lanes["process_planner"]["acts"]] == [True, True, False]
+    assert all(l["y"] < pic["axis"]["y"] for l in pic["axis"]["lanes"]) and pic["axis"]["top"] < pic["axis"]["lanes"][0]["y"] + 1
+    page = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=12")
+    assert 'class="lane"' in page.text and "0:00:10–0:00:16 analysing ×3 · plan-1@v3" in page.text and "reshaping, planning" in page.text
 
 
 def test_parse_at_takes_seconds_or_a_time_and_defaults_to_the_end(root):
@@ -223,3 +274,16 @@ def test_runs_pages(client, root):
 def test_runs_pages_without_a_root(home):
     page = TestClient(create_app(home)).get("/runs")
     assert page.status_code == 200 and "No runs root is set" in page.text
+
+
+def test_the_player_fragment_carries_the_clock(client):
+    view = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01/view?at=300.5")
+    assert view.status_code == 200 and view.text.lstrip().startswith("<div id=\"overview\"") and "<html" not in view.text
+    assert 'data-at="300.5"' in view.text and 'data-next="301.0"' in view.text and 'data-end="600.0"' in view.text and 'data-live=""' in view.text
+    assert 'data-previous="300.000000"' in view.text and 'data-next-event="301.000000"' in view.text and 'data-next-decision="320.000000"' in view.text
+    assert 'id="playhead"' in view.text and 'id="clock"' in view.text and 'id="next-in"' in view.text
+    page = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=300.5").text
+    assert 'id="player"' in page and 'id="overview"' in page and "follow now" not in page
+    live = client.get("/runs/h1-plate-20261101T000000Z/closed-01?at=900").text
+    assert "follow now" in live and 'data-live="1"' in live and 'data-end="900.0"' in live     # live, the clock at now is the axis's end
+    assert ">now</text>" in live and "following" in live

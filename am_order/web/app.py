@@ -667,15 +667,23 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             raise HTTPException(404, "no picture of this version beside the run")
         return FileResponse(path)
 
-    @app.get("/runs/{run_id:path}", response_class=HTMLResponse)
-    def run_page(request: Request, run_id: str, at: str | None = None):
+    def run_view(request: Request, run_id: str, at: str | None, template: str):
         root = app.state.runs_root
         run = R.read(root, run_id) if root else None
         if run is None:
             raise HTTPException(404, f"{run_id} is not a run under the runs root")
         st = R.state(run, R.parse_at(run, at))
         pic = overview(run, st)
-        return page(request, "run.html", None, "run", run=run, state=st, pic=pic, picture=R.picture_of(run, st.design) is not None)
+        return page(request, template, None, "run", run=run, state=st, pic=pic, picture=R.picture_of(run, st.design) is not None)
+
+    @app.get("/runs/{run_id:path}/view", response_class=HTMLResponse)
+    def run_fragment(request: Request, run_id: str, at: str | None = None):
+        """The part of the run's page that depends on the time: what the player fetches when the clock passes an event."""
+        return run_view(request, run_id, at, "_overview.html")
+
+    @app.get("/runs/{run_id:path}", response_class=HTMLResponse)
+    def run_page(request: Request, run_id: str, at: str | None = None):
+        return run_view(request, run_id, at, "run.html")
 
     return app
 

@@ -57,6 +57,10 @@ it. It is one picture with two uses, the system operator's console and the demon
 - **The time axis** runs from the run's start to the last time the log knows, every event a mark, decisions larger, the clock's
   position on it, and "next in …" beside it. In playback the axis is there from the start; live it grows, and nothing is known
   beyond now. Jumps (next event, next decision, a click on the axis) move the clock without bending it.
+- **The activity lines**, one per role parallel to the axis, show what happens between the events: each waking as a bar, within
+  it the work the role did (reading, analysing, reshaping or planning, from the tool calls the record keeps per waking), and on
+  it every word the role said. The cell says the same in words at the clock's time. The lines are what makes a long silence
+  legible: who is working, on what, and who is waiting.
 - **The catalogue** lists the recorded runs by product, experiment and condition (negotiation, decision makers, when, how long,
   outcome). It reads the folders am-llm leaves today; when the requester stands and registers runs on the shared surface, it
   becomes a view of that contract and shows running runs beside finished ones.
@@ -98,7 +102,8 @@ Done:
 
 Next, independent of the open decisions:
 
-2. **The overview playing.** The clock in the page, speeds, pause, jumps, keyboard; the same page following a running run.
+2. **The overview playing.** The clock in the page, speeds, pause, jumps both ways between events and between decisions,
+   keyboard; the activity lines; the same page following a running run.
 
 On am-llm's side, as soon as the review is read, in parallel with the builds here; it depends on the brief's form and on where the
 mandate becomes the reservation, and on nothing else that is open:

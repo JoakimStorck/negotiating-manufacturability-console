@@ -5,79 +5,148 @@
 <style>
 .overview { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1rem; }
 .overview svg { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
-.controls a, .controls span.off { display: inline-block; margin-right: .6rem; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; }
+.controls a, .controls span.off, .player button { display: inline-block; margin-right: .6rem; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; }
 .controls span.off { color: var(--muted); }
+.player { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: .4rem 0 .6rem; }
+.player button { background: var(--bg); color: var(--accent); font: inherit; cursor: pointer; }
+.player button.on { background: var(--accent); color: #fff; }
+.player .speed { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: center; }
+.player .keys { color: var(--muted); font-size: .85rem; margin-left: auto; }
 .events li { list-style: none; margin: .2rem 0; padding-left: .6rem; border-left: 3px solid var(--line); }
 .events ul { padding: 0; margin: 0; }
 .events .clock { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: .4rem; }
 .events .decision { font-weight: 600; }
 .facts dt { color: var(--muted); font-size: .85rem; margin-top: .4rem; } .facts dd { margin: 0; }
 .legend span { margin-right: .7rem; white-space: nowrap; }
+.cell.awake rect { animation: none; }
+.cell.waiting rect { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
 </style>
 <p class="muted"><a href="/runs">Runs</a> › <a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a> › {{ run.entry.condition }}</p>
 <h1>{{ run.entry.lineages|join(", ") or run.entry.condition }} <span class="muted">· {{ run.entry.negotiation or "" }} negotiation{% if run.entry.held and run.entry.held != "off" %}, held {{ run.entry.held }}{% endif %}{% if run.live %}, running{% endif %}</span></h1>
-<div class="overview">
-<div>
-<svg viewBox="0 0 {{ pic.width }} {{ pic.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
-  <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker>
-  </defs>
-  {% for e in pic.edges %}
-  <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" stroke="{{ e.stroke }}" stroke-width="{{ 3.5 if e.bold else 1.5 }}" marker-end="url(#arrow)" {% if not e.bold %}opacity=".7"{% endif %}/>
-  {% if e.words %}<text x="{{ e.label_x }}" y="{{ e.label_y }}" text-anchor="{{ e.anchor }}" fill="#5f6b76" font-size="12">{{ e.words }}</text>{% endif %}
-  {% endfor %}
-  {% for n in pic.nodes %}
-  <g>
-    <rect x="{{ n.x }}" y="{{ n.y }}" width="{{ n.w }}" height="{{ n.h }}" rx="6" fill="{{ n.fill }}" stroke="{{ n.stroke }}" stroke-width="{{ 3 if n.mode in ('awake', 'waiting') else 1.5 }}"/>
-    <text x="{{ n.x + 12 }}" y="{{ n.y + 24 }}" font-weight="600" font-size="16" fill="#1d2125">{{ n.title }}</text>
-    <text x="{{ n.x + 12 }}" y="{{ n.y + 44 }}" fill="#5f6b76" font-size="12">{{ n.maker }}</text>
-    <text x="{{ n.x + 12 }}" y="{{ n.y + 62 }}" fill="{{ n.stroke if n.mode in ('awake', 'waiting') else '#5f6b76' }}" font-size="12">{{ n.note }}</text>
-  </g>
-  {% endfor %}
-  {# the time axis #}
-  {% set ax = pic.axis %}
-  {% if ax.marks is defined and ax.ticks %}
-  <line x1="{{ ax.x0 }}" y1="{{ ax.y }}" x2="{{ ax.x1 }}" y2="{{ ax.y }}" stroke="#1d2125" stroke-width="1"/>
-  {% for t in ax.ticks %}<line x1="{{ t.x }}" y1="{{ ax.y }}" x2="{{ t.x }}" y2="{{ ax.y + 6 }}" stroke="#1d2125"/><text x="{{ t.x }}" y="{{ ax.y + 20 }}" text-anchor="middle" font-size="11" fill="#5f6b76">{{ t.label }}</text>{% endfor %}
-  {% for m in ax.marks %}<line x1="{{ m.x }}" y1="{{ ax.y - m.h }}" x2="{{ m.x }}" y2="{{ ax.y }}" stroke="{{ m.colour }}" stroke-width="{{ 2.5 if m.h > 20 else 1.5 }}" {% if m.dashed %}stroke-dasharray="2 2"{% endif %} {% if not m.past %}opacity=".35"{% endif %}><title>{{ m.title }}</title></line>{% endfor %}
-  <line x1="{{ ax.head }}" y1="{{ ax.y - 40 }}" x2="{{ ax.head }}" y2="{{ ax.y + 8 }}" stroke="#b3261e" stroke-width="2"/>
-  <polygon points="{{ ax.head - 6 }},{{ ax.y - 48 }} {{ ax.head + 6 }},{{ ax.y - 48 }} {{ ax.head }},{{ ax.y - 40 }}" fill="#b3261e"/>
-  <text x="{{ ax.head }}" y="{{ ax.y - 54 }}" text-anchor="middle" font-size="13" font-weight="600" fill="#b3261e">{{ ax.clock }}</text>
-  <text x="{{ ax.x0 }}" y="{{ ax.y + 38 }}" font-size="11" fill="#5f6b76">{{ ax.start }}</text>
-  <text x="{{ ax.x1 }}" y="{{ ax.y + 38 }}" text-anchor="end" font-size="11" fill="#5f6b76">{% if ax.live %}now{% else %}{{ ax.end }}{% endif %}</text>
-  {% if ax.next %}<text x="{{ ax.x1 }}" y="{{ ax.y - 54 }}" text-anchor="end" font-size="13" fill="#5f6b76">next in {{ ax.next.in }} · {{ ax.next.what }}</text>
-  {% elif pic.outcome %}<text x="{{ ax.x1 }}" y="{{ ax.y - 54 }}" text-anchor="end" font-size="13" font-weight="600" fill="#1d2125">{{ pic.outcome }}</text>{% endif %}
-  {% endif %}
-</svg>
-<p class="controls">
-  {% for key, word in [("start", "⏮ start"), ("previous", "◀ previous event"), ("next", "next event ▶"), ("next_decision", "next decision ▶▶"), ("end", "end ⏭")] %}
-  {% if pic.jumps[key] is not none %}<a href="/runs/{{ run.entry.id }}?at={{ pic.jumps[key] }}">{{ word }}</a>{% else %}<span class="off">{{ word }}</span>{% endif %}
-  {% endfor %}
-</p>
-<p class="legend">{% for name, c in pic.legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %}</p>
-<div class="events">
-<h2>What happened last</h2>
-<ul>
-{% for s in pic.sentences %}
-<li style="border-color: {{ s.colour }}"><span class="clock">{{ s.clock }}</span><span class="{% if s.decision %}decision{% endif %}">{{ s.head }}</span>{% if s.text %} <span class="muted">— {{ s.text }}</span>{% endif %}</li>
-{% endfor %}
-</ul>
+<div class="player" id="player">
+  <button id="play" title="space">▶ play</button>
+  <button id="slower" title="-">−</button><span class="speed" id="speed">×1</span><button id="faster" title="+">+</button>
+  {% if run.live %}<button id="follow" title="l">follow now</button>{% endif %}
+  <span class="keys" id="keys">without script the links under the picture step through the run</span>
 </div>
-</div>
-<aside style="border:0;padding:0">
-  {% if pic.design %}
-  <h2>{{ pic.design }}</h2>
-  {% if picture %}<img class="picture" src="/runs/{{ run.entry.id }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}
-  {% else %}<h2>No design yet</h2>{% endif %}
-  <dl class="facts">
-    <dt>Experiment</dt><dd>{{ run.entry.experiment }} / {{ run.entry.condition }}</dd>
-    {% if run.order %}<dt>Order</dt><dd>{{ run.order[0] }}@{{ run.order[1] }}</dd>{% endif %}
-    <dt>Decision makers</dt><dd>{% for role, who in run.decision_makers.items() %}{{ role.replace("_", " ") }}: {{ who }}<br>{% else %}none woke{% endfor %}</dd>
-    {% if run.accepted_plan %}<dt>Accepted plan</dt><dd>{{ run.accepted_plan }}</dd>{% endif %}
-    <dt>Outcome</dt><dd>{{ run.entry.outcome or run.entry.status }}{% if run.entry.reason %} ({{ run.entry.reason }}){% endif %}</dd>
-    <dt>Events</dt><dd>{{ state.seen }} of {{ run.events|length }} at this time</dd>
-  </dl>
-</aside>
-</div>
+{% include "_overview.html" %}
+<script>
+(function () {
+  // The player: a clock in log seconds from the run's start and a speed. Between events the page moves the playhead and the clock
+  // itself; when the clock passes the next event, or jumps, it fetches the picture at that time from the server. Live, the clock
+  // follows now and the picture is fetched every two seconds, since the next event is not known.
+  const base = "/runs/{{ run.entry.id }}";
+  const SPEEDS = [0.5, 1, 2, 4, 8, 16, 32, 64];
+  const P = { at: 0, speed: 1, playing: false, follow: false, next: null, end: 0, span: 1, live: false, epoch: 0, x0: 0, x1: 1,
+              last: performance.now(), fetching: false, lastFetch: 0, lastLive: 0, lastUrl: 0 };
+
+  function num(v) { return v === "" || v === undefined ? null : parseFloat(v); }
+  function readData() {
+    const d = document.getElementById("overview").dataset;
+    P.at = num(d.at) || 0; P.next = num(d.next); P.end = num(d.end) || 0; P.span = num(d.span) || 1;
+    P.live = d.live === "1"; P.epoch = num(d.startEpoch) || 0; P.x0 = num(d.x0) || 0; P.x1 = num(d.x1) || 1;
+    for (const a of document.querySelectorAll("#overview .controls a[data-seconds]")) {
+      a.addEventListener("click", function (ev) { ev.preventDefault(); goTo(parseFloat(a.dataset.seconds)); });
+    }
+    const axis = document.getElementById("axis");
+    if (axis) axis.addEventListener("click", function (ev) {
+      const svg = document.getElementById("picture");
+      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      goTo(Math.max(0, Math.min(1, (p.x - P.x0) / (P.x1 - P.x0))) * P.span);
+    });
+  }
+
+  function hms(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 3600) + ":" + String(Math.floor(s % 3600 / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
+  function span(s) { s = Math.ceil(s); if (s >= 3600) return Math.floor(s / 3600) + " h " + Math.floor(s % 3600 / 60) + " min"; if (s >= 60) return Math.floor(s / 60) + " min " + (s % 60) + " s"; return s + " s"; }
+
+  function paint() {
+    const head = document.getElementById("playhead"), cap = document.getElementById("playhead-cap"), clock = document.getElementById("clock"), nxt = document.getElementById("next-in");
+    if (!head) return;
+    const x = P.x0 + (P.x1 - P.x0) * Math.max(0, Math.min(1, P.at / P.span));
+    head.setAttribute("x1", x); head.setAttribute("x2", x);
+    const top = parseFloat(head.getAttribute("y1"));
+    cap.setAttribute("points", (x - 6) + "," + (top - 8) + " " + (x + 6) + "," + (top - 8) + " " + x + "," + top);
+    clock.setAttribute("x", x); clock.textContent = hms(P.at);
+    if (P.next !== null) nxt.textContent = "next in " + span(P.next - P.at) + " · " + nxt.textContent.replace(/^next in [^·]*·\s*/, "");
+    document.getElementById("play").textContent = P.playing ? "❚❚ pause" : "▶ play";
+    document.getElementById("play").classList.toggle("on", P.playing);
+    document.getElementById("speed").textContent = "×" + P.speed;
+    const f = document.getElementById("follow"); if (f) f.classList.toggle("on", P.follow);
+    if (performance.now() - P.lastUrl > 1000) { P.lastUrl = performance.now(); history.replaceState(null, "", base + "?at=" + P.at.toFixed(1)); }
+  }
+
+  async function fetchAt(seconds) {
+    if (P.fetching) return;
+    P.fetching = true;
+    try {
+      const r = await fetch(base + "/view?at=" + seconds.toFixed(6));
+      if (r.ok) {
+        const html = await r.text();
+        const holder = document.createElement("div"); holder.innerHTML = html;
+        document.getElementById("overview").replaceWith(holder.firstElementChild);
+        const playing = P.playing, speed = P.speed, follow = P.follow;
+        readData(); P.playing = playing; P.speed = speed; P.follow = follow;
+      }
+    } finally { P.fetching = false; P.lastFetch = performance.now(); paint(); }
+  }
+
+  function goTo(seconds) { P.follow = false; P.at = seconds; fetchAt(seconds); }
+  function now() { return Date.now() / 1000 - P.epoch; }
+
+  function tick(t) {
+    const dt = (t - P.last) / 1000; P.last = t;
+    if (P.follow && P.live) {
+      P.at = now();
+      if (t - P.lastLive > 2000 && !P.fetching) { P.lastLive = t; fetchAt(P.at); }
+    } else if (P.playing) {
+      P.at += dt * P.speed;
+      if (P.next !== null && P.at >= P.next) {
+        if (t - P.lastFetch > 150 && !P.fetching) { P.at = Math.max(P.at, P.next); fetchAt(P.at); }
+      } else if (P.at >= P.end && !P.live) {
+        P.at = P.end; P.playing = false; fetchAt(P.at);
+      } else if (P.at >= P.end && P.live) {
+        P.follow = true;
+      }
+    }
+    paint();
+    requestAnimationFrame(tick);
+  }
+
+  function step(key) {
+    const d = document.getElementById("overview").dataset;
+    const v = num(d[key]); if (v !== null) goTo(v);
+  }
+  function faster(up) {
+    const i = SPEEDS.indexOf(P.speed);
+    P.speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, i + (up ? 1 : -1)))]; paint();
+  }
+
+  document.getElementById("play").addEventListener("click", function () { P.playing = !P.playing; if (P.playing && P.at >= P.end && !P.live) goTo(0); paint(); });
+  document.getElementById("faster").addEventListener("click", function () { faster(true); });
+  document.getElementById("slower").addEventListener("click", function () { faster(false); });
+  const follow = document.getElementById("follow");
+  if (follow) follow.addEventListener("click", function () { P.follow = !P.follow; P.playing = false; if (P.follow) fetchAt(now()); paint(); });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA" || ev.target.tagName === "SELECT") return;
+    const k = ev.key;
+    if (k === " ") { ev.preventDefault(); document.getElementById("play").click(); }
+    else if (k === "ArrowRight") { ev.preventDefault(); step("nextEvent"); }
+    else if (k === "ArrowLeft") { ev.preventDefault(); step("previous"); }
+    else if (k === "d") step("nextDecision");
+    else if (k === "D") step("previousDecision");
+    else if (k === "+" || k === "=") faster(true);
+    else if (k === "-") faster(false);
+    else if (k === "Home") goTo(0);
+    else if (k === "End") goTo(P.end);
+    else if (k === "l" && follow) follow.click();
+  });
+
+  readData(); paint(); requestAnimationFrame(tick);
+  // written last, so that the hint shows only when the player is up
+  document.getElementById("keys").textContent = "space play · ← → event · d D decision · + − speed · Home End" + (follow ? " · l now" : "") + " · click the axis";
+})();
+</script>
 {% endblock %}
 {% block aside %}{% endblock %}
