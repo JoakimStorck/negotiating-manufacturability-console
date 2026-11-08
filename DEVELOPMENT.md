@@ -66,6 +66,9 @@ it. It is one picture with two uses, the system operator's console and the demon
   ended turn with the model's own summary of its thinking and the calls it made (a click puts the clock there), and where it
   stands now (thinking for so long, the tools answering, or nothing written yet). The summary is the model's summary, not its
   thinking, and the panel says what a call was about, not its result; the result is a level deeper and am-llm's console's.
+- **The page fills the window.** The title and the player stand at the top, the time picture against the bottom edge, and
+  between them the block diagram, the turns and the design take the height that is left, the turns scrolling in their column
+  with the latest in view. The time picture is thus always in the same place however long the turns run.
 - **The catalogue** lists the recorded runs by product, experiment and condition (negotiation, decision makers, when, how long,
   outcome). It reads the folders am-llm leaves today; when the requester stands and registers runs on the shared surface, it
   becomes a view of that contract and shows running runs beside finished ones.

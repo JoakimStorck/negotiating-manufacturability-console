@@ -235,7 +235,7 @@ def test_the_activity_lines_show_what_a_role_does_between_its_words(root, client
     pic = overview(run, st)
     cells = {n["role"]: n for n in pic["nodes"]}
     assert cells["process_planner"]["note"] == "analysing"
-    assert overview(run, R.state(run, T0 + timedelta(seconds=150.5)))["nodes"][1]["note"] == "reshaping the design bracket-mass@v1"
+    assert overview(run, R.state(run, T0 + timedelta(seconds=150.5)))["nodes"][1]["note"] == "reshaping bracket-mass@v1"
     assert overview(run, R.state(run, T0 + timedelta(seconds=30)))["nodes"][2]["note"] == "thinking"
     assert overview(run, R.state(run, T0 + timedelta(seconds=45)))["nodes"][2]["note"] == "awake"
     # one line per role above the axis: the planner's waking as a bar, its acts on it, and the three messages it sent as marks

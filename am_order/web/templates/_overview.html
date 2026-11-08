@@ -9,9 +9,8 @@
      data-previous-turn="{{ pic.jumps.previous_turn if pic.jumps.previous_turn is not none else '' }}" data-next-turn="{{ pic.jumps.next_turn if pic.jumps.next_turn is not none else '' }}"
      data-previous-decision="{{ pic.jumps.previous_decision if pic.jumps.previous_decision is not none else '' }}"
      data-next-decision="{{ pic.jumps.next_decision if pic.jumps.next_decision is not none else '' }}">
-<div>
 <div class="top">
-<svg id="diagram" viewBox="0 0 {{ pic.diagram.width }} {{ pic.diagram.height }}" width="{{ pic.diagram.width * 0.72 }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
+<svg id="diagram" viewBox="0 0 {{ pic.diagram.width }} {{ pic.diagram.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker>
   </defs>
@@ -46,7 +45,35 @@
 <p class="muted">{% if pic.outcome %}The run has ended.{% else %}The roles sleep; a message or an answer wakes the next.{% endif %}</p>
 {% endfor %}
 </div>
+<aside style="border:0;padding:0">
+  {% if pic.design %}
+  <h2>{{ pic.design }}</h2>
+  {% if picture %}<img class="picture" src="/runs/{{ run.entry.id }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}
+  {% else %}<h2>No design yet</h2>{% endif %}
+<div class="events">
+<h2>What happened last</h2>
+<ul>
+{% for s in pic.sentences %}
+<li style="border-color: {{ s.colour }}"><span class="clock">{{ s.clock }}</span><span class="{% if s.decision %}decision{% endif %}">{{ s.head }}</span>{% if s.text %} <span class="muted">— {{ s.text }}</span>{% endif %}</li>
+{% endfor %}
+</ul>
 </div>
+  <dl class="facts">
+    <dt>Experiment</dt><dd>{{ run.entry.experiment }} / {{ run.entry.condition }}</dd>
+    {% if run.order %}<dt>Order</dt><dd>{{ run.order[0] }}@{{ run.order[1] }}</dd>{% endif %}
+    <dt>Decision makers</dt><dd>{% for role, who in run.decision_makers.items() %}{{ role.replace("_", " ") }}: {{ who }}<br>{% else %}none woke{% endfor %}</dd>
+    {% if run.accepted_plan %}<dt>Accepted plan</dt><dd>{{ run.accepted_plan }}</dd>{% endif %}
+    <dt>Outcome</dt><dd>{{ run.entry.outcome or run.entry.status }}{% if run.entry.reason %} ({{ run.entry.reason }}){% endif %}</dd>
+    <dt>Events</dt><dd>{{ state.seen }} of {{ run.events|length }} at this time</dd>
+  </dl>
+</aside>
+</div>
+<div class="time">
+<p class="bar">
+  {% for key, word in [("start", "⏮ start"), ("previous_decision", "◀◀ decision"), ("previous", "◀ event"), ("previous_turn", "‹ turn"), ("next_turn", "turn ›"), ("next", "event ▶"), ("next_decision", "decision ▶▶"), ("end", "end ⏭")] %}
+  {% if pic.jumps[key] is not none %}<a href="/runs/{{ run.entry.id }}?at={{ pic.jumps[key] }}" data-seconds="{{ pic.jumps[key] }}">{{ word }}</a>{% else %}<span class="off">{{ word }}</span>{% endif %}
+  {% endfor %}
+ <span class="legend">{% for name, c in pic.legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %} <span>·</span>{% for name, c in pic.act_legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %}</span></p>
 <svg id="picture" viewBox="0 0 {{ pic.width }} {{ pic.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
   {% if ax.marks is defined and ax.ticks %}
   <g id="axis">
@@ -72,34 +99,5 @@
   </g>
   {% endif %}
 </svg>
-<p class="controls">
-  {% for key, word in [("start", "⏮ start"), ("previous_decision", "◀◀ decision"), ("previous", "◀ event"), ("previous_turn", "‹ turn"), ("next_turn", "turn ›"), ("next", "event ▶"), ("next_decision", "decision ▶▶"), ("end", "end ⏭")] %}
-  {% if pic.jumps[key] is not none %}<a href="/runs/{{ run.entry.id }}?at={{ pic.jumps[key] }}" data-seconds="{{ pic.jumps[key] }}">{{ word }}</a>{% else %}<span class="off">{{ word }}</span>{% endif %}
-  {% endfor %}
-</p>
-<p class="legend">{% for name, c in pic.legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %}
-<span class="muted">· on the activity lines</span> {% for name, c in pic.act_legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %}</p>
-<div class="events">
-<h2>What happened last</h2>
-<ul>
-{% for s in pic.sentences %}
-<li style="border-color: {{ s.colour }}"><span class="clock">{{ s.clock }}</span><span class="{% if s.decision %}decision{% endif %}">{{ s.head }}</span>{% if s.text %} <span class="muted">— {{ s.text }}</span>{% endif %}</li>
-{% endfor %}
-</ul>
 </div>
-</div>
-<aside style="border:0;padding:0">
-  {% if pic.design %}
-  <h2>{{ pic.design }}</h2>
-  {% if picture %}<img class="picture" src="/runs/{{ run.entry.id }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}
-  {% else %}<h2>No design yet</h2>{% endif %}
-  <dl class="facts">
-    <dt>Experiment</dt><dd>{{ run.entry.experiment }} / {{ run.entry.condition }}</dd>
-    {% if run.order %}<dt>Order</dt><dd>{{ run.order[0] }}@{{ run.order[1] }}</dd>{% endif %}
-    <dt>Decision makers</dt><dd>{% for role, who in run.decision_makers.items() %}{{ role.replace("_", " ") }}: {{ who }}<br>{% else %}none woke{% endfor %}</dd>
-    {% if run.accepted_plan %}<dt>Accepted plan</dt><dd>{{ run.accepted_plan }}</dd>{% endif %}
-    <dt>Outcome</dt><dd>{{ run.entry.outcome or run.entry.status }}{% if run.entry.reason %} ({{ run.entry.reason }}){% endif %}</dd>
-    <dt>Events</dt><dd>{{ state.seen }} of {{ run.events|length }} at this time</dd>
-  </dl>
-</aside>
 </div>

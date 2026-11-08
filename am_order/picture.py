@@ -106,7 +106,9 @@ def _doing(act) -> str:
     """What an awake role does, for its cell: the act's word, else just awake."""
     if act is None:
         return "awake"
-    return act.word + (f" {act.detail}" if act.detail and act.word in ("reshaping the design", "planning") else "")
+    if act.detail and act.word in ("reshaping the design", "planning"):
+        return f"{act.word.split()[0]} {act.detail}"     # short enough for the cell: "reshaping bracket-mass@v11"
+    return act.word
 
 
 def _anchor(a: dict, b: dict) -> tuple[float, float]:

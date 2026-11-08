@@ -3,36 +3,49 @@
 {% block mainclass %}wide{% endblock %}
 {% block content %}
 <style>
-.overview { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1rem; }
-.overview svg#picture { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
-.top { display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: .6rem; }
-.top svg { height: auto; max-width: 100%; flex: none; }
-.wakings { flex: 1 1 18rem; min-width: 0; }
-.controls a, .controls span.off, .player button { display: inline-block; margin-right: .6rem; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; }
-.controls span.off { color: var(--muted); }
-.player { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: .4rem 0 .6rem; }
-.player button { background: var(--bg); color: var(--accent); font: inherit; cursor: pointer; }
+/* the page fills the window: the title and the player at the top, the time picture against the bottom, and between them the
+   block diagram, the turns and the design, taking the height that is left; the turns scroll inside their column */
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; overflow: hidden; }
+main.wide { flex: 1 1 auto; min-height: 0; display: block; padding: .5rem 1rem .6rem; }
+main.wide > section { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.crumbs { margin: 0 0 .1rem; } h1 { margin: 0 0 .3rem; }
+.player { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: 0 0 .5rem; flex: none; }
+.player button { display: inline-block; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); color: var(--accent); font: inherit; cursor: pointer; }
 .player button.on { background: var(--accent); color: #fff; }
 .player .speed { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: center; }
 .player .keys { color: var(--muted); font-size: .85rem; margin-left: auto; }
-.events li { list-style: none; margin: .2rem 0; padding-left: .6rem; border-left: 3px solid var(--line); }
+.overview { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.top { flex: 1 1 auto; min-height: 0; display: flex; gap: 1.2rem; align-items: stretch; }
+.top svg#diagram { flex: none; height: 100%; width: auto; max-width: 40%; }
+.wakings { flex: 1 1 18rem; min-width: 0; min-height: 0; overflow-y: auto; padding-right: .4rem; }
 .wakings h2 { margin-top: 0; } .wakings h2 .muted { font-weight: normal; font-size: .85rem; }
-.turns { padding: 0; margin: 0; max-height: 21rem; overflow-y: auto; font-size: .9rem; }
+.turns { padding: 0; margin: 0; font-size: .9rem; }
 .turns li { list-style: none; margin: .3rem 0; padding-left: .6rem; border-left: 3px solid #b9a7e2; }
 .turns li.now { border-left-style: dashed; color: var(--muted); }
 .turns .thinking { margin: .15rem 0; color: #4a4a6a; font-size: .9rem; } .turns p { margin: .15rem 0; }
 .turns .acts a { display: inline-block; margin: 0 .5rem .15rem 0; padding: 0 .35rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; font-size: .85rem; }
 .turns .acts a.future { opacity: .45; }
+.top aside { flex: none; width: 22rem; min-height: 0; overflow-y: auto; }
+.top aside h2 { margin: 0 0 .3rem; } .top aside .picture { display: block; }
+.events h2 { margin: .8rem 0 .3rem; font-size: 1rem; }
 .events ul { padding: 0; margin: 0; }
+.events li { list-style: none; margin: .2rem 0; padding-left: .6rem; border-left: 3px solid var(--line); font-size: .9rem; }
 .events .clock, .turns .clock { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: .4rem; }
 .events .decision { font-weight: 600; }
-.facts dt { color: var(--muted); font-size: .85rem; margin-top: .4rem; } .facts dd { margin: 0; }
-.legend span { margin-right: .7rem; white-space: nowrap; }
+.facts { margin: .8rem 0 0; font-size: .9rem; } .facts dt { color: var(--muted); font-size: .8rem; margin-top: .3rem; } .facts dd { margin: 0; }
+.time { flex: none; margin-top: .4rem; }
+.time svg#picture { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
+.bar { display: flex; flex-wrap: wrap; gap: .3rem .5rem; align-items: center; margin: 0 0 .3rem; }
+.bar a, .bar span.off { display: inline-block; padding: .05rem .45rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; font-size: .9rem; }
+.bar span.off { color: var(--muted); }
+.bar .legend { margin-left: auto; font-size: .8rem; color: var(--muted); } .bar .legend > span { margin-left: .5rem; white-space: nowrap; }
+.bar .legend .swatch { width: .7rem; height: .7rem; margin-right: .2rem; }
 .cell.awake rect { animation: none; }
 .cell.waiting rect { animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
 </style>
-<p class="muted"><a href="/runs">Runs</a> › <a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a> › {{ run.entry.condition }}</p>
+<p class="muted crumbs"><a href="/runs">Runs</a> › <a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a> › {{ run.entry.condition }}</p>
 <h1>{{ run.entry.lineages|join(", ") or run.entry.condition }} <span class="muted">· {{ run.entry.negotiation or "" }} negotiation{% if run.entry.held and run.entry.held != "off" %}, held {{ run.entry.held }}{% endif %}{% if run.live %}, running{% endif %}</span></h1>
 <div class="player" id="player">
   <button id="play" title="space">▶ play</button>
@@ -59,7 +72,7 @@
     for (const a of document.querySelectorAll("#overview a[data-seconds]")) {
       a.addEventListener("click", function (ev) { ev.preventDefault(); goTo(parseFloat(a.dataset.seconds)); });
     }
-    for (const t of document.querySelectorAll("#overview .turns")) t.scrollTop = t.scrollHeight;
+    for (const w of document.querySelectorAll("#overview .wakings")) w.scrollTop = w.scrollHeight;
     const axis = document.getElementById("axis");
     if (axis) axis.addEventListener("click", function (ev) {
       const svg = document.getElementById("picture");
