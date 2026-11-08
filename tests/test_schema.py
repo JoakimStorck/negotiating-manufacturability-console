@@ -1,9 +1,10 @@
-"""The two contracts: every example validates; a document out of form is refused with the place named."""
+"""The contracts: every example validates; a document out of form is refused with the place named."""
 import json
 
 import pytest
 
-from am_order import Order, SchemaError, validate_features, validate_order
+from am_order import Order, SchemaError, validate_events, validate_features, validate_order, validate_presence
+from am_order.schema import schema
 from conftest import EXAMPLES, REFERENCE
 
 
@@ -29,3 +30,39 @@ def test_a_document_out_of_form_is_refused():
         validate_order({**Order.new("x").data, "lineage": "Not A Lineage"})
     with pytest.raises(SchemaError):
         validate_features({"schema": "features/1"})
+
+
+def test_the_frames_contracts_validate_their_own_examples():
+    for name, validate in (("presence-1.json", validate_presence), ("events-1.json", validate_events)):
+        examples = schema(name)["examples"]
+        assert examples
+        for example in examples:
+            validate(example)
+
+
+def test_down_is_the_readers_and_never_written():
+    presence = json.loads(json.dumps(schema("presence-1.json")["examples"][0]))
+    presence["parts"][0]["state"] = "down"
+    with pytest.raises(SchemaError) as e:
+        validate_presence(presence)
+    assert "parts/0/state" in str(e.value)
+    machine = json.loads(json.dumps(schema("presence-1.json")["examples"][0]))
+    del machine["parts"][3]["machine"]
+    with pytest.raises(SchemaError):
+        validate_presence(machine)
+
+
+def test_an_event_has_its_kinds_form_and_no_other():
+    events = schema("events-1.json")["examples"][0]
+    acceptance = json.loads(json.dumps(events))
+    acceptance["events"][-1]["relaxations"][0].pop("to")
+    with pytest.raises(SchemaError):
+        validate_events(acceptance)
+    unknown = json.loads(json.dumps(events))
+    unknown["events"].append({"seq": 8, "time": "2026-11-20T09:15:02Z", "kind": "rumour"})
+    with pytest.raises(SchemaError):
+        validate_events(unknown)
+    local = json.loads(json.dumps(events))
+    local["at"] = "2026-11-20T10:15:02+01:00"
+    with pytest.raises(SchemaError):
+        validate_events(local)

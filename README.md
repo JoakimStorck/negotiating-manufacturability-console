@@ -11,7 +11,7 @@ or played back from the record, down to the model's turns.
 
 The person is the order's owner: they define the product, state its needs and metrics, and give the requester its mandate. The tool binds each of the product's objects to features of a design version, which gives the chain need → metric → object → feature.
 
-The tool runs on its own. Its contracts with a design system are two versioned JSON schemas, `am_order/schemas/order-1.json` (the order) and `am_order/schemas/features-1.json` (a design version's feature list). It reads no CAD file: a design system writes the feature list, with the version's picture and its model as STL and 3MF beside it, and the tool shows them as they are.
+The tool runs on its own. Its contracts with a design system are two versioned JSON schemas, `am_order/schemas/order-1.json` (the order) and `am_order/schemas/features-1.json` (a design version's feature list). Its contracts with am-llm's standing frame, sketched before the frame is built, are `am_order/schemas/presence-1.json` (who is up, since when, what waits) and `am_order/schemas/events-1.json` (a run's events by sequence number). It reads no CAD file: a design system writes the feature list, with the version's picture and its model as STL and 3MF beside it, and the tool shows them as they are.
 
 ## Install
 
@@ -79,6 +79,10 @@ A save is atomic: the version is written whole under its hash, then `order.json`
 **The order** (`order-1.json`) holds the product (its name, purpose and overview picture), the needs (`N<n>`: text, importance 1–5, primary need), the objects (`O<n>`: the product's features as the owner sees them, each with its kind, count, datum and optionally its place as a box or a cylinder in mm), the metrics (`M<n>`: demand or wish, the checklist's heading, the object, the quantity and unit, the conditions it is measured under, the ideal value, the needs it measures, its sources, how it is verified, the objects that carry it, and the mandate), the headings' statements where nothing applies, the brief, and the bindings to a design version's features. An id is kept across versions; a need, object or metric is dropped by marking it. A load is the condition a metric is measured under (`under`), not a metric.
 
 **The feature list** (`features-1.json`) holds a design version's id, its features (name, kind, axis or normal, centroid, bounding box, labels, declared or recognised, status, its colour in the picture) and the names and hashes of the picture and the model beside it.
+
+**The frame's presence** (`presence-1.json`, a sketch) holds the frame's clock and its limit for a part's silence, the parts (the roles with the decision maker over each, the one chosen for the next waking, the alternatives, what is awake and what waits; the machines with their class and job), each with when it came, its latest sign of life and the state it declares (`present`, `unavailable`, `left`; `down` is the reader's inference), and the runs the frame holds with their order version and state.
+
+**A run's events** (`events-1.json`, a sketch) holds the run (its order version or scenario, settings, status, outcome) and its events after a sequence number in the order the frame wrote them: wakings, turns, calls, the protocol's messages, the dialogue's words (a showing with its findings and certificate, an acceptance with the relaxations it makes), designs, plans with their verdicts, the case's state, jobs and the end.
 
 The quantities a metric may state, with their units and value forms, are a table in `am_order/vocab/quantities.json`, extensible by a row; the checklist's headings are `am_order/vocab/headings.json`.
 

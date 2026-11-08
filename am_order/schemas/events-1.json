@@ -1,0 +1,479 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "am-order/events-1",
+  "title": "A run's events",
+  "description": "What the standing frame serves for one run: the run as it stands and its events after a sequence number, in the order the frame wrote them. Every event has a sequence number, unique and increasing within the run, and a time, when the thing happened on the frame's clock; the two orders differ where a row is written as something ends (a turn, a call), and a reader that asks for the events after the last number it read misses none. An event never changes once served: a waking's end, a call's answer and a case's new state are events of their own. Playback reads the list from the start; following a live run asks again after the last number. A sketch of 2026-11-08, written before the frame is built (am-llm's design document 2.6).",
+  "type": "object",
+  "required": ["schema", "at", "run", "after", "last", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "events/1"},
+    "at": {"$ref": "#/$defs/time", "description": "When the frame served the document: the live clock's now"},
+    "run": {"$ref": "#/$defs/run"},
+    "after": {"type": "integer", "minimum": 0, "description": "The sequence number asked after; 0 from the start"},
+    "last": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The last sequence number in the document, `after` when there is none; the next request asks after it"
+    },
+    "events": {"type": "array", "items": {"$ref": "#/$defs/event"}}
+  },
+  "$defs": {
+    "time": {"type": "string", "format": "date-time", "pattern": "Z$", "description": "ISO 8601 UTC, on the frame's clock"},
+    "seq": {"type": "integer", "minimum": 1},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "role": {
+      "enum": [
+        "requester",
+        "design_engineer",
+        "process_planner",
+        "production_planner",
+        "quality_engineer",
+        "machine_operator",
+        "maintenance_technician"
+      ]
+    },
+    "maker": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {"kind": {"enum": ["model", "scripted", "operator", "none"]}, "name": {"type": ["string", "null"]}}
+    },
+    "run": {
+      "type": "object",
+      "required": ["id", "status", "started"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "order": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["lineage", "revision", "sha256"],
+              "additionalProperties": false,
+              "properties": {"lineage": {"type": "string"}, "revision": {"type": "integer", "minimum": 1}, "sha256": {"$ref": "#/$defs/sha"}}
+            }
+          ]
+        },
+        "scenario": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["experiment", "condition"],
+              "additionalProperties": false,
+              "properties": {"experiment": {"type": "string"}, "condition": {"type": "string"}}
+            }
+          ]
+        },
+        "lineages": {"type": "array", "items": {"type": "string"}},
+        "settings": {"type": "object", "description": "The run's settings as the frame holds them (negotiation, held, ...)"},
+        "version": {"type": "string", "description": "am-llm's commit the run ran on"},
+        "status": {"enum": ["running", "parked", "done"]},
+        "started": {"$ref": "#/$defs/time"},
+        "ended": {"oneOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
+        "outcome": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": ["requirement", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {"type": "string", "description": "The case's requirement as the record numbers it"},
+        "metric": {"type": ["string", "null"], "description": "The order's metric it carries, where an order exists"},
+        "feature": {"type": ["string", "null"]},
+        "status": {"enum": ["at_risk", "critical", "no_data"]},
+        "value": {"type": ["number", "null"]},
+        "limit": {"type": ["number", "null"]},
+        "margin": {"type": ["number", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "call": {"type": ["string", "null"], "description": "The analysis call the value is from"}
+      }
+    },
+    "relaxation": {
+      "type": "object",
+      "required": ["requirement", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {"type": "string"},
+        "metric": {"type": ["string", "null"]},
+        "what": {"enum": ["margin", "value"], "description": "The margin relaxed to what a plan reaches, or the requirement's value"},
+        "from": {},
+        "to": {},
+        "unit": {"type": ["string", "null"]},
+        "within_mandate": {"type": "boolean"}
+      }
+    },
+    "certificate": {
+      "type": "object",
+      "required": ["text", "cites"],
+      "additionalProperties": false,
+      "description": "The secretary's statement of exhausted means, written from the record",
+      "properties": {
+        "text": {"type": "string", "description": "One line for the reader"},
+        "versions": {"type": "integer", "minimum": 0, "description": "Design versions made since the brief"},
+        "means": {"type": "array", "items": {"enum": ["parameters", "material", "shape"]}},
+        "lightest": {"type": ["string", "null"], "description": "The lightest version holding every other requirement as given"},
+        "cites": {"type": "array", "items": {"type": "string"}, "description": "The calls every number is from"}
+      }
+    },
+    "event": {
+      "oneOf": [
+        {"$ref": "#/$defs/woke"},
+        {"$ref": "#/$defs/turn"},
+        {"$ref": "#/$defs/call"},
+        {"$ref": "#/$defs/results"},
+        {"$ref": "#/$defs/slept"},
+        {"$ref": "#/$defs/message"},
+        {"$ref": "#/$defs/dialogue"},
+        {"$ref": "#/$defs/design"},
+        {"$ref": "#/$defs/plan"},
+        {"$ref": "#/$defs/case"},
+        {"$ref": "#/$defs/job"},
+        {"$ref": "#/$defs/ended"}
+      ]
+    },
+    "woke": {
+      "type": "object",
+      "description": "A role woke: the waking begins. `time` is when it woke.",
+      "required": ["seq", "time", "kind", "waking", "role", "actor", "maker"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "woke"},
+        "waking": {"type": "string"},
+        "role": {"$ref": "#/$defs/role"},
+        "actor": {"enum": ["agent", "operator"]},
+        "maker": {"$ref": "#/$defs/maker"},
+        "case": {"type": ["string", "null"]},
+        "prompt": {"type": "string", "description": "What woke it, whole"}
+      }
+    },
+    "turn": {
+      "type": "object",
+      "description": "The model ended a turn in a waking. `time` is when it ended; it thought for `seconds` before.",
+      "required": ["seq", "time", "kind", "waking", "turn", "seconds"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "turn"},
+        "waking": {"type": "string"},
+        "turn": {"type": "integer", "minimum": 1},
+        "seconds": {"type": "number", "minimum": 0},
+        "model": {"type": ["string", "null"]},
+        "thinking": {"type": "string", "description": "The model's summary of its thinking, where it gives one; whole"},
+        "text": {"type": "string", "description": "What the model said in words; whole"}
+      }
+    },
+    "call": {
+      "type": "object",
+      "description": "A tool call answered. `time` is when it started, `seconds` how long it took; it is served once it has answered, so its `seq` may follow events with later times. The dialogue's calls are `dialogue` events and the messages `message` events, not calls.",
+      "required": ["seq", "time", "kind", "id", "tool", "seconds", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "call"},
+        "id": {"type": "string"},
+        "waking": {"type": ["string", "null"]},
+        "turn": {"type": ["integer", "null"]},
+        "tool": {"type": "string"},
+        "seconds": {"type": "number", "minimum": 0},
+        "error": {"type": "boolean"},
+        "inputs": {"type": "object", "description": "The call's inputs as the record keeps them"},
+        "about": {"type": ["string", "null"]}
+      }
+    },
+    "results": {
+      "type": "object",
+      "description": "The last call of a turn answered: the model's next turn begins. `time` is when.",
+      "required": ["seq", "time", "kind", "waking", "turn"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "results"},
+        "waking": {"type": "string"},
+        "turn": {"type": "integer", "minimum": 1}
+      }
+    },
+    "slept": {
+      "type": "object",
+      "description": "A waking ended.",
+      "required": ["seq", "time", "kind", "waking", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "slept"},
+        "waking": {"type": "string"},
+        "role": {"$ref": "#/$defs/role"},
+        "outcome": {"type": ["string", "null"]}
+      }
+    },
+    "message": {
+      "type": "object",
+      "description": "A message of the protocol between two roles, valid or refused by the record with its reasons.",
+      "required": ["seq", "time", "kind", "id", "type", "from_role", "to_role", "from_actor", "valid", "body"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "message"},
+        "id": {"type": "string"},
+        "case": {"type": ["string", "null"]},
+        "type": {"enum": ["assignment", "status", "query", "answer", "proposal", "report", "escalation"]},
+        "from_role": {"$ref": "#/$defs/role"},
+        "to_role": {"$ref": "#/$defs/role"},
+        "from_actor": {"enum": ["agent", "operator"]},
+        "in_reply_to": {"type": ["string", "null"]},
+        "valid": {"type": "boolean"},
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["rule"],
+            "properties": {"rule": {}, "name": {"type": "string"}, "text": {"type": "string"}}
+          }
+        },
+        "body": {"type": "object", "description": "The whole message as the record holds it"}
+      }
+    },
+    "dialogue": {
+      "type": "object",
+      "description": "A word of the requester's dialogue with the design engineer, as the call that carries it. A showing carries its findings against the requirements in force and, where it relaxes one, the secretary's certificate; an acceptance carries the relaxations it makes (R12: a plan at risk is accepted only by relaxing the margin to what it reaches).",
+      "required": ["seq", "time", "kind", "id", "tool", "inputs"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "dialogue"},
+        "id": {"type": "string"},
+        "case": {"type": ["string", "null"]},
+        "tool": {
+          "enum": ["brief", "ask_requester", "answer_requester", "remark", "show_design", "accept_design", "decline_order", "consent"]
+        },
+        "actor": {
+          "enum": ["agent", "operator", "owner"],
+          "description": "Who spoke for the requester's side: its agent, a person in the role, or the order's owner through the order view"
+        },
+        "inputs": {"type": "object"},
+        "within_brief": {
+          "type": "boolean",
+          "description": "A consent the brief gives on its own to a version within what it lets change: no act of the requester's"
+        },
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+        "relaxations": {"type": "array", "items": {"$ref": "#/$defs/relaxation"}},
+        "certificate": {"$ref": "#/$defs/certificate"}
+      }
+    },
+    "design": {
+      "type": "object",
+      "description": "A design version made in the run, or one the run began with (its `time` before the run's start).",
+      "required": ["seq", "time", "kind", "id", "made_by_role", "made_by_actor", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "design"},
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}@v[1-9][0-9]*$"},
+        "parent": {"type": ["string", "null"]},
+        "made_by_role": {"$ref": "#/$defs/role"},
+        "made_by_actor": {"enum": ["agent", "operator"]},
+        "sha256": {"$ref": "#/$defs/sha"},
+        "features": {"type": "boolean", "description": "Its feature list (`features-1`) can be fetched from the frame"}
+      }
+    },
+    "plan": {
+      "type": "object",
+      "description": "A plan made and judged.",
+      "required": ["seq", "time", "kind", "id", "design", "machine_class", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "plan"},
+        "id": {"type": "string"},
+        "case": {"type": ["string", "null"]},
+        "design": {"type": "string"},
+        "machine_class": {"type": "string"},
+        "verdict": {"enum": ["ok", "at_risk", "critical", "incomplete"]},
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}, "description": "The findings that are not ok"}
+      }
+    },
+    "case": {
+      "type": "object",
+      "description": "The case's state changed: what follows is the whole state in force.",
+      "required": ["seq", "time", "kind", "case", "phase", "requirement_version"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "case"},
+        "case": {"type": "string"},
+        "phase": {"enum": ["negotiation", "execution", "closure"]},
+        "negotiation": {"enum": ["open", "closed"]},
+        "status": {"type": ["string", "null"]},
+        "accepted_plan": {"type": ["string", "null"]},
+        "mandate": {"type": "object"},
+        "requirement_version": {"type": "integer", "minimum": 0},
+        "referred": {"type": "boolean"}
+      }
+    },
+    "job": {
+      "type": "object",
+      "description": "A job on a machine changed its status.",
+      "required": ["seq", "time", "kind", "id", "machine", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "job"},
+        "id": {"type": "string"},
+        "case": {"type": ["string", "null"]},
+        "machine": {"type": "string"},
+        "program": {"type": ["string", "null"]},
+        "status": {"enum": ["queued", "running", "paused", "completed", "aborted", "failed"]}
+      }
+    },
+    "ended": {
+      "type": "object",
+      "description": "The run ended.",
+      "required": ["seq", "time", "kind", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "ended"},
+        "outcome": {"type": "string"},
+        "reason": {"type": ["string", "null"]}
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "events/1",
+      "at": "2026-11-20T09:15:02Z",
+      "after": 0,
+      "last": 7,
+      "run": {
+        "id": "bracket-mass@2",
+        "order": {"lineage": "bracket-mass", "revision": 2, "sha256": "e6011872895f9bf153a3212614ca9d28f0174f80f5de362a3aa67fb537f1c465"},
+        "scenario": null,
+        "lineages": ["bracket-mass"],
+        "settings": {"negotiation": "open", "held": "mass"},
+        "version": "714b5f8",
+        "status": "running",
+        "started": "2026-11-20T09:02:11Z",
+        "ended": null,
+        "outcome": null,
+        "reason": null
+      },
+      "events": [
+        {
+          "seq": 1,
+          "time": "2026-11-20T09:02:12Z",
+          "kind": "woke",
+          "waking": "r1",
+          "role": "design_engineer",
+          "actor": "agent",
+          "maker": {"kind": "model", "name": "claude-sonnet-5-5"},
+          "case": "c1",
+          "prompt": "The brief for bracket-mass@2."
+        },
+        {
+          "seq": 2,
+          "time": "2026-11-20T09:02:40Z",
+          "kind": "turn",
+          "waking": "r1",
+          "turn": 1,
+          "seconds": 27.5,
+          "model": "claude-sonnet-5-5",
+          "thinking": "The mass demand binds; reshape toward it first.",
+          "text": ""
+        },
+        {
+          "seq": 3,
+          "time": "2026-11-20T09:02:41Z",
+          "kind": "design",
+          "id": "bracket-mass@v16",
+          "parent": "bracket-mass@v15",
+          "made_by_role": "design_engineer",
+          "made_by_actor": "agent",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "features": true
+        },
+        {
+          "seq": 4,
+          "time": "2026-11-20T09:02:40Z",
+          "kind": "call",
+          "id": "k12",
+          "waking": "r1",
+          "turn": 1,
+          "tool": "reshape",
+          "seconds": 95.0,
+          "error": false,
+          "inputs": {"design": "bracket-mass@v15", "goal": "mass"},
+          "about": "bracket-mass@v15"
+        },
+        {"seq": 5, "time": "2026-11-20T09:04:15Z", "kind": "results", "waking": "r1", "turn": 1},
+        {
+          "seq": 6,
+          "time": "2026-11-20T09:14:40Z",
+          "kind": "dialogue",
+          "id": "k31",
+          "case": "c1",
+          "tool": "show_design",
+          "actor": "agent",
+          "inputs": {"design": "bracket-mass@v16", "text": "The lightest version holding the rest, its plan at risk on one load case."},
+          "findings": [
+            {
+              "requirement": "req-14",
+              "metric": "M6",
+              "feature": "lug",
+              "status": "at_risk",
+              "value": 0.72,
+              "limit": 1.0,
+              "margin": 0.6,
+              "unit": "1",
+              "call": "k29"
+            }
+          ],
+          "certificate": {
+            "text": "9 versions since the brief by parameters and shape; the lightest holding the rest is bracket-mass@v16 at 15.9 g.",
+            "versions": 9,
+            "means": ["parameters", "shape"],
+            "lightest": "bracket-mass@v16",
+            "cites": ["k12", "k29"]
+          }
+        },
+        {
+          "seq": 7,
+          "time": "2026-11-20T09:15:01Z",
+          "kind": "dialogue",
+          "id": "k32",
+          "case": "c1",
+          "tool": "accept_design",
+          "actor": "agent",
+          "inputs": {"showing": "k31"},
+          "relaxations": [
+            {
+              "requirement": "req-14",
+              "metric": "M6",
+              "what": "margin",
+              "from": 0.6,
+              "to": 0.72,
+              "unit": "1",
+              "within_mandate": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

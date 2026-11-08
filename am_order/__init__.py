@@ -19,8 +19,9 @@ from .export import export, import_xlsx, read_reqif
 from .home import Home, HomeError, ReadOnly, Refused, Saved
 from .order import Order
 from .render import render, table
-from .schema import SchemaError, validate_features, validate_order
+from .schema import SchemaError, validate_events, validate_features, validate_order, validate_presence
 
 __version__ = "1.0.0"
 __all__ = ["Home", "Order", "check", "bind", "render", "export", "import_xlsx", "read_reqif", "confirm", "reject", "proposals", "diff",
-           "table", "Refusal", "HomeError", "ReadOnly", "Refused", "Saved", "SchemaError", "validate_order", "validate_features"]
+           "table", "Refusal", "HomeError", "ReadOnly", "Refused", "Saved", "SchemaError", "validate_order", "validate_features",
+           "validate_presence", "validate_events"]

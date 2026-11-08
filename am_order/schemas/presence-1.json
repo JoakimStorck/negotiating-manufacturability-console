@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "am-order/presence-1",
+  "title": "The frame's presence",
+  "description": "What the standing frame serves at its presence endpoint: the frame itself, each part of the system it knows (the roles with the decision makers over them, the machines) with when it came, its latest sign of life and the state it declares, and the runs the frame holds with the state each is in. A part declares `present`, `unavailable` (with why) or `left` (with a farewell); `down` is never written: the reader infers it from a sign of life older than `down_after` seconds before `at`, both on the frame's clock, never on the reader's. A frame that does not answer is the reader's to say. A sketch of 2026-11-08, written before the frame is built (am-llm's design document 2.6).",
+  "type": "object",
+  "required": ["schema", "at", "down_after", "frame", "parts", "runs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "presence/1"},
+    "at": {"$ref": "#/$defs/time", "description": "When the frame served the document: the reader's now for everything in it"},
+    "down_after": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Seconds: a part whose latest sign of life is older than this before `at` is down"
+    },
+    "frame": {
+      "type": "object",
+      "required": ["name", "version", "since"],
+      "additionalProperties": false,
+      "description": "The frame itself: it is present whenever it answers",
+      "properties": {
+        "name": {"$ref": "#/$defs/id", "description": "The frame's name, as its help page gives it"},
+        "version": {"type": "string", "description": "am-llm's commit the frame runs"},
+        "since": {"$ref": "#/$defs/time"},
+        "scenario": {
+          "type": ["string", "null"],
+          "description": "The scenario the frame was started with, for an experiment; null for a frame that waits for orders"
+        }
+      }
+    },
+    "parts": {"type": "array", "items": {"$ref": "#/$defs/part"}},
+    "runs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/run"},
+      "description": "The runs the frame holds that have not ended, and those ended since it started"
+    }
+  },
+  "$defs": {
+    "time": {"type": "string", "format": "date-time", "pattern": "Z$", "description": "ISO 8601 UTC, on the frame's clock"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "maker": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "description": "A decision maker over a role: a model by its name, a scripted policy, a person (am-llm's operator), or none, where the case stops at the frame when a decision is needed",
+      "properties": {
+        "kind": {"enum": ["model", "scripted", "operator", "none"]},
+        "name": {"type": ["string", "null"], "description": "The model's id, the policy's name, or the person's"}
+      }
+    },
+    "part": {
+      "type": "object",
+      "required": ["id", "kind", "since", "seen", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "description": "The role's name, or the machine's"},
+        "kind": {"enum": ["role", "machine"]},
+        "since": {"$ref": "#/$defs/time", "description": "When the part announced itself"},
+        "seen": {"$ref": "#/$defs/time", "description": "Its latest sign of life"},
+        "state": {"enum": ["present", "unavailable", "left"]},
+        "note": {"type": ["string", "null"], "description": "Why it is unavailable, or its farewell"},
+        "role": {"$ref": "#/$defs/role"},
+        "machine": {"$ref": "#/$defs/machine"}
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "role"}}}, "then": {"required": ["role"], "not": {"required": ["machine"]}}},
+        {"if": {"properties": {"kind": {"const": "machine"}}}, "then": {"required": ["machine"], "not": {"required": ["role"]}}}
+      ]
+    },
+    "role": {
+      "type": "object",
+      "required": ["title", "level", "maker"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string"},
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0 the requester, 1 the design level, 2 the planning level, 3 the machines'"
+        },
+        "maker": {"$ref": "#/$defs/maker", "description": "Who fills the role now"},
+        "next": {
+          "oneOf": [{"$ref": "#/$defs/maker"}, {"type": "null"}],
+          "description": "The decision maker the system operator has chosen, taking effect at the role's next waking"
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/maker"},
+          "description": "The decision makers present that the system operator may choose"
+        },
+        "awake": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["run", "since"],
+              "additionalProperties": false,
+              "properties": {
+                "run": {"type": "string", "description": "The run it works in"},
+                "waking": {"type": "string"},
+                "since": {"$ref": "#/$defs/time"}
+              }
+            }
+          ]
+        },
+        "waits": {
+          "type": "array",
+          "description": "What waits for the role: a message or a word of the dialogue it has not taken up",
+          "items": {
+            "type": "object",
+            "required": ["run", "what", "since"],
+            "additionalProperties": false,
+            "properties": {
+              "run": {"type": "string"},
+              "what": {"type": "string", "description": "The message type or the dialogue's word"},
+              "from": {"type": ["string", "null"]},
+              "since": {"$ref": "#/$defs/time"}
+            }
+          }
+        }
+      }
+    },
+    "machine": {
+      "type": "object",
+      "required": ["class", "adapter"],
+      "additionalProperties": false,
+      "properties": {
+        "class": {"type": "string"},
+        "adapter": {"enum": ["virtual", "instrumented", "closed"]},
+        "job": {"type": ["string", "null"], "description": "The job it runs now"}
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": ["id", "state", "since"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The run's name: the order version's for an order (`<lineage>@<revision>`), the experiment's and condition's for a scenario"
+        },
+        "order": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["lineage", "revision", "sha256"],
+              "additionalProperties": false,
+              "properties": {"lineage": {"type": "string"}, "revision": {"type": "integer", "minimum": 1}, "sha256": {"$ref": "#/$defs/sha"}}
+            }
+          ],
+          "description": "The order version placed, as the products home names it; null for a run from a scenario"
+        },
+        "state": {
+          "enum": ["placed", "preparing", "parked", "ended"],
+          "description": "Placed and waiting for the frame; being prepared; parked at the frame for the owner's word; ended"
+        },
+        "since": {"$ref": "#/$defs/time", "description": "When it entered its state"},
+        "outcome": {"type": ["string", "null"], "description": "For an ended run: accepted, declined, or what else ended it"}
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "presence/1",
+      "at": "2026-11-20T09:15:02Z",
+      "down_after": 30,
+      "frame": {"name": "workshop-1", "version": "714b5f8", "since": "2026-11-20T08:00:00Z", "scenario": null},
+      "parts": [
+        {
+          "id": "requester",
+          "kind": "role",
+          "since": "2026-11-20T08:00:01Z",
+          "seen": "2026-11-20T09:15:00Z",
+          "state": "present",
+          "role": {
+            "title": "Requester",
+            "level": 0,
+            "maker": {"kind": "model", "name": "claude-haiku-5-5"},
+            "next": null,
+            "alternatives": [{"kind": "model", "name": "claude-sonnet-5-5"}, {"kind": "scripted", "name": "reference"}, {"kind": "none"}],
+            "awake": null,
+            "waits": [{"run": "bracket-mass@2", "what": "showing", "from": "design_engineer", "since": "2026-11-20T09:14:40Z"}]
+          }
+        },
+        {
+          "id": "design_engineer",
+          "kind": "role",
+          "since": "2026-11-20T08:00:01Z",
+          "seen": "2026-11-20T09:15:00Z",
+          "state": "present",
+          "role": {
+            "title": "Design engineer",
+            "level": 1,
+            "maker": {"kind": "model", "name": "claude-sonnet-5-5"},
+            "next": null,
+            "awake": null,
+            "waits": []
+          }
+        },
+        {
+          "id": "process_planner",
+          "kind": "role",
+          "since": "2026-11-20T08:00:01Z",
+          "seen": "2026-11-20T09:15:00Z",
+          "state": "present",
+          "role": {
+            "title": "Process planner",
+            "level": 2,
+            "maker": {"kind": "model", "name": "claude-sonnet-5-5"},
+            "next": {"kind": "scripted", "name": "reference"},
+            "awake": null,
+            "waits": []
+          }
+        },
+        {
+          "id": "core-one-1",
+          "kind": "machine",
+          "since": "2026-11-20T08:00:02Z",
+          "seen": "2026-11-20T09:14:58Z",
+          "state": "unavailable",
+          "note": "filament change",
+          "machine": {"class": "core-one-plus", "adapter": "virtual", "job": null}
+        }
+      ],
+      "runs": [
+        {
+          "id": "bracket-mass@2",
+          "order": {
+            "lineage": "bracket-mass",
+            "revision": 2,
+            "sha256": "e6011872895f9bf153a3212614ca9d28f0174f80f5de362a3aa67fb537f1c465"
+          },
+          "state": "preparing",
+          "since": "2026-11-20T09:02:11Z",
+          "outcome": null
+        }
+      ]
+    }
+  ]
+}
