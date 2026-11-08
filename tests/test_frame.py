@@ -309,3 +309,16 @@ def test_the_command_line_reads_the_frame_and_places(stub, home_dir, tmp_path, c
     assert main(base + ["runs"]) == 1
     err = capsys.readouterr().err
     assert "refuses the token" in err and "wrong" not in err.replace("refuses", "")
+
+
+def test_a_version_is_placed_as_the_home_holds_it_whatever_the_line_endings(stub, home_dir, tmp_path, capsys, monkeypatch):
+    # a checkout on Windows may give the examples' files CRLF line endings: the order's file then no longer hashes to its
+    # version's name, and the version is found by its revision
+    for f in (home_dir / "own" / "bracket-mass").rglob("*.json"):
+        f.write_bytes(f.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+    token = tmp_path / "token"
+    token.write_text("me=s3cret\n", encoding="utf-8")
+    app = stub.app()
+    monkeypatch.setattr("am_order.cli._client", lambda url: TestClient(app, base_url=url))
+    assert main(["--home", str(home_dir), "--frame", "http://frame.test", "--token-file", str(token), "place", "bracket-mass"]) == 0
+    assert "bracket-mass@2" in capsys.readouterr().out

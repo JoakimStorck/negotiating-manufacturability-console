@@ -33,7 +33,7 @@ from ..order import Order
 from ..render import TABLES, TITLES, metric_name, table
 from .. import runs as R
 from ..picture import overview
-from ..frame import Frame, FrameError, Reading, maker_text, part_state
+from ..frame import Frame, FrameError, Reading, maker_text, part_state, saved_version
 
 HERE = Path(__file__).parent
 
@@ -783,13 +783,14 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
     def placing_ctx(lineage: str, message: str | None = None, bad: bool = False) -> dict:
         reading = app.state.frame
         error = reading.read_catalogue() or reading.read_presence()
-        saved = home.load(lineage) if home.version_of(lineage) else None
+        held = saved_version(home, lineage)
+        saved = home.load(lineage) if held else None
         facets = home.facets(lineage)
         ready = saved is not None and facets["state"] == "confirmed"
         why = None if ready else ("the order has no saved version yet" if saved is None else
                                   "the draft has changes not yet saved" if facets["state"] == "draft" else
                                   f"the order is {facets['state']}, not confirmed: bind it to a design and confirm every binding")
-        return {"lineage": lineage, "runs": reading.runs_of(lineage), "saved": saved, "version": home.version_of(lineage),
+        return {"lineage": lineage, "runs": reading.runs_of(lineage), "saved": saved, "version": held[0] if held else None,
                 "ready": ready, "why": why, "contact_note": contact_note(error), "frame_url": reading.frame.url,
                 "message": message, "bad": bad}
 
@@ -804,8 +805,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         if not ctx["ready"]:
             log.write(f"/products/{lineage}/place", "place", detail={"capacity": "orderer", "message": ctx["why"]})
             return templates.TemplateResponse(request, "_placing.html", {**ctx, "message": f"Not placed: {ctx['why']}.", "bad": True}, status_code=409)
-        version = home.version_of(lineage)
-        body = (home._folder(lineage) / "versions" / f"{version}.json").read_bytes()
+        version, body = saved_version(home, lineage)
         try:
             answer = reading.frame.place(body)
             message, bad, status = f"Placed at the frame: the run {answer.get('run')} ({answer.get('state', 'placed')}).", False, 201

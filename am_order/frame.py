@@ -179,6 +179,18 @@ class Frame:
 
 # -------------------------------------------------------------------- reading presence
 
+def saved_version(home, lineage: str, revision: int | None = None) -> tuple[str, bytes] | None:
+    """A product's saved version (the latest, or a revision) as the home holds it: its hash, the name of its file, and the file's
+    bytes, which are what is placed. Found by its revision in the history, not by hashing `order.json`, whose bytes a checkout may
+    have changed (line endings) while the version keeps its name."""
+    history = home.history(lineage) if (home._folder(lineage) / "versions").exists() else []
+    found = [v for v in history if revision is None or v["revision"] == revision]
+    if not found:
+        return None
+    version = found[-1]["version"]
+    return version, (home._folder(lineage) / "versions" / f"{version}.json").read_bytes()
+
+
 def part_state(part: dict, presence: dict) -> str:
     """A part's state as the reader takes it: what it declares, or `down` when its latest sign of life is older than
     `down_after` before the frame's `at` (the frame's clock, both)."""

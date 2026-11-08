@@ -34,7 +34,7 @@ from pathlib import Path
 
 from . import Home, HomeError, Refused, bind, check, confirm, export, import_xlsx, reject, render
 from . import runs as R
-from .frame import Frame, FrameError, read_token
+from .frame import Frame, FrameError, read_token, saved_version
 from .render import TABLES
 
 
@@ -334,8 +334,7 @@ def _place(args, frame: Frame, home: Home) -> int:
     order = home.load(args.product)
     if not confirmed(order):
         raise HomeError(f"{args.product} is not confirmed: bind it to a design and confirm every binding before it is placed")
-    version = home.version_of(lineage) if not revision else next(v["version"] for v in home.history(lineage) if v["revision"] == order.data["revision"])
-    body = (home._folder(lineage) / "versions" / f"{version}.json").read_bytes()
+    version, body = saved_version(home, lineage, order.data["revision"])
     answer = frame.place(body)
     print(f"{lineage}@{order.data['revision']} ({version[:12]}) placed at {frame.url}: the run {answer.get('run')}, {answer.get('state', 'placed')}")
     return 0
