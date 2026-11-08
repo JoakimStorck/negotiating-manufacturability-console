@@ -6,6 +6,7 @@ import threading
 import pytest
 
 from am_order import Home, HomeError, ReadOnly, Refused
+from am_order.schema import SchemaError
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 64
 
@@ -50,6 +51,19 @@ def test_derive_into_user_then_edit_versions_and_the_change_record(home):
     assert [c["text"] for c in home.compare("my-bracket@1", "my-bracket")] == ["value M5: at most 0.2 mm -> at most 0.15 mm"]
     first = home.history("my-bracket")[0]["version"]
     assert home.load(f"my-bracket@{first[:10]}").data["revision"] == 1
+
+
+def test_a_derive_that_fails_leaves_no_product(home):
+    def broken(o):
+        raise ValueError("the change fails")
+    with pytest.raises(ValueError):
+        home.derive("bracket-ge", "half", change=broken)
+    assert home.folder("half") is None and "half" not in home.lineages()
+    with pytest.raises(SchemaError):                              # an order the schema refuses is no product either
+        home.derive("bracket-ge", "half", change=lambda o: o.data.__setitem__("metrics", "nonsense"))
+    assert home.folder("half") is None
+    home.derive("bracket-ge", "half")                              # and the name is free for a derive that works
+    assert home.category("half") == "user"
 
 
 def test_a_refused_save_keeps_the_draft(home):

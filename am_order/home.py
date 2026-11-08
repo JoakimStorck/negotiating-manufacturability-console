@@ -296,21 +296,26 @@ class Home:
         version = sha256((folder / "order.json").read_bytes()) if "@" not in source else self._version_path(folder, source.partition("@")[2]).stem
         self.create(lineage, name or origin.data.get("title"), origin.data["product"].get("purpose", ""),
                     group or self.group_path(origin.data.get("group")), category=category)
-        data = {k: v for k, v in origin.content().items()}
-        data = json.loads(json.dumps(data))
-        data["lineage"] = lineage
-        data["title"] = name or origin.data.get("title")
-        data["product"]["name"] = name or data["product"]["name"]
-        data["parent"] = {"lineage": src_lineage, "version": version}
-        data["group"] = self._group_id(group) if group else data.get("group") or self._group_id(None)
-        order = Order(data)
-        if change is not None:
-            change(order)
+        made = self.root / category / lineage
         try:
-            self.save(order)
-        except Refused:
-            pass
-        return order
+            data = {k: v for k, v in origin.content().items()}
+            data = json.loads(json.dumps(data))
+            data["lineage"] = lineage
+            data["title"] = name or origin.data.get("title")
+            data["product"]["name"] = name or data["product"]["name"]
+            data["parent"] = {"lineage": src_lineage, "version": version}
+            data["group"] = self._group_id(group) if group else data.get("group") or self._group_id(None)
+            order = Order(data)
+            if change is not None:
+                change(order)
+            try:
+                self.save(order)
+            except Refused:
+                pass                            # refused by a check: the draft stands, as a refused save leaves it
+            return order
+        except BaseException:
+            shutil.rmtree(made, ignore_errors=True)   # anything else leaves no half-made product behind
+            raise
 
     def compare(self, a: str, b: str) -> list[dict]:
         """The changes from one product or version to another (`PRODUCT`, `PRODUCT@<version>`)."""
