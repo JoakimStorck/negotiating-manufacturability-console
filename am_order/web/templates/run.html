@@ -35,6 +35,9 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
 .events li { list-style: none; margin: .2rem 0; padding-left: .6rem; border-left: 3px solid var(--line); font-size: .9rem; }
 .events .clock, .turns .clock { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: .4rem; }
 .events .decision { font-weight: 600; }
+.events .note { color: #4a4a6a; font-size: .85rem; margin: .1rem 0 0; }
+.events .certificate { font-size: .85rem; margin: .2rem 0 0; padding: .2rem .4rem; background: var(--soft); border: 1px solid var(--line); }
+.facts .bad { color: var(--bad); }
 .facts { margin: .8rem 0 0; font-size: .9rem; } .facts dt { color: var(--muted); font-size: .8rem; margin-top: .3rem; } .facts dd { margin: 0; }
 .time { flex: none; margin-top: .4rem; }
 .time svg#picture { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
@@ -47,8 +50,8 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
 .cell.waiting rect { animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
 </style>
-<p class="muted crumbs"><a href="/runs">Runs</a> › <a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a> › {{ run.entry.condition }}</p>
-<h1>{{ run.entry.lineages|join(", ") or run.entry.condition }} <span class="muted">· {{ run.entry.negotiation or "" }} negotiation{% if run.entry.held and run.entry.held != "off" %}, held {{ run.entry.held }}{% endif %}{% if run.live %}, running{% endif %}</span></h1>
+<p class="muted crumbs"><a href="/runs">Runs</a> › {% if run.entry.source == "frame" %}the frame{% if run.entry.experiment != "orders" %} › {{ run.entry.experiment }}{% endif %}{% else %}<a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a>{% endif %} › {{ run.entry.condition }}</p>
+<h1>{{ run.entry.lineages|join(", ") or run.entry.condition }} <span class="muted">· {{ run.entry.negotiation or "" }} negotiation{% if run.entry.held and run.entry.held != "off" %}, held {{ run.entry.held }}{% endif %}{% if run.live %}, running{% elif run.is_parked %}, parked for the owner's word{% endif %}</span></h1>
 <div class="player" id="player">
   <button id="play" title="space">▶ play</button>
   <button id="slower" title="-">−</button><span class="speed" id="speed">×1</span><button id="faster" title="+">+</button>
@@ -61,16 +64,16 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
   // The player: a clock in log seconds from the run's start and a speed. Between events the page moves the playhead and the clock
   // itself; when the clock passes the next event, or jumps, it fetches the picture at that time from the server. Live, the clock
   // follows now and the picture is fetched every two seconds, since the next event is not known.
-  const base = "/runs/{{ run.entry.id }}";
+  const base = "{{ run.entry.href }}";
   const SPEEDS = [0.5, 1, 2, 4, 8, 16, 32, 64];
   const P = { at: 0, speed: 1, playing: false, follow: false, next: null, end: 0, span: 1, live: false, epoch: 0, x0: 0, x1: 1,
-              last: performance.now(), fetching: false, lastFetch: 0, lastLive: 0, lastUrl: 0 };
+              last: performance.now(), fetching: false, lastFetch: 0, lastLive: 0, lastUrl: 0, skew: 0 };
 
   function num(v) { return v === "" || v === undefined ? null : parseFloat(v); }
   function readData() {
     const d = document.getElementById("overview").dataset;
     P.at = num(d.at) || 0; P.next = num(d.next); P.end = num(d.end) || 0; P.span = num(d.span) || 1;
-    P.live = d.live === "1"; P.epoch = num(d.startEpoch) || 0; P.x0 = num(d.x0) || 0; P.x1 = num(d.x1) || 1;
+    P.live = d.live === "1"; P.skew = num(d.skew) || 0; P.epoch = num(d.startEpoch) || 0; P.x0 = num(d.x0) || 0; P.x1 = num(d.x1) || 1;
     for (const a of document.querySelectorAll("#overview a[data-seconds]")) {
       a.addEventListener("click", function (ev) { ev.preventDefault(); goTo(parseFloat(a.dataset.seconds)); });
     }
@@ -121,7 +124,8 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
   }
 
   function goTo(seconds) { P.follow = false; P.at = seconds; fetchAt(seconds); }
-  function now() { return Date.now() / 1000 - P.epoch; }
+  // now on the clock of the run's source: the frame's, where the run is read from a frame (its clock less this one's, `skew`)
+  function now() { return Date.now() / 1000 + P.skew - P.epoch; }
 
   function tick(t) {
     const dt = (t - P.last) / 1000; P.last = t;

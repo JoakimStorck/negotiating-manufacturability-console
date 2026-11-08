@@ -45,5 +45,9 @@
   <select name="importance">{% for i in [1, 2, 3, 4, 5] %}<option>{{ i }}</option>{% endfor %}</select>
   <input name="group" placeholder="primary need"> <button>Add a need</button>
 </form>
+{% if request.app.state.frame %}
+<h2>At the frame</h2>
+<div id="placing" hx-get="/products/{{ lineage }}/frame" hx-trigger="load" hx-swap="outerHTML"><p class="muted">Reading the frame …</p></div>
+{% endif %}
 {% set item = "product" %}{% include "_refusals.html" with context %}
 {% endblock %}

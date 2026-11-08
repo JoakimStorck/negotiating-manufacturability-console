@@ -1,0 +1,24 @@
+{# the order at the frame: the version that may be placed, the runs of the product's orders and their states #}
+<div id="placing">
+{% if contact_note %}<div class="message bad">{{ contact_note }}</div>{% endif %}
+{% if message %}<div class="message {% if bad %}bad{% endif %}">{{ message }}</div>{% endif %}
+{% if ready %}
+<form hx-post="/products/{{ lineage }}/place" hx-target="#placing" hx-swap="outerHTML" method="post" action="/products/{{ lineage }}/place">
+  <button>Place revision {{ saved.data.revision }} at the frame</button> <span class="muted">{{ version[:12] }}, as the home holds it; the frame at {{ frame_url }} makes the run</span>
+</form>
+{% else %}<p class="muted">Not ready to be placed: {{ why }}.</p>{% endif %}
+{% if runs %}
+<table>
+<thead><tr><th>Revision</th><th>Run</th><th>State</th><th>Since</th><th>Outcome</th></tr></thead>
+<tbody>
+{% for r in runs %}
+<tr><td>{{ r.revision }}{% if r.sha256 == version %} <span class="badge">this version</span>{% endif %}</td>
+<td>{% if r.run %}<a href="/frame/runs/{{ r.id }}">{{ r.id }}</a>{% else %}{{ r.id }}{% endif %}</td>
+<td>{{ {"placed": "placed, waiting for the frame", "preparing": "being prepared", "running": "being prepared", "parked": "parked: the owner's word is awaited, given in the dialogue's build", "done": "done", "ended": "ended"}.get(r.status, r.status) }}</td>
+<td>{{ (r.started or "")[:19].replace("T", " ") }}{% if r.started %}Z{% endif %}</td>
+<td>{{ r.outcome or "" }}{% if r.reason %} <span class="muted">({{ r.reason }})</span>{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p class="muted">No version of this order is at the frame.</p>{% endif %}
+</div>

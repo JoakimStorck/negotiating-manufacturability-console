@@ -316,7 +316,7 @@ def test_runs_pages(client, root):
 
 def test_runs_pages_without_a_root(home):
     page = TestClient(create_app(home)).get("/runs")
-    assert page.status_code == 200 and "No runs root is set" in page.text
+    assert page.status_code == 200 and "No runs root and no frame" in page.text
 
 
 def test_the_player_fragment_carries_the_clock(client):

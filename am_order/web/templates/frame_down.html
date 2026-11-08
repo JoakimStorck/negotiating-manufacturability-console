@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ run_id }}{% endblock %}
+{% block mainclass %}wide{% endblock %}
+{% block content %}
+<p class="muted"><a href="/runs">Runs</a> › the frame › {{ run_id }}</p>
+<h1>{{ run_id }}</h1>
+<div class="message bad">{{ contact_note }}</div>
+<p class="muted">Nothing of this run has been read from the frame yet; the page shows it once the frame answers.</p>
+{% endblock %}
+{% block aside %}{% endblock %}

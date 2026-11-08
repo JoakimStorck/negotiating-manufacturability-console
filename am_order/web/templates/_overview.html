@@ -3,7 +3,7 @@
 <div id="overview" class="overview"
      data-at="{{ ax.seconds if ax.seconds is defined else 0 }}" data-next="{{ ax.next.seconds if ax.next else '' }}"
      data-end="{{ ax.end_seconds if ax.end_seconds is defined else 0 }}" data-span="{{ ax.span if ax.span is defined else 1 }}"
-     data-live="{{ '1' if ax.live else '' }}" data-start-epoch="{{ ax.start_epoch if ax.start_epoch is defined else 0 }}"
+     data-live="{{ '1' if ax.live else '' }}" data-skew="{{ skew or 0 }}" data-start-epoch="{{ ax.start_epoch if ax.start_epoch is defined else 0 }}"
      data-x0="{{ ax.x0 if ax.x0 is defined else 0 }}" data-x1="{{ ax.x1 if ax.x1 is defined else 1 }}"
      data-previous="{{ pic.jumps.previous if pic.jumps.previous is not none else '' }}" data-next-event="{{ pic.jumps.next if pic.jumps.next is not none else '' }}"
      data-previous-turn="{{ pic.jumps.previous_turn if pic.jumps.previous_turn is not none else '' }}" data-next-turn="{{ pic.jumps.next_turn if pic.jumps.next_turn is not none else '' }}"
@@ -36,7 +36,7 @@
 {% for t in w.turns %}
 <li><span class="clock">{{ t.clock }}</span> <b>turn {{ t.n }}</b> <span class="muted">· thought {{ t.seconds }}</span>
 {% if t.thinking[0] %}{{ fold(t.thinking, "more-" ~ w.role ~ "-" ~ t.seq ~ "-thinking", "thinking") }}{% endif %}{% if t.text[0] %}{{ fold(t.text, "more-" ~ w.role ~ "-" ~ t.seq ~ "-text") }}{% endif %}
-{% if t.acts %}<p class="acts">{% for a in t.acts %}<a href="/runs/{{ run.entry.id }}?at={{ a.seconds }}" data-seconds="{{ a.seconds }}" {% if a.future %}class="future"{% endif %}>{{ a.word }}{% if a.count > 1 %} ×{{ a.count }}{% endif %}{% if a.detail %} <span class="muted">{{ a.detail }}</span>{% endif %}</a>{% endfor %}</p>{% endif %}
+{% if t.acts %}<p class="acts">{% for a in t.acts %}<a href="{{ run.entry.href }}?at={{ a.seconds }}" data-seconds="{{ a.seconds }}" {% if a.future %}class="future"{% endif %}>{{ a.word }}{% if a.count > 1 %} ×{{ a.count }}{% endif %}{% if a.detail %} <span class="muted">{{ a.detail }}</span>{% endif %}</a>{% endfor %}</p>{% endif %}
 </li>
 {% endfor %}
 {% if w.now %}<li class="now"><span class="clock">{{ ax.clock }}</span> {{ w.now }}</li>{% endif %}
@@ -49,22 +49,29 @@
 <aside style="border:0;padding:0">
   {% if pic.design %}
   <h2>{{ pic.design }}</h2>
-  {% if picture %}<img class="picture" src="/runs/{{ run.entry.id }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}
+  {% if picture %}<img class="picture" src="{{ run.entry.href }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}
   {% else %}<h2>No design yet</h2>{% endif %}
 <div class="events">
 <h2>What happened last</h2>
 <ul>
 {% for s in pic.sentences %}
-<li style="border-color: {{ s.colour }}"><span class="clock">{{ s.clock }}</span><span class="{% if s.decision %}decision{% endif %}">{{ s.head }}</span>{% if s.text %} <span class="muted">— {{ s.text }}</span>{% endif %}</li>
+<li style="border-color: {{ s.colour }}"><span class="clock">{{ s.clock }}</span><span class="{% if s.decision %}decision{% endif %}">{{ s.head }}</span>{% if s.text %} <span class="muted">— {{ s.text }}</span>{% endif %}
+{% for note in s.notes %}<div class="note">{{ note }}</div>{% endfor %}
+{% if s.certificate %}<div class="certificate"><b>The certificate of exhausted means:</b> {{ s.certificate.text }}{% if s.certificate.cites %} <span class="muted">(cites {{ s.certificate.cites|join(", ") }})</span>{% endif %}</div>{% endif %}</li>
 {% endfor %}
 </ul>
 </div>
   <dl class="facts">
-    <dt>Experiment</dt><dd>{{ run.entry.experiment }} / {{ run.entry.condition }}</dd>
+    {% if run.entry.source == "frame" %}<dt>Read from</dt><dd>the frame {{ frame_name or "" }}{% if contact_note %}<br><span class="bad">{{ contact_note }}</span>{% endif %}</dd>{% endif %}
+    {% if run.entry.experiment != "orders" %}<dt>Experiment</dt><dd>{{ run.entry.experiment }} / {{ run.entry.condition }}</dd>{% endif %}
     {% if run.order %}<dt>Order</dt><dd>{{ run.order[0] }}@{{ run.order[1] }}</dd>{% endif %}
     <dt>Decision makers</dt><dd>{% for role, who in run.decision_makers.items() %}{{ role.replace("_", " ") }}: {{ who }}<br>{% else %}none woke{% endfor %}</dd>
     {% if run.accepted_plan %}<dt>Accepted plan</dt><dd>{{ run.accepted_plan }}</dd>{% endif %}
     <dt>Outcome</dt><dd>{{ run.entry.outcome or run.entry.status }}{% if run.entry.reason %} ({{ run.entry.reason }}){% endif %}</dd>
+    {% if run.parked %}<dt>Waits for the owner</dt><dd>The case is parked at the frame since {{ run.parked.time.strftime("%H:%M:%SZ") }}: a {{ run.parked.what }} waits for the order's owner{% if run.parked.metrics %} on {{ run.parked.metrics|join(", ") }}{% endif %}. The owner's word is given in the dialogue's build of the tool, which is still to come.</dd>{% endif %}
+    {% if accepted %}<dt>Accepted version</dt><dd>{{ accepted.design }}{% if accepted.features %}: {{ accepted.features.features|length }} features
+      · <a href="{{ run.entry.href }}/features/{{ accepted.design }}/picture.png">picture</a>{% for m in accepted.features.models %} · <a href="{{ run.entry.href }}/features/{{ accepted.design }}/model.{{ m.format }}">{{ m.format|upper }}</a>{% endfor %}
+      {% elif accepted.error %} <span class="muted">({{ accepted.error }})</span>{% endif %}</dd>{% endif %}
     <dt>Events</dt><dd>{{ state.seen }} of {{ run.events|length }} at this time</dd>
   </dl>
 </aside>
@@ -72,7 +79,7 @@
 <div class="time">
 <p class="bar">
   {% for key, word in [("start", "⏮ start"), ("previous_decision", "◀◀ decision"), ("previous", "◀ event"), ("previous_turn", "‹ turn"), ("next_turn", "turn ›"), ("next", "event ▶"), ("next_decision", "decision ▶▶"), ("end", "end ⏭")] %}
-  {% if pic.jumps[key] is not none %}<a href="/runs/{{ run.entry.id }}?at={{ pic.jumps[key] }}" data-seconds="{{ pic.jumps[key] }}">{{ word }}</a>{% else %}<span class="off">{{ word }}</span>{% endif %}
+  {% if pic.jumps[key] is not none %}<a href="{{ run.entry.href }}?at={{ pic.jumps[key] }}" data-seconds="{{ pic.jumps[key] }}">{{ word }}</a>{% else %}<span class="off">{{ word }}</span>{% endif %}
   {% endfor %}
  <span class="legend">{% for name, c in pic.legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %} <span>·</span>{% for name, c in pic.act_legend %}<span><span class="swatch" style="background:{{ c }}"></span>{{ name }}</span>{% endfor %}</span></p>
 <svg id="picture" viewBox="0 0 {{ pic.width }} {{ pic.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">

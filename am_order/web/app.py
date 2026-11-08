@@ -1,10 +1,14 @@
 """The web app: the person's interface to the products home, served on 127.0.0.1 for one user, rendered on the server with htmx.
 
-    am-order serve [--home DIR] [--port 8770] [--log DIR] [--allow-own]
+    am-order [--frame URL --token-file FILE] serve [--home DIR] [--port 8770] [--log DIR] [--runs DIR] [--allow-own]
 
 Every page is a URL of its own. An edit goes to the product's draft and the page comes back with the checks' refusals beside what
 they concern; Save makes a version when no check fails, and a refused save keeps the draft. With `--log DIR` every action is one
 JSON line in `DIR/<session>.jsonl` (time, session, page, action, the refusals shown), the session an id drawn at the start.
+
+With `--frame URL` the runs pages read a standing frame of am-llm besides the folders: its presence (the overview's empty state),
+its catalogue and a run's events, through one client (`am_order.frame`); an order version is placed there from the order's
+page. A frame that does not answer is a state of the page, which keeps what it last read.
 """
 from __future__ import annotations
 
@@ -29,6 +33,7 @@ from ..order import Order
 from ..render import TABLES, TITLES, metric_name, table
 from .. import runs as R
 from ..picture import overview
+from ..frame import Frame, FrameError, Reading, maker_text, part_state
 
 HERE = Path(__file__).parent
 
@@ -164,7 +169,8 @@ def picked(form, name: str) -> list[str]:
 
 # -------------------------------------------------------------------- the app
 
-def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None = None) -> FastAPI:
+def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None = None, frame: Frame | None = None,
+               refresh: float = 3.0) -> FastAPI:
     app = FastAPI(title="am-order", docs_url=None, redoc_url=None, openapi_url=None)
     templates = Jinja2Templates(directory=str(HERE / "templates"))
     templates.env.globals.update(value_text=value_text, mandate_text=mandate_text, heading_name=V.heading_name, place_text=place_text,
@@ -173,6 +179,8 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
     log = Log(log_dir)
     app.state.home, app.state.log = home, log
     app.state.runs_root = Path(runs_root).resolve() if runs_root else None
+    app.state.frame = Reading(frame) if frame else None
+    templates.env.globals.update(maker_text=maker_text, refresh=refresh)
 
     def features_of(order: Order):
         return home.features(order.data["design"]) if order.data.get("design") else None
@@ -655,8 +663,159 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
                 counts[key] = counts.get(key, 0) + 1
             outcomes[x.name] = sorted(counts.items(), key=lambda kv: -kv[1])
         lineages = sorted({l for x in (R.catalogue(root) if root and product else experiments) for l in x.lineages})
+        reading = app.state.frame
+        framed = None
+        if reading is not None:
+            error = reading.read_catalogue()
+            entries = [R.entry_of(d) for d in (reading.catalogue or {}).get("runs", [])]
+            if product:
+                entries = [x for x in entries if product in x.lineages]
+            framed = {"entries": entries, "origins": {d["id"]: _origin(home, d) for d in (reading.catalogue or {}).get("runs", [])},
+                      **presence_ctx(error)}
         return page(request, "runs.html", None, "runs", root=root, experiments=experiments, experiment=experiment, product=product,
-                    outcomes=outcomes, lineages=lineages, total=sum(len(x.runs) for x in experiments))
+                    outcomes=outcomes, lineages=lineages, total=sum(len(x.runs) for x in experiments), framed=framed)
+
+    # ---------------------------------------------------------------- the standing frame
+
+    def contact_note(error: FrameError | None) -> str | None:
+        """What the page says when the frame did not answer as asked, keeping what it last read."""
+        reading = app.state.frame
+        if error is None:
+            return None
+        if error.kind == "unreachable":
+            since = reading.frame.contact.since or datetime.now(timezone.utc)
+            return f"The frame at {reading.frame.url} has not answered since {since.strftime('%Y-%m-%d %H:%M:%S')}Z ({error}); " \
+                   "the page shows what it last read."
+        if error.kind == "refused":
+            return f"{error} (the frame's fault, not the tool's): " + "; ".join(error.reasons[:5])
+        return str(error)
+
+    def presence_ctx(catalogue_error: FrameError | None = None) -> dict:
+        reading = app.state.frame
+        error = reading.read_presence() or catalogue_error
+        doc = reading.presence
+        parts = []
+        if doc is not None:
+            for part in doc["parts"]:
+                parts.append({**part, "reader_state": part_state(part, doc), "seen_ago": _ago(doc["at"], part["seen"])})
+        levels = sorted({p["role"]["level"] for p in parts if p["kind"] == "role"})
+        waits = {}
+        for p in parts:
+            for w in (p.get("role") or {}).get("waits") or []:
+                waits.setdefault(w["run"], []).append({**w, "for": p["role"]["title"]})
+        return {"presence": doc, "parts": parts, "levels": levels, "waits": waits, "frame_url": reading.frame.url,
+                "contact_note": contact_note(error), "frame_error": error}
+
+    @app.get("/frame/presence", response_class=HTMLResponse)
+    def frame_presence(request: Request):
+        """The overview's empty state: what the page refreshes at its interval."""
+        if app.state.frame is None:
+            raise HTTPException(404, "the tool is not connected to a frame; start it with --frame URL --token-file FILE")
+        return templates.TemplateResponse(request, "_presence.html", presence_ctx())
+
+    def frame_run(run_id: str):
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame; start it with --frame URL --token-file FILE")
+        kept, error = reading.read_run(run_id)
+        if kept is None:
+            if error is not None and error.kind == "answer" and error.status == 404:
+                raise HTTPException(404, str(error))
+            return None, error
+        live = kept["run"]["status"] == "running"
+        run = R.from_events(kept["run"], kept["events"], reading.frame.contact.frame_now() if live else None)
+        run.entry.last = kept["last"]
+        return run, error
+
+    def frame_view(request: Request, run_id: str, at: str | None, template: str):
+        reading = app.state.frame
+        run, error = frame_run(run_id)
+        if run is None:
+            return page(request, "frame_down.html", None, "run", contact_note=contact_note(error), run_id=run_id, status=503)
+        st = R.state(run, R.parse_at(run, at))
+        pic = overview(run, st)
+        accepted = None
+        if run.entry.outcome == "accepted" and run.accepted_design:
+            features, ferror = reading.read_features(run_id, run.accepted_design)
+            accepted = {"design": run.accepted_design, "features": features, "error": str(ferror) if ferror else None}
+        if reading.presence is None and error is None:
+            reading.read_presence()               # once, for the frame's name
+        presence = reading.presence or {}
+        return page(request, template, None, "run", run=run, state=st, pic=pic, picture=True, accepted=accepted,
+                    skew=reading.frame.contact.skew.total_seconds(), frame_name=(presence.get("frame") or {}).get("name") or reading.frame.url,
+                    contact_note=contact_note(error))
+
+    def frame_file(run_id: str, design: str, name: str | None):
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame")
+        try:
+            data, media = reading.frame.file(run_id, design, name)
+        except FrameError as e:
+            raise HTTPException(e.status if e.kind == "answer" and e.status else 503, str(e))
+        headers = {} if media.startswith("image/") else {"Content-Disposition": f'attachment; filename="{design}-{name}"'}
+        return Response(data, media_type=media, headers=headers)
+
+    @app.get("/frame/runs/{run_id:path}/picture/{design}")
+    def frame_picture(run_id: str, design: str):
+        return frame_file(run_id, design, None)
+
+    @app.get("/frame/runs/{run_id:path}/features/{design}/{name}")
+    def frame_feature_file(run_id: str, design: str, name: str):
+        if name not in ("picture.png", "model.stl", "model.3mf"):
+            raise HTTPException(404)
+        return frame_file(run_id, design, name)
+
+    @app.get("/frame/runs/{run_id:path}/view", response_class=HTMLResponse)
+    def frame_run_fragment(request: Request, run_id: str, at: str | None = None):
+        return frame_view(request, run_id, at, "_overview.html")
+
+    @app.get("/frame/runs/{run_id:path}", response_class=HTMLResponse)
+    def frame_run_page(request: Request, run_id: str, at: str | None = None):
+        return frame_view(request, run_id, at, "run.html")
+
+    @app.get("/products/{lineage}/frame", response_class=HTMLResponse)
+    def product_frame(request: Request, lineage: str):
+        """The order at the frame: its runs and their states, and the version that may be placed (a fragment of the order's page)."""
+        working(lineage)
+        return templates.TemplateResponse(request, "_placing.html", placing_ctx(lineage))
+
+    def placing_ctx(lineage: str, message: str | None = None, bad: bool = False) -> dict:
+        reading = app.state.frame
+        error = reading.read_catalogue() or reading.read_presence()
+        saved = home.load(lineage) if home.version_of(lineage) else None
+        facets = home.facets(lineage)
+        ready = saved is not None and facets["state"] == "confirmed"
+        why = None if ready else ("the order has no saved version yet" if saved is None else
+                                  "the draft has changes not yet saved" if facets["state"] == "draft" else
+                                  f"the order is {facets['state']}, not confirmed: bind it to a design and confirm every binding")
+        return {"lineage": lineage, "runs": reading.runs_of(lineage), "saved": saved, "version": home.version_of(lineage),
+                "ready": ready, "why": why, "contact_note": contact_note(error), "frame_url": reading.frame.url,
+                "message": message, "bad": bad}
+
+    @app.post("/products/{lineage}/place", response_class=HTMLResponse)
+    def place(request: Request, lineage: str):
+        """The order's saved version placed at the frame, as the home holds it; the frame makes the run, never the tool."""
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame")
+        working(lineage)
+        ctx = placing_ctx(lineage)
+        if not ctx["ready"]:
+            log.write(f"/products/{lineage}/place", "place", detail={"capacity": "orderer", "message": ctx["why"]})
+            return templates.TemplateResponse(request, "_placing.html", {**ctx, "message": f"Not placed: {ctx['why']}.", "bad": True}, status_code=409)
+        version = home.version_of(lineage)
+        body = (home._folder(lineage) / "versions" / f"{version}.json").read_bytes()
+        try:
+            answer = reading.frame.place(body)
+            message, bad, status = f"Placed at the frame: the run {answer.get('run')} ({answer.get('state', 'placed')}).", False, 201
+        except FrameError as e:
+            message = f"Not placed: {e}" + (": " + "; ".join(e.reasons[:5]) if e.reasons else "")
+            bad, status = True, e.status if e.kind == "answer" and e.status else 503
+            answer = {"status": e.status, "kind": e.kind}
+        log.write(f"/products/{lineage}/place", "place", detail={"capacity": "orderer", "version": version,
+                                                                 "revision": ctx["saved"].data.get("revision"), "answer": answer})
+        return templates.TemplateResponse(request, "_placing.html", {**placing_ctx(lineage), "message": message, "bad": bad}, status_code=status)
 
     @app.get("/runs/{run_id:path}/picture/{design}")
     def run_picture(run_id: str, design: str):
@@ -686,6 +845,26 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         return run_view(request, run_id, at, "run.html")
 
     return app
+
+
+def _ago(at: str, then: str) -> str:
+    """How long before the frame's `at` a time of the frame's was, in words."""
+    a = datetime.fromisoformat(at.replace("Z", "+00:00"))
+    b = datetime.fromisoformat(then.replace("Z", "+00:00"))
+    s = max(0, int((a - b).total_seconds()))
+    return f"{s} s ago" if s < 120 else f"{s // 60} min ago" if s < 7200 else f"{s // 3600} h ago"
+
+
+def _origin(home: Home, run: dict) -> dict | None:
+    """Where a frame's order run links in the products home: the lineage when the tool holds it, and whether the revision the
+    frame names is the version the home holds under that number (by its hash)."""
+    o = run.get("order")
+    if not o or home.folder(o["lineage"]) is None:
+        return None
+    held = next((v for v in home.history(o["lineage"]) if v["revision"] == o["revision"]), None) \
+        if (home._folder(o["lineage"]) / "versions").exists() else None
+    return {"lineage": o["lineage"], "revision": o["revision"], "same": held is not None and held["version"] == o["sha256"],
+            "held": held is not None}
 
 
 def _back(request: Request, url: str, message: str):

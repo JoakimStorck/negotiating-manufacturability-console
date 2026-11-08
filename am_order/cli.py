@@ -1,6 +1,6 @@
 """`am-order`: the order tool from the command line. Every command calls the Python API (`am_order`).
 
-    am-order [--home DIR] [--allow-own] COMMAND ...
+    am-order [--home DIR] [--allow-own] [--frame URL --token-file FILE] COMMAND ...
 
     tree [--tag T] [--state S] [--find TEXT]          the groups and their products, filtered
     groups add PATH | rename GROUP NAME | move GROUP [PARENT] | remove GROUP | list
@@ -18,8 +18,12 @@
     reqif export PRODUCT FILE
     features list | add DIR                           the feature lists in the home
     serve [--port 8770] [--log DIR] [--runs DIR]      the web app on 127.0.0.1
+    runs [show RUN [--at T]]                          the frame's runs, or a run's state at a time (seconds from its start)
+    place PRODUCT[@REVISION]                          a confirmed order version placed at the frame, as the home holds it
 
-The home is `--home` or `AM_ORDER_HOME`. An own product opens read only unless `--allow-own` is given.
+The home is `--home` or `AM_ORDER_HOME`. An own product opens read only unless `--allow-own` is given. `--frame URL` is a
+standing frame of am-llm, its token read from `--token-file` (its one `NAME=TOKEN` line) or `AM_FRAME_TOKEN`; the frame's help
+page at URL says how to obtain one.
 """
 from __future__ import annotations
 
@@ -29,7 +33,27 @@ import sys
 from pathlib import Path
 
 from . import Home, HomeError, Refused, bind, check, confirm, export, import_xlsx, reject, render
+from . import runs as R
+from .frame import Frame, FrameError, read_token
 from .render import TABLES
+
+
+def _client(url: str):
+    """The HTTP client of a frame at a URL; a test gives its own."""
+    return None
+
+
+def _frame(args) -> Frame | None:
+    if not args.frame:
+        return None
+    return Frame(args.frame, read_token(args.token_file), client=_client(args.frame))
+
+
+def confirmed(order) -> bool:
+    """An order version bound to a design with every binding confirmed: what may be placed."""
+    design = order.data.get("design")
+    bound = [f for b in order.data.get("bindings", []) if b["design"] == design for f in b["features"]] if design else []
+    return bool(bound) and all(f["confirmed"] for f in bound)
 
 
 def _saved(saved, lineage: str) -> str:
@@ -47,6 +71,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="am-order", description=__doc__.splitlines()[0])
     ap.add_argument("--home")
     ap.add_argument("--allow-own", action="store_true")
+    ap.add_argument("--frame", help="a standing frame of am-llm: its URL")
+    ap.add_argument("--token-file", help="the file with the token for the frame (its one NAME=TOKEN line)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     t = sub.add_parser("tree")
     t.add_argument("--tag")
@@ -114,15 +140,24 @@ def main(argv=None) -> int:
     sv.add_argument("--port", type=int, default=8770)
     sv.add_argument("--log")
     sv.add_argument("--runs", help="the folder am-llm writes its runs under, read only, for the runs pages")
+    rn = sub.add_parser("runs")
+    rn.add_argument("what", nargs="?", choices=["list", "show"], default="list")
+    rn.add_argument("run", nargs="?")
+    rn.add_argument("--at", help="seconds from the run's start, or an ISO time; the end when not given")
+    pl = sub.add_parser("place")
+    pl.add_argument("product")
     args = ap.parse_args(argv)
 
     try:
-        home = Home(args.home, allow_own=args.allow_own)
+        home = None if args.cmd == "runs" else Home(args.home, allow_own=args.allow_own)    # the frame's runs need no home
         return _run(args, home, ap)
     except Refused as e:
         return _refused(e)
     except HomeError as e:
         print(f"am-order: {e}", file=sys.stderr)
+        return 1
+    except FrameError as e:
+        print(f"am-order: {e}" + ("".join(f"\n  {r}" for r in e.reasons)), file=sys.stderr)
         return 1
 
 
@@ -251,11 +286,59 @@ def _run(args, home: Home, ap) -> int:
     if cmd == "serve":
         import uvicorn
         from .web.app import create_app
-        app = create_app(home, Path(args.log) if args.log else None, Path(args.runs) if args.runs else None)
-        print(f"am-order on http://127.0.0.1:{args.port}/ (home {home.root}, session {app.state.log.session})")
+        frame = _frame(args)
+        app = create_app(home, Path(args.log) if args.log else None, Path(args.runs) if args.runs else None, frame=frame)
+        print(f"am-order on http://127.0.0.1:{args.port}/ (home {home.root}, session {app.state.log.session}"
+              + (f", the frame at {frame.url}" if frame else "") + ")")
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
         return 0
+    if cmd in ("runs", "place"):
+        frame = _frame(args)
+        if frame is None:
+            ap.error(f"{cmd}: give the frame with --frame URL (and --token-file FILE)")
+        return _runs(args, frame, ap) if cmd == "runs" else _place(args, frame, home)
     return 1
+
+
+def _runs(args, frame: Frame, ap) -> int:
+    if args.what == "list":
+        for d in frame.runs()["runs"]:
+            e = R.entry_of(d)
+            origin = f"order {e.condition}" if e.experiment == "orders" else f"{e.experiment} / {e.condition}"
+            minutes = f"{e.minutes:.0f} min" if e.minutes is not None else ""
+            print(f"{e.id:40} {origin:32} {e.status:8} {e.started.strftime('%Y-%m-%d %H:%M') if e.started else '':16} {minutes:>7} "
+                  f"{e.outcome or ''}{f' ({e.reason})' if e.reason else ''}")
+        return 0
+    if not args.run:
+        ap.error("runs show: name the run")
+    doc = frame.events(args.run, 0)
+    run = R.from_events(doc["run"], doc["events"], frame.contact.frame_now() if doc["run"]["status"] == "running" else None)
+    st = R.state(run, R.parse_at(run, args.at))
+    seconds = (st.at - run.start).total_seconds() if run.start else 0
+    print(f"{run.entry.id} at {int(seconds) // 3600}:{int(seconds) % 3600 // 60:02d}:{int(seconds) % 60:02d} ({st.at.strftime('%Y-%m-%d %H:%M:%SZ')}),"
+          f" {st.seen} of {len(run.events)} events")
+    for role in run.roles:
+        doing = "at work" + (f", {st.activity[role].word}" if role in st.activity else "") if role in st.awake else st.waiting.get(role, "asleep")
+        print(f"  {R.TITLES.get(role, role):24} {run.decision_makers.get(role, 'not woken'):24} {doing}")
+    if st.design:
+        print(f"  design {st.design}")
+    if run.parked:
+        print(f"  parked for the owner's word: a {run.parked['what']} on {', '.join(run.parked['metrics']) or 'the order'}")
+    if st.outcome:
+        print(f"  outcome: {st.outcome}")
+    return 0
+
+
+def _place(args, frame: Frame, home: Home) -> int:
+    lineage, _, revision = args.product.partition("@")
+    order = home.load(args.product)
+    if not confirmed(order):
+        raise HomeError(f"{args.product} is not confirmed: bind it to a design and confirm every binding before it is placed")
+    version = home.version_of(lineage) if not revision else next(v["version"] for v in home.history(lineage) if v["revision"] == order.data["revision"])
+    body = (home._folder(lineage) / "versions" / f"{version}.json").read_bytes()
+    answer = frame.place(body)
+    print(f"{lineage}@{order.data['revision']} ({version[:12]}) placed at {frame.url}: the run {answer.get('run')}, {answer.get('state', 'placed')}")
+    return 0
 
 
 if __name__ == "__main__":
