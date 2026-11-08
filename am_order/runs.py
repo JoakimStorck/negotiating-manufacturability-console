@@ -80,7 +80,8 @@ def _json(path: Path) -> dict:
 
 
 def _connect(db: Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    """The record opened read only, by a file URI, which on Windows must be `file:///C:/...` and not the bare path."""
+    conn = sqlite3.connect(f"{Path(db).resolve().as_uri()}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     return conn
 
