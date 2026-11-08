@@ -75,3 +75,21 @@ def test_an_event_has_its_kinds_form_and_no_other():
     local["at"] = "2026-11-20T10:15:02+01:00"
     with pytest.raises(SchemaError):
         validate_events(local)
+
+
+def test_a_runs_result_has_an_example_of_every_outcome_and_may_be_absent():
+    catalogue = schema("runs-1.json")["examples"][0]
+    outcomes = {(r.get("result") or {}).get("outcome") for r in catalogue["runs"]}
+    assert {"accepted", "declined", "parked", "referred", "stopped", "error", None} <= outcomes
+    without = json.loads(json.dumps(catalogue))
+    for r in without["runs"]:
+        r.pop("result", None)
+    validate_runs(without)                                   # a run ended before the result was served
+    unitless = json.loads(json.dumps(catalogue))
+    accepted = next(r for r in unitless["runs"] if (r.get("result") or {}).get("outcome") == "accepted")
+    accepted["result"]["plan"]["settings"]["layer_height"] = 0.15
+    with pytest.raises(SchemaError):
+        validate_runs(unitless)
+    parked = schema("events-1.json")["examples"][1]
+    assert parked["run"]["result"]["waits"]["metrics"] == ["M13"]
+    validate_events(parked)

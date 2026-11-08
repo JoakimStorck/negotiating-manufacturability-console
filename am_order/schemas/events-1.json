@@ -84,8 +84,138 @@
         "started": {"$ref": "#/$defs/time"},
         "ended": {"oneOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
         "outcome": {"type": ["string", "null"]},
-        "reason": {"type": ["string", "null"]}
+        "reason": {"type": ["string", "null"]},
+        "result": {"$ref": "#/$defs/result"}
       }
+    },
+    "result": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/outcome"}],
+      "description": "The run's result: null while it runs; once it has ended or parked, what it came to. The frame computes it from the run's measures (`measures.json`) once, when the run ends or parks, and never changes it; a parked run has no measures yet, and its `waits` come from the dialogue. Every number carries its unit."
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["outcome", "reason", "plan", "requirements", "waits", "showing"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": {"enum": ["accepted", "declined", "parked", "referred", "stopped", "error"]},
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Why it ended so, in words: the requester's reason for declining, the referral's, the error's"
+        },
+        "plan": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/plan"}],
+          "description": "The accepted plan, for an accepted run; null otherwise"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/requirement"},
+          "description": "The requirements as finally stated, for an accepted run; empty otherwise"
+        },
+        "waits": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/waits"}],
+          "description": "What waits for whom, for a parked run; null otherwise"
+        },
+        "showing": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/showing"}],
+          "description": "The last showing, for a declined or referred run, where there was one"
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "description": "A plan made and judged.",
+      "required": ["seq", "time", "kind", "id", "design", "machine_class", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "plan"},
+        "source": {"$ref": "#/$defs/source"},
+        "id": {"type": "string"},
+        "case": {"type": ["string", "null"]},
+        "design": {"type": "string"},
+        "machine_class": {"type": "string"},
+        "verdict": {"enum": ["ok", "at_risk", "critical", "incomplete"]},
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}, "description": "The findings that are not ok"}
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["requirement", "kind", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {"type": "string", "description": "The case's requirement as the record numbers it"},
+        "metric": {"type": ["string", "null"], "description": "The order's metric it carries, where the order gave one"},
+        "kind": {"type": "string"},
+        "feature": {"type": ["string", "null"]},
+        "value": {"type": "object", "description": "The value in force, in the record's form (at_most, at_least, band, equals, holds)"},
+        "margin": {"type": ["number", "null"], "description": "The margin in force where the order demands a reserve"},
+        "unit": {"type": ["string", "null"]},
+        "relaxed": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/relaxed"}], "description": "Where it was relaxed in the run"}
+      }
+    },
+    "relaxed": {
+      "type": "object",
+      "required": ["what", "from", "to", "by", "showing"],
+      "additionalProperties": false,
+      "properties": {
+        "what": {"enum": ["margin", "value"]},
+        "from": {},
+        "to": {},
+        "by": {
+          "type": "object",
+          "required": ["role", "actor"],
+          "additionalProperties": false,
+          "properties": {
+            "role": {
+              "enum": [
+                "requester",
+                "design_engineer",
+                "process_planner",
+                "production_planner",
+                "quality_engineer",
+                "machine_operator",
+                "maintenance_technician"
+              ]
+            },
+            "actor": {"enum": ["agent", "operator", "owner"]}
+          }
+        },
+        "showing": {
+          "type": ["string", "null"],
+          "description": "The dialogue's call of the showing the relaxation was made on, where there was one"
+        },
+        "within_mandate": {"type": ["boolean", "null"]}
+      }
+    },
+    "waits": {
+      "type": "object",
+      "required": ["what", "for", "since", "metrics"],
+      "additionalProperties": false,
+      "properties": {
+        "what": {"enum": ["showing", "question"]},
+        "for": {"enum": ["owner", "requester"]},
+        "since": {"type": "string", "format": "date-time", "pattern": "Z$"},
+        "metrics": {"type": "array", "items": {"type": "string"}},
+        "dialogue": {"type": ["string", "null"]}
+      }
+    },
+    "showing": {
+      "type": "object",
+      "required": ["dialogue", "design"],
+      "additionalProperties": false,
+      "properties": {
+        "dialogue": {"type": "string"},
+        "design": {"type": ["string", "null"]},
+        "plan": {"type": ["string", "null"]},
+        "text": {"type": ["string", "null"]}
+      }
+    },
+    "quantity": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "additionalProperties": false,
+      "properties": {"value": {"type": ["number", "string", "boolean"]}, "unit": {"type": "string"}}
     },
     "finding": {
       "type": "object",
@@ -307,24 +437,6 @@
         "sha256": {"$ref": "#/$defs/sha"}
       }
     },
-    "plan": {
-      "type": "object",
-      "description": "A plan made and judged.",
-      "required": ["seq", "time", "kind", "id", "design", "machine_class", "verdict"],
-      "additionalProperties": false,
-      "properties": {
-        "seq": {"$ref": "#/$defs/seq"},
-        "time": {"$ref": "#/$defs/time"},
-        "kind": {"const": "plan"},
-        "source": {"$ref": "#/$defs/source"},
-        "id": {"type": "string"},
-        "case": {"type": ["string", "null"]},
-        "design": {"type": "string"},
-        "machine_class": {"type": "string"},
-        "verdict": {"enum": ["ok", "at_risk", "critical", "incomplete"]},
-        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}, "description": "The findings that are not ok"}
-      }
-    },
     "case": {
       "type": "object",
       "description": "The case's state changed: what follows is the whole state in force.",
@@ -410,7 +522,8 @@
         "started": "2026-11-20T09:02:11Z",
         "ended": null,
         "outcome": null,
-        "reason": null
+        "reason": null,
+        "result": null
       },
       "events": [
         {
@@ -511,6 +624,150 @@
               "within_mandate": true
             }
           ]
+        }
+      ]
+    },
+    {
+      "schema": "events/1",
+      "at": "2026-11-20T09:15:02Z",
+      "after": 0,
+      "last": 8,
+      "run": {
+        "id": "bracket-mass@2",
+        "order": {"lineage": "bracket-mass", "revision": 2, "sha256": "e6011872895f9bf153a3212614ca9d28f0174f80f5de362a3aa67fb537f1c465"},
+        "scenario": null,
+        "lineages": ["bracket-mass"],
+        "settings": {"negotiation": "open", "held": "mass"},
+        "version": "714b5f8",
+        "status": "parked",
+        "started": "2026-11-20T09:02:11Z",
+        "ended": null,
+        "outcome": null,
+        "reason": null,
+        "result": {
+          "outcome": "parked",
+          "reason": "a showing waits for the order's owner",
+          "plan": null,
+          "requirements": [],
+          "showing": null,
+          "waits": {
+            "what": "showing",
+            "for": "owner",
+            "since": "2026-11-08T16:26:51Z",
+            "metrics": ["M13"],
+            "dialogue": "call-01M6XZQT7Y"
+          }
+        }
+      },
+      "events": [
+        {
+          "seq": 1,
+          "time": "2026-11-20T09:02:12Z",
+          "kind": "woke",
+          "waking": "r1",
+          "role": "design_engineer",
+          "actor": "agent",
+          "maker": {"kind": "model", "name": "claude-sonnet-5-5"},
+          "case": "c1",
+          "prompt": "The brief for bracket-mass@2.",
+          "source": {"table": "run", "row": "r1"}
+        },
+        {
+          "seq": 2,
+          "time": "2026-11-20T09:02:40Z",
+          "kind": "turn",
+          "waking": "r1",
+          "turn": 1,
+          "seconds": 27.5,
+          "model": "claude-sonnet-5-5",
+          "thinking": "The mass demand binds; reshape toward it first.",
+          "text": ""
+        },
+        {
+          "seq": 3,
+          "time": "2026-11-20T09:02:41Z",
+          "kind": "design",
+          "id": "bracket-mass@v16",
+          "parent": "bracket-mass@v15",
+          "made_by_role": "design_engineer",
+          "made_by_actor": "agent",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "seq": 4,
+          "time": "2026-11-20T09:02:40Z",
+          "kind": "call",
+          "id": "k12",
+          "waking": "r1",
+          "turn": 1,
+          "tool": "reshape",
+          "seconds": 95.0,
+          "error": false,
+          "inputs": {"design": "bracket-mass@v15", "goal": "mass"},
+          "about": "bracket-mass@v15"
+        },
+        {"seq": 5, "time": "2026-11-20T09:04:15Z", "kind": "results", "waking": "r1", "turn": 1},
+        {
+          "seq": 6,
+          "time": "2026-11-20T09:14:40Z",
+          "kind": "dialogue",
+          "id": "k31",
+          "case": "c1",
+          "tool": "show_design",
+          "actor": "agent",
+          "inputs": {"design": "bracket-mass@v16", "text": "The lightest version holding the rest, its plan at risk on one load case."},
+          "findings": [
+            {
+              "requirement": "req-14",
+              "metric": "M6",
+              "feature": "lug",
+              "status": "at_risk",
+              "value": 0.72,
+              "limit": 1.0,
+              "margin": 0.6,
+              "unit": "1",
+              "call": "k29"
+            }
+          ],
+          "certificate": {
+            "text": "9 versions since the brief by parameters and shape; the lightest holding the rest is bracket-mass@v16 at 15.9 g.",
+            "versions": 9,
+            "means": ["parameters", "shape"],
+            "lightest": "bracket-mass@v16",
+            "cites": ["k12", "k29"]
+          }
+        },
+        {
+          "seq": 7,
+          "time": "2026-11-20T09:15:01Z",
+          "kind": "dialogue",
+          "id": "k32",
+          "case": "c1",
+          "tool": "accept_design",
+          "actor": "agent",
+          "inputs": {"showing": "k31"},
+          "source": {"table": "call", "row": "k32"},
+          "relaxations": [
+            {
+              "requirement": "req-14",
+              "metric": "M6",
+              "what": "margin",
+              "from": 0.6,
+              "to": 0.72,
+              "unit": "1",
+              "within_mandate": true
+            }
+          ]
+        },
+        {
+          "seq": 8,
+          "time": "2026-11-20T09:15:02Z",
+          "kind": "parked",
+          "source": {"table": "call", "row": "k33"},
+          "case": "c1",
+          "what": "showing",
+          "dialogue": "k31",
+          "metrics": ["M13"]
         }
       ]
     }

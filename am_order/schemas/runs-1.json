@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "am-order/runs-1",
   "title": "The frame's runs",
-  "description": "What the standing frame serves as its catalogue: every run it holds, from an order or from a scenario, running, parked or done, each as `events-1` names a run and with what the catalogue shows beside it (the decision makers, the last sequence number of its events). The tool groups the runs by order or by experiment; a run's events are fetched by its id. An order placed and not yet made a run is presence's (`presence-1`, a run `placed`), not the catalogue's. A sketch of 2026-11-08, written before the frame is built (am-llm's design document 2.6).",
+  "description": "What the standing frame serves as its catalogue: every run it holds, from an order or from a scenario, running, parked or done, each as `events-1` names a run and with what the catalogue shows beside it (the decision makers, the last sequence number of its events). Each run carries its `result` once it has ended or parked, so that the catalogue shows what a run came to (the plan's time, material and mass) without reading its events. The tool groups the runs by order or by experiment; a run's events are fetched by its id. An order placed and not yet made a run is presence's (`presence-1`, a run `placed`), not the catalogue's. A sketch of 2026-11-08, written before the frame is built (am-llm's design document 2.6).",
   "type": "object",
   "required": ["schema", "at", "runs"],
   "additionalProperties": false,
@@ -30,6 +30,158 @@
       "required": ["kind"],
       "additionalProperties": false,
       "properties": {"kind": {"enum": ["model", "scripted", "operator", "none"]}, "name": {"type": ["string", "null"]}}
+    },
+    "result": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/outcome"}],
+      "description": "The run's result: null while it runs; once it has ended or parked, what it came to. The frame computes it from the run's measures (`measures.json`) once, when the run ends or parks, and never changes it; a parked run has no measures yet, and its `waits` come from the dialogue. Every number carries its unit."
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["outcome", "reason", "plan", "requirements", "waits", "showing"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": {"enum": ["accepted", "declined", "parked", "referred", "stopped", "error"]},
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Why it ended so, in words: the requester's reason for declining, the referral's, the error's"
+        },
+        "plan": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/plan"}],
+          "description": "The accepted plan, for an accepted run; null otherwise"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/requirement"},
+          "description": "The requirements as finally stated, for an accepted run; empty otherwise"
+        },
+        "waits": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/waits"}],
+          "description": "What waits for whom, for a parked run; null otherwise"
+        },
+        "showing": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/showing"}],
+          "description": "The last showing, for a declined or referred run, where there was one"
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "required": ["id", "design", "orientation", "settings", "print_time_s", "material_g", "verdict", "findings"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "design": {"type": "string"},
+        "orientation": {"type": ["string", "null"]},
+        "material": {"type": ["string", "null"]},
+        "settings": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/quantity"},
+          "description": "The plan's decision values by name, each with its unit (layer_height in mm, perimeters a count, fill_density in %)"
+        },
+        "print_time_s": {"type": "number", "minimum": 0, "description": "Print time in s"},
+        "material_g": {"type": "number", "minimum": 0, "description": "Material used in g"},
+        "mass_g": {"type": ["number", "null"], "minimum": 0, "description": "The printed part's mass in g, where the analysis gives it"},
+        "verdict": {"enum": ["ok", "at_risk", "critical", "incomplete"]},
+        "findings": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/finding"},
+          "description": "The findings not ok against the requirements as finally stated"
+        }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["requirement", "kind", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {"type": "string", "description": "The case's requirement as the record numbers it"},
+        "metric": {"type": ["string", "null"], "description": "The order's metric it carries, where the order gave one"},
+        "kind": {"type": "string"},
+        "feature": {"type": ["string", "null"]},
+        "value": {"type": "object", "description": "The value in force, in the record's form (at_most, at_least, band, equals, holds)"},
+        "margin": {"type": ["number", "null"], "description": "The margin in force where the order demands a reserve"},
+        "unit": {"type": ["string", "null"]},
+        "relaxed": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/relaxed"}], "description": "Where it was relaxed in the run"}
+      }
+    },
+    "relaxed": {
+      "type": "object",
+      "required": ["what", "from", "to", "by", "showing"],
+      "additionalProperties": false,
+      "properties": {
+        "what": {"enum": ["margin", "value"]},
+        "from": {},
+        "to": {},
+        "by": {
+          "type": "object",
+          "required": ["role", "actor"],
+          "additionalProperties": false,
+          "properties": {
+            "role": {
+              "enum": [
+                "requester",
+                "design_engineer",
+                "process_planner",
+                "production_planner",
+                "quality_engineer",
+                "machine_operator",
+                "maintenance_technician"
+              ]
+            },
+            "actor": {"enum": ["agent", "operator", "owner"]}
+          }
+        },
+        "showing": {
+          "type": ["string", "null"],
+          "description": "The dialogue's call of the showing the relaxation was made on, where there was one"
+        },
+        "within_mandate": {"type": ["boolean", "null"]}
+      }
+    },
+    "waits": {
+      "type": "object",
+      "required": ["what", "for", "since", "metrics"],
+      "additionalProperties": false,
+      "properties": {
+        "what": {"enum": ["showing", "question"]},
+        "for": {"enum": ["owner", "requester"]},
+        "since": {"type": "string", "format": "date-time", "pattern": "Z$"},
+        "metrics": {"type": "array", "items": {"type": "string"}},
+        "dialogue": {"type": ["string", "null"]}
+      }
+    },
+    "showing": {
+      "type": "object",
+      "required": ["dialogue", "design"],
+      "additionalProperties": false,
+      "properties": {
+        "dialogue": {"type": "string"},
+        "design": {"type": ["string", "null"]},
+        "plan": {"type": ["string", "null"]},
+        "text": {"type": ["string", "null"]}
+      }
+    },
+    "quantity": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "additionalProperties": false,
+      "properties": {"value": {"type": ["number", "string", "boolean"]}, "unit": {"type": "string"}}
+    },
+    "finding": {
+      "type": "object",
+      "required": ["requirement", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {"type": "string"},
+        "metric": {"type": ["string", "null"]},
+        "feature": {"type": ["string", "null"]},
+        "status": {"enum": ["at_risk", "critical", "no_data"]},
+        "value": {"type": ["number", "null"]},
+        "limit": {"type": ["number", "null"]},
+        "margin": {"type": ["number", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "call": {"type": ["string", "null"]}
+      }
     },
     "run": {
       "type": "object",
@@ -76,6 +228,7 @@
         "ended": {"oneOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
         "outcome": {"type": ["string", "null"]},
         "reason": {"type": ["string", "null"]},
+        "result": {"$ref": "#/$defs/result"},
         "last": {
           "type": "integer",
           "minimum": 0,
@@ -110,7 +263,21 @@
           "ended": null,
           "outcome": null,
           "reason": null,
-          "last": 412
+          "last": 412,
+          "result": {
+            "outcome": "parked",
+            "reason": "a showing waits for the order's owner",
+            "plan": null,
+            "requirements": [],
+            "showing": null,
+            "waits": {
+              "what": "showing",
+              "for": "owner",
+              "since": "2026-11-08T16:26:51Z",
+              "metrics": ["M13"],
+              "dialogue": "call-01M6XZQT7Y"
+            }
+          }
         },
         {
           "id": "h1-plate/default-01",
@@ -129,7 +296,188 @@
           "ended": "2026-11-20T08:04:31Z",
           "outcome": "accepted",
           "reason": null,
-          "last": 57
+          "last": 57,
+          "result": {
+            "outcome": "accepted",
+            "reason": null,
+            "waits": null,
+            "showing": null,
+            "plan": {
+              "id": "plan-bracket-mass-v3-mZ@v12",
+              "design": "bracket-mass@v3",
+              "orientation": "-Z",
+              "material": "Prusament PLA",
+              "settings": {
+                "layer_height": {"value": 0.15, "unit": "mm"},
+                "perimeters": {"value": 3, "unit": "1"},
+                "fill_density": {"value": 10, "unit": "%"}
+              },
+              "print_time_s": 3280.8,
+              "material_g": 21.4,
+              "mass_g": 19.852,
+              "verdict": "ok",
+              "findings": []
+            },
+            "requirements": [
+              {
+                "requirement": "req-14",
+                "metric": "M8",
+                "kind": "load_case",
+                "feature": "pin-hole",
+                "value": {"at_most": 1.0},
+                "margin": 0.838,
+                "unit": "1",
+                "relaxed": {
+                  "what": "margin",
+                  "from": 0.6,
+                  "to": 0.838,
+                  "by": {"role": "requester", "actor": "agent"},
+                  "showing": "call-01M6XZQT7Y",
+                  "within_mandate": true
+                }
+              },
+              {
+                "requirement": "req-20",
+                "metric": "M13",
+                "kind": "mass",
+                "feature": null,
+                "value": {"at_most": 19.86},
+                "margin": null,
+                "unit": "g",
+                "relaxed": {
+                  "what": "value",
+                  "from": {"at_most": 16.0},
+                  "to": {"at_most": 19.86},
+                  "by": {"role": "requester", "actor": "agent"},
+                  "showing": "call-01M6XZQT7Y",
+                  "within_mandate": true
+                }
+              },
+              {
+                "requirement": "req-2",
+                "metric": "M2",
+                "kind": "diameter",
+                "feature": "pin-hole",
+                "value": {"band": {"lower": 8, "nominal": 8.3, "upper": 8.6}},
+                "margin": null,
+                "unit": "mm",
+                "relaxed": null
+              }
+            ]
+          }
+        },
+        {
+          "id": "h1-bracket-mass/declined-01",
+          "order": null,
+          "scenario": {"experiment": "h1-bracket-mass", "condition": "declined"},
+          "lineages": ["bracket-mass"],
+          "settings": {"negotiation": "open"},
+          "version": "714b5f8",
+          "makers": {"requester": {"kind": "model", "name": "claude-haiku-5-5"}},
+          "status": "done",
+          "started": "2026-11-20T07:00:00Z",
+          "ended": "2026-11-20T07:40:00Z",
+          "outcome": "declined",
+          "reason": "the mass held at 16 g cannot be met: the lightest version holding the rest is 18.84 g",
+          "last": 300,
+          "result": {
+            "outcome": "declined",
+            "reason": "the mass held at 16 g cannot be met: the lightest version holding the rest is 18.84 g",
+            "plan": null,
+            "requirements": [],
+            "waits": null,
+            "showing": {
+              "dialogue": "call-01M6XZQT7Y",
+              "design": "bracket-mass@v3",
+              "plan": "plan-bracket-mass-v3-mZ@v12",
+              "text": "The lightest version holding the rest"
+            }
+          }
+        },
+        {
+          "id": "h1-bracket-mass/referred-01",
+          "order": null,
+          "scenario": {"experiment": "h1-bracket-mass", "condition": "referred"},
+          "lineages": ["bracket-mass"],
+          "settings": {"negotiation": "open"},
+          "version": "714b5f8",
+          "makers": {"requester": {"kind": "model", "name": "claude-haiku-5-5"}},
+          "status": "done",
+          "started": "2026-11-20T07:00:00Z",
+          "ended": "2026-11-20T07:40:00Z",
+          "outcome": "referred",
+          "reason": "stalled: design_engineer ended its run without moving the case",
+          "last": 300,
+          "result": {
+            "outcome": "referred",
+            "reason": "stalled: design_engineer ended its run without moving the case",
+            "plan": null,
+            "requirements": [],
+            "waits": null,
+            "showing": {"dialogue": "call-01M6YAVGVX", "design": "bracket-ge@v6", "plan": null, "text": null}
+          }
+        },
+        {
+          "id": "h1-bracket-mass/stopped-01",
+          "order": null,
+          "scenario": {"experiment": "h1-bracket-mass", "condition": "stopped"},
+          "lineages": ["bracket-mass"],
+          "settings": {"negotiation": "open"},
+          "version": "714b5f8",
+          "makers": {"requester": {"kind": "model", "name": "claude-haiku-5-5"}},
+          "status": "done",
+          "started": "2026-11-20T07:00:00Z",
+          "ended": "2026-11-20T07:40:00Z",
+          "outcome": "stopped",
+          "reason": "frame: a decision is needed and the role has no decision maker",
+          "last": 300,
+          "result": {
+            "outcome": "stopped",
+            "reason": "frame: a decision is needed and the role has no decision maker",
+            "plan": null,
+            "requirements": [],
+            "waits": null,
+            "showing": null
+          }
+        },
+        {
+          "id": "h1-bracket-mass/error-01",
+          "order": null,
+          "scenario": {"experiment": "h1-bracket-mass", "condition": "error"},
+          "lineages": ["bracket-mass"],
+          "settings": {"negotiation": "open"},
+          "version": "714b5f8",
+          "makers": {"requester": {"kind": "model", "name": "claude-haiku-5-5"}},
+          "status": "done",
+          "started": "2026-11-20T07:00:00Z",
+          "ended": "2026-11-20T07:40:00Z",
+          "outcome": "error",
+          "reason": "the shape tool ran out of memory (23 GB at volume fraction 0.12)",
+          "last": 300,
+          "result": {
+            "outcome": "error",
+            "reason": "the shape tool ran out of memory (23 GB at volume fraction 0.12)",
+            "plan": null,
+            "requirements": [],
+            "waits": null,
+            "showing": null
+          }
+        },
+        {
+          "id": "h1-plate/running-01",
+          "order": null,
+          "scenario": {"experiment": "h1-plate", "condition": "running"},
+          "lineages": ["plate"],
+          "settings": {},
+          "version": "714b5f8",
+          "makers": {},
+          "status": "running",
+          "started": "2026-11-20T09:10:00Z",
+          "ended": null,
+          "outcome": null,
+          "reason": null,
+          "last": 12,
+          "result": null
         }
       ]
     }
