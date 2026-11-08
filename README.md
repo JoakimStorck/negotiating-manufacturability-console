@@ -91,3 +91,7 @@ cd ../am-llm
 .venv/bin/python -m design features --all --out ../am-order/examples/features
 cp -r products/own products/groups.json ../am-order/examples/
 ```
+
+## Licence
+
+Copyright 2026 Joakim Storck. Licensed under the Apache License, Version 2.0 (`LICENSE`). The vendored web libraries keep their own licences beside them (`am_order/web/static/`).
