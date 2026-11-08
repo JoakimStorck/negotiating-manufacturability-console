@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "am-order"
-version = "1.0.0"
+dynamic = ["version"]                       # one place: am_order/__init__.py
 description = "The order tool: a product's requirements by Pahl & Beitz, Ulrich & Eppinger and ISO/IEC/IEEE 29148, bound to a design's features"
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -24,6 +24,9 @@ test = [
 
 [project.scripts]
 am-order = "am_order.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "am_order.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["am_order*"]

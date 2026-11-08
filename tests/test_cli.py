@@ -1,4 +1,5 @@
 """The command line, each command once against a copy of the examples."""
+import importlib.metadata
 import json
 
 from am_order import Home
@@ -38,3 +39,8 @@ def test_the_commands(home_dir, tmp_path, capsys):
     assert run(home_dir, "features", "list") == 0 and "nist-am-artifact@v1" in capsys.readouterr().out
     f = Home(home_dir).facets("plate-2")
     assert (f["category"], f["group"], f["tags"]) == ("archive", "trials/cli", ["control"])
+
+
+def test_the_version_is_the_packages():
+    import am_order
+    assert importlib.metadata.version("am-order") == am_order.__version__     # pyproject.toml reads it from the package
