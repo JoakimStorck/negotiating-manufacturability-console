@@ -1,6 +1,6 @@
 """The contracts, each versioned by its file name: with a design system the order (`schemas/order-1.json`) and the feature list
 (`schemas/features-1.json`), against which every read and every save validates; with am-llm's standing frame its presence
-(`schemas/presence-1.json`) and a run's events (`schemas/events-1.json`), sketched before the frame is built and validated as the
+(`schemas/presence-1.json`), its runs (`schemas/runs-1.json`) and a run's events (`schemas/events-1.json`), sketched before the frame is built and validated as the
 frame serves them. Every schema carries an example of its form."""
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ ORDER = "order-1.json"
 FEATURES = "features-1.json"
 PRESENCE = "presence-1.json"
 EVENTS = "events-1.json"
+RUNS = "runs-1.json"
 
 
 class SchemaError(ValueError):
@@ -62,6 +63,13 @@ def validate_presence(presence: dict) -> dict:
     if found:
         raise SchemaError("the frame's presence", found)
     return presence
+
+
+def validate_runs(runs: dict) -> dict:
+    found = errors(runs, RUNS)
+    if found:
+        raise SchemaError("the frame's runs", found)
+    return runs
 
 
 def validate_events(events: dict) -> dict:

@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "am-order/runs-1",
+  "title": "The frame's runs",
+  "description": "What the standing frame serves as its catalogue: every run it holds, from an order or from a scenario, running, parked or done, each as `events-1` names a run and with what the catalogue shows beside it (the decision makers, the last sequence number of its events). The tool groups the runs by order or by experiment; a run's events are fetched by its id. An order placed and not yet made a run is presence's (`presence-1`, a run `placed`), not the catalogue's. A sketch of 2026-11-08, written before the frame is built (am-llm's design document 2.6).",
+  "type": "object",
+  "required": ["schema", "at", "runs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "runs/1"},
+    "at": {"$ref": "#/$defs/time", "description": "When the frame served the document"},
+    "runs": {"type": "array", "items": {"$ref": "#/$defs/run"}, "description": "Newest first"}
+  },
+  "$defs": {
+    "time": {"type": "string", "format": "date-time", "pattern": "Z$", "description": "ISO 8601 UTC, on the frame's clock"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "role": {
+      "enum": [
+        "requester",
+        "design_engineer",
+        "process_planner",
+        "production_planner",
+        "quality_engineer",
+        "machine_operator",
+        "maintenance_technician"
+      ]
+    },
+    "maker": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {"kind": {"enum": ["model", "scripted", "operator", "none"]}, "name": {"type": ["string", "null"]}}
+    },
+    "run": {
+      "type": "object",
+      "required": ["id", "status", "started", "makers", "last"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The run's name, as `events-1` and the events' address use it: `<lineage>@<revision>` for an order, `<experiment>/<condition>` for a scenario"
+        },
+        "order": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["lineage", "revision", "sha256"],
+              "additionalProperties": false,
+              "properties": {"lineage": {"type": "string"}, "revision": {"type": "integer", "minimum": 1}, "sha256": {"$ref": "#/$defs/sha"}}
+            }
+          ]
+        },
+        "scenario": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["experiment", "condition"],
+              "additionalProperties": false,
+              "properties": {"experiment": {"type": "string"}, "condition": {"type": "string"}}
+            }
+          ]
+        },
+        "lineages": {"type": "array", "items": {"type": "string"}},
+        "settings": {"type": "object", "description": "The run's settings as the frame holds them (negotiation, held, ...)"},
+        "version": {"type": "string", "description": "am-llm's commit the run ran on"},
+        "makers": {
+          "type": "object",
+          "propertyNames": {"$ref": "#/$defs/role"},
+          "additionalProperties": {"$ref": "#/$defs/maker"},
+          "description": "The decision maker that filled each role in the run, the latest where it changed"
+        },
+        "status": {"enum": ["running", "parked", "done"]},
+        "started": {"$ref": "#/$defs/time"},
+        "ended": {"oneOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
+        "outcome": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]},
+        "last": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The last sequence number of the run's events: a reader that has read up to it has nothing new to ask for"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "runs/1",
+      "at": "2026-11-20T09:15:02Z",
+      "runs": [
+        {
+          "id": "bracket-mass@2",
+          "order": {
+            "lineage": "bracket-mass",
+            "revision": 2,
+            "sha256": "e6011872895f9bf153a3212614ca9d28f0174f80f5de362a3aa67fb537f1c465"
+          },
+          "scenario": null,
+          "lineages": ["bracket-mass"],
+          "settings": {"negotiation": "open"},
+          "version": "714b5f8",
+          "makers": {
+            "requester": {"kind": "model", "name": "claude-haiku-5-5"},
+            "design_engineer": {"kind": "model", "name": "claude-sonnet-5-5"},
+            "process_planner": {"kind": "model", "name": "claude-sonnet-5-5"}
+          },
+          "status": "parked",
+          "started": "2026-11-20T09:02:11Z",
+          "ended": null,
+          "outcome": null,
+          "reason": null,
+          "last": 412
+        },
+        {
+          "id": "h1-plate/default",
+          "order": null,
+          "scenario": {"experiment": "h1-plate", "condition": "default"},
+          "lineages": ["plate"],
+          "settings": {"negotiation": "open", "held": null},
+          "version": "714b5f8",
+          "makers": {
+            "requester": {"kind": "scripted", "name": "reference"},
+            "design_engineer": {"kind": "none"},
+            "process_planner": {"kind": "none"}
+          },
+          "status": "done",
+          "started": "2026-11-20T08:01:00Z",
+          "ended": "2026-11-20T08:04:31Z",
+          "outcome": "accepted",
+          "reason": null,
+          "last": 57
+        }
+      ]
+    }
+  ]
+}

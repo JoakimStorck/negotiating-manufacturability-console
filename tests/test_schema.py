@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from am_order import Order, SchemaError, validate_events, validate_features, validate_order, validate_presence
+from am_order import Order, SchemaError, validate_events, validate_features, validate_order, validate_presence, validate_runs
 from am_order.schema import schema
 from conftest import EXAMPLES, REFERENCE
 
@@ -33,7 +33,7 @@ def test_a_document_out_of_form_is_refused():
 
 
 def test_the_frames_contracts_validate_their_own_examples():
-    for name, validate in (("presence-1.json", validate_presence), ("events-1.json", validate_events)):
+    for name, validate in (("presence-1.json", validate_presence), ("runs-1.json", validate_runs), ("events-1.json", validate_events)):
         examples = schema(name)["examples"]
         assert examples
         for example in examples:
@@ -68,6 +68,10 @@ def test_an_event_has_its_kinds_form_and_no_other():
                              "dialogue": "k31", "metrics": ["M13"], "source": {"table": "call", "row": "k31"}})
     validate_events(parked)
     local = json.loads(json.dumps(events))
+    catalogue = json.loads(json.dumps(schema("runs-1.json")["examples"][0]))
+    catalogue["runs"][0]["makers"]["foreman"] = {"kind": "none"}
+    with pytest.raises(SchemaError):
+        validate_runs(catalogue)
     local["at"] = "2026-11-20T10:15:02+01:00"
     with pytest.raises(SchemaError):
         validate_events(local)

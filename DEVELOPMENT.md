@@ -81,7 +81,7 @@ it. It is one picture with two uses, the system operator's console and the demon
   between them the block diagram, the turns and the design take the height that is left, the turns scrolling in their column
   with the latest in view. The time picture is thus always in the same place however long the turns run.
 - **The catalogue** lists the recorded runs by product, experiment and condition (negotiation, decision makers, when, how long,
-  outcome). It reads the folders am-llm leaves today; with the frame it reads the frame's runs and their events (`events-1.json`),
+  outcome). It reads the folders am-llm leaves today; with the frame it reads the frame's runs (`runs-1.json`) and their events (`events-1.json`),
   and shows running runs beside finished ones.
 - **The events** are the run as the frame serves it: one list in the order the frame wrote them, each with its time and a sequence
   number, fetched after the last number read, so that a row written late (a turn written as it ends, a call as it answers) is
