@@ -107,11 +107,12 @@ default home. These decide the order-2 schema and the dialogue contract, and not
 Done:
 
 1. **The runs pages** (commit 16fd871): the catalogue and the overview as a still picture at a chosen time, read from the record.
-
-Next, independent of the open decisions:
-
-2. **The overview playing.** The clock in the page, speeds, pause, jumps both ways between events, turns and decisions,
-   keyboard; the activity lines with the thinking and the calls; the turns panel; the same page following a running run.
+2. **The overview playing** (d0dc2cc to 81acac4): the clock in the page, speeds, pause, jumps both ways between events, turns
+   and decisions, keyboard; the activity lines with the thinking and the calls; the turns panel; the page filling the window;
+   the same page following a running run.
+3. **Foundations** (8d296d7 to the commit after 0b5a7bc): the tests on Linux, Windows and macOS with Python 3.12 and 3.13 at
+   every push, in `negotiating-manufacturability-console` on GitHub; `logs/` ignored; the version in one place; `Home.derive`
+   leaving no half-made product; the writer lock on the home; the tree reading an order once until it changes.
 
 On am-llm's side, as soon as the review is read, in parallel with the builds here; it depends on the brief's form and on where the
 mandate becomes the reservation, and on nothing else that is open:
@@ -122,8 +123,7 @@ mandate becomes the reservation, and on nothing else that is open:
   contract is the first of the four contracts written, since the empty frame has nothing else to be seen by.
 
 Then, independent of the open decisions:
-3. **Foundations.** CI on Linux, Windows and macOS; Python 3.13 in the range and the tests; `logs/` ignored; the version in one
-   place; `Home.derive` leaving no half-made product on failure; a writer lock on the home; the tree not reading every order.
+
 4. **The web app for a person.** Partial page updates instead of whole-body swaps; confirmations before anything is lost; error
    pages in words, including the workbook import's; the message colour from the outcome, not from a word in the text; one log per
    session with the proposals logged; the word tables (synonyms, kinds, compatibility) as data beside the vocabularies.
