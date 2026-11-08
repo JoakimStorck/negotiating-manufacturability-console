@@ -62,6 +62,11 @@ def test_an_event_has_its_kinds_form_and_no_other():
     unknown["events"].append({"seq": 8, "time": "2026-11-20T09:15:02Z", "kind": "rumour"})
     with pytest.raises(SchemaError):
         validate_events(unknown)
+    parked = json.loads(json.dumps(events))
+    parked["run"]["status"] = "parked"
+    parked["events"].append({"seq": 8, "time": "2026-11-20T09:15:02Z", "kind": "parked", "case": "c1", "what": "showing",
+                             "dialogue": "k31", "metrics": ["M13"], "source": {"table": "call", "row": "k31"}})
+    validate_events(parked)
     local = json.loads(json.dumps(events))
     local["at"] = "2026-11-20T10:15:02+01:00"
     with pytest.raises(SchemaError):

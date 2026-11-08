@@ -58,7 +58,10 @@
         "id": {"$ref": "#/$defs/id", "description": "The role's name, or the machine's"},
         "kind": {"enum": ["role", "machine"]},
         "since": {"$ref": "#/$defs/time", "description": "When the part announced itself"},
-        "seen": {"$ref": "#/$defs/time", "description": "Its latest sign of life"},
+        "seen": {
+          "$ref": "#/$defs/time",
+          "description": "Its latest sign of life: that it is alive, not that it worked. A role that waits idle in a frame that stands is seen at `at`; a part that runs elsewhere is seen when it last reported"
+        },
         "state": {"enum": ["present", "unavailable", "left"]},
         "note": {"type": ["string", "null"], "description": "Why it is unavailable, or its farewell"},
         "role": {"$ref": "#/$defs/role"},

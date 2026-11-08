@@ -21,6 +21,13 @@
   "$defs": {
     "time": {"type": "string", "format": "date-time", "pattern": "Z$", "description": "ISO 8601 UTC, on the frame's clock"},
     "seq": {"type": "integer", "minimum": 1},
+    "source": {
+      "type": "object",
+      "required": ["table", "row"],
+      "additionalProperties": false,
+      "description": "What the event came from, so that a deeper reading can follow it: the record's table and the row's id (a turn's as `<waking>/<seq>`), or the run folder's file for what the record does not hold",
+      "properties": {"table": {"type": "string"}, "row": {"type": "string"}}
+    },
     "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "role": {
       "enum": [
@@ -70,7 +77,10 @@
         "lineages": {"type": "array", "items": {"type": "string"}},
         "settings": {"type": "object", "description": "The run's settings as the frame holds them (negotiation, held, ...)"},
         "version": {"type": "string", "description": "am-llm's commit the run ran on"},
-        "status": {"enum": ["running", "parked", "done"]},
+        "status": {
+          "enum": ["running", "parked", "done"],
+          "description": "Parked while a case waits for the owner's word; done once `ended` is served"
+        },
         "started": {"$ref": "#/$defs/time"},
         "ended": {"oneOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
         "outcome": {"type": ["string", "null"]},
@@ -133,6 +143,7 @@
         {"$ref": "#/$defs/plan"},
         {"$ref": "#/$defs/case"},
         {"$ref": "#/$defs/job"},
+        {"$ref": "#/$defs/parked"},
         {"$ref": "#/$defs/ended"}
       ]
     },
@@ -145,6 +156,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "woke"},
+        "source": {"$ref": "#/$defs/source"},
         "waking": {"type": "string"},
         "role": {"$ref": "#/$defs/role"},
         "actor": {"enum": ["agent", "operator"]},
@@ -162,6 +174,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "turn"},
+        "source": {"$ref": "#/$defs/source"},
         "waking": {"type": "string"},
         "turn": {"type": "integer", "minimum": 1},
         "seconds": {"type": "number", "minimum": 0},
@@ -179,6 +192,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "call"},
+        "source": {"$ref": "#/$defs/source"},
         "id": {"type": "string"},
         "waking": {"type": ["string", "null"]},
         "turn": {"type": ["integer", "null"]},
@@ -198,6 +212,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "results"},
+        "source": {"$ref": "#/$defs/source"},
         "waking": {"type": "string"},
         "turn": {"type": "integer", "minimum": 1}
       }
@@ -211,6 +226,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "slept"},
+        "source": {"$ref": "#/$defs/source"},
         "waking": {"type": "string"},
         "role": {"$ref": "#/$defs/role"},
         "outcome": {"type": ["string", "null"]}
@@ -225,6 +241,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "message"},
+        "source": {"$ref": "#/$defs/source"},
         "id": {"type": "string"},
         "case": {"type": ["string", "null"]},
         "type": {"enum": ["assignment", "status", "query", "answer", "proposal", "report", "escalation"]},
@@ -253,6 +270,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "dialogue"},
+        "source": {"$ref": "#/$defs/source"},
         "id": {"type": "string"},
         "case": {"type": ["string", "null"]},
         "tool": {
@@ -281,6 +299,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "design"},
+        "source": {"$ref": "#/$defs/source"},
         "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}@v[1-9][0-9]*$"},
         "parent": {"type": ["string", "null"]},
         "made_by_role": {"$ref": "#/$defs/role"},
@@ -298,6 +317,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "plan"},
+        "source": {"$ref": "#/$defs/source"},
         "id": {"type": "string"},
         "case": {"type": ["string", "null"]},
         "design": {"type": "string"},
@@ -315,6 +335,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "case"},
+        "source": {"$ref": "#/$defs/source"},
         "case": {"type": "string"},
         "phase": {"enum": ["negotiation", "execution", "closure"]},
         "negotiation": {"enum": ["open", "closed"]},
@@ -334,6 +355,7 @@
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "job"},
+        "source": {"$ref": "#/$defs/source"},
         "id": {"type": "string"},
         "case": {"type": ["string", "null"]},
         "machine": {"type": "string"},
@@ -341,15 +363,32 @@
         "status": {"enum": ["queued", "running", "paused", "completed", "aborted", "failed"]}
       }
     },
+    "parked": {
+      "type": "object",
+      "description": "The case parked at the frame for the owner's word: a showing or a question the requester's mandate does not cover. The run does not end; the dialogue that resumes it is the dialogue contract's, and the events go on after it.",
+      "required": ["seq", "time", "kind", "case", "what"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "parked"},
+        "source": {"$ref": "#/$defs/source"},
+        "case": {"type": "string"},
+        "what": {"enum": ["showing", "question"]},
+        "dialogue": {"type": ["string", "null"], "description": "The dialogue's call that waits for the owner"},
+        "metrics": {"type": "array", "items": {"type": "string"}, "description": "The order's metrics the word is needed on"}
+      }
+    },
     "ended": {
       "type": "object",
-      "description": "The run ended.",
+      "description": "The run ended; nothing follows it. A run parked for the owner has not ended.",
       "required": ["seq", "time", "kind", "outcome"],
       "additionalProperties": false,
       "properties": {
         "seq": {"$ref": "#/$defs/seq"},
         "time": {"$ref": "#/$defs/time"},
         "kind": {"const": "ended"},
+        "source": {"$ref": "#/$defs/source"},
         "outcome": {"type": "string"},
         "reason": {"type": ["string", "null"]}
       }
@@ -384,7 +423,8 @@
           "actor": "agent",
           "maker": {"kind": "model", "name": "claude-sonnet-5-5"},
           "case": "c1",
-          "prompt": "The brief for bracket-mass@2."
+          "prompt": "The brief for bracket-mass@2.",
+          "source": {"table": "run", "row": "r1"}
         },
         {
           "seq": 2,
@@ -461,6 +501,7 @@
           "tool": "accept_design",
           "actor": "agent",
           "inputs": {"showing": "k31"},
+          "source": {"table": "call", "row": "k32"},
           "relaxations": [
             {
               "requirement": "req-14",
