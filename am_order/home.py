@@ -18,6 +18,7 @@ import json
 import os
 import re
 import shutil
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,11 +65,20 @@ def utc_now() -> str:
 
 
 def write_atomic(path: Path, data: bytes) -> None:
-    """The file written whole beside its place, then renamed into it."""
+    """The file written whole beside its place, then renamed into it, so that a reader sees the old file or the new and never
+    a half. On Windows the rename is refused while a reader holds the file open, and a reader opening it during the rename is
+    refused too: the writer retries for a moment here, and a reader on Windows retries a PermissionError on open."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{id(data)}.tmp")
     tmp.write_bytes(data)
-    os.replace(tmp, path)
+    for attempt in range(200):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if attempt == 199:
+                raise
+            time.sleep(0.01)
 
 
 def picture_type(data: bytes) -> tuple[str, str]:

@@ -120,6 +120,8 @@ def test_a_reader_never_sees_a_half_written_order(home):
                 seen.append(json.loads(path.read_bytes())["revision"])
             except (ValueError, KeyError) as e:
                 bad.append(e)
+            except PermissionError:
+                pass                # Windows refuses the open while the file is being replaced; a reader tries again
     reader = threading.Thread(target=read)
     reader.start()
     for i in range(40):
