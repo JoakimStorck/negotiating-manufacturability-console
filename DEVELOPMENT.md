@@ -146,32 +146,39 @@ Done:
    every push, in `negotiating-manufacturability-console` on GitHub; `logs/` ignored; the version in one place; `Home.derive`
    leaving no half-made product; the writer lock on the home; the tree reading an order once until it changes.
 
-On am-llm's side, next, once `presence-1.json` and `events-1.json` are sketched here:
-
-- **The standing frame** (`python -m agents stand`, or so): the frame started empty and serving over HTTP with a personal
-  token: presence (its roles with their decision makers, the machines), the help page at its root, an order version (`order-1`)
-  placed and prepared as a run named by it, the run's events (an acceptance with its relaxation among them), the accepted version's
-  feature list; the experiment runner the frame started with a scenario. The dialogue waits for its contract (build 6); the
-  console stays. Presence and the help page come first, since the empty frame has nothing else to be seen by.
+On am-llm's side, done: **the standing frame** (`python -m agents stand`; `../am-llm/probes/frame-build-report.md`, am-llm
+037d936 to 7441414): the frame started empty or with a scenario, serving over HTTP with a personal token the help page,
+`presence-1`, `runs-1`, a run's `events-1` after a sequence number the record itself keeps (schema version 6), `POST /orders`
+with an `order-1` version (stored by the products home's hash, 409 when placed already, 422 with the schema's reasons), the
+accepted version's `features-1` with its picture and models, and the picture of every version a run made. The five reference
+orders reach their scenarios' outcomes through it, the held one parked for the owner's word. Not served yet: the dialogue,
+and the placing of a decision maker (`next` is null, the alternatives the frame's configuration).
 
 Here, in this order:
 
+7. **The tool connected to the frame**, next, since it waits on nothing: `am-order serve --frame URL --token-file FILE`, one
+   client (the frame's 401 named in words, the frame unreachable a state of the page, not an error); the overview's empty state
+   from `presence-1` (the frame since a time, the roles with their decision makers, the machines, the runs placed, preparing and
+   parked, what waits), the three states of a part with `down` inferred on the frame's clock; the catalogue from `runs-1` beside
+   the folders; a run read from `events-1` into the same picture the folders give today, played back from the start and followed
+   live after the last number, the pictures from the frame; an order version placed from the order view (`POST /orders`), the
+   order showing its run and the run's state, parked meaning that the owner's word is awaited and given in build 6. The reading
+   of the folders stays for the runs that have no frame. Held on am-llm's side: `tests/test_order_runs.py` reads one run both
+   ways through the tool and finds the same picture.
+5. **Order 2**: the type and the instance in the schema, the brief as intent with the objects `fixed` or `free` (`may_change` and
+   `may_relax` gone), the mandate per metric, the answering policy, the requirements in force; migration from order 1 with the
+   examples re-written; am-llm's adapter follows and the pin moves.
+6. **The dialogue contract** (`dialogue-1.json`) over the frame and the order view against it: parking answered, consenting, the
+   acceptance of a plan at risk as a relaxation, the certificate, approving, bound to versions; the accepted version's feature
+   list, picture and models published into the person's products home.
 4. **The web app for a person.** Partial page updates instead of whole-body swaps; confirmations before anything is lost; error
    pages in words, including the workbook import's; the message colour from the outcome, not from a word in the text; one log per
-   session with the proposals logged; the word tables (synonyms, kinds, compatibility) as data beside the vocabularies.
-
-5. **Order 2**, in parallel with the frame: the type and the instance in the schema, the brief as intent with the objects `fixed`
-   or `free` (`may_change` and `may_relax` gone), the mandate per metric, the answering policy, the requirements in force;
-   migration from order 1 with the examples re-written; am-llm's adapter follows and the pin moves.
-6. **The dialogue contract** (`dialogue-1.json`) over the frame and the order view against it: placing, parking, answering,
-   consenting, the acceptance of a plan at risk as a relaxation, the certificate, approving, bound to versions; the catalogue and
-   the overview reading the frame's events instead of the folders.
-7. **Presence and decision makers** in the overview, against the frame's endpoint, as soon as the frame stands (it waits on
-   nothing else): the empty state, the three states of a part, the decision makers selectable where the frame reads its setting at
-   the role's next waking; `--frame URL` with its token.
+   session with the proposals logged; the word tables (synonyms, kinds, compatibility) as data beside the vocabularies. Taken
+   in beside the others where they touch the same pages.
 8. **Johansson's layers** as the 1.1 build in am-llm describes them, on the order-2 type.
-9. **The role view**: a person filling a role, placed by the system operator, with the role's tools as forms; am-llm's
-   interactive console goes with it.
+9. **The role view and the decision makers placed**: a person filling a role, placed by the system operator, with the role's
+   tools as forms; the system operator choosing a role's decision maker, taking effect at its next waking (the frame's endpoint
+   for it with this build); am-llm's interactive console goes with it.
 
 Each build is written as `probes/<name>-build.md` in am-llm, built, and reported, as the first version was.
 
