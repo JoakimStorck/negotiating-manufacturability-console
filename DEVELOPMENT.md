@@ -91,9 +91,10 @@ it. It is one picture with two uses, the system operator's console and the demon
   ended turn with the model's own summary of its thinking and the calls it made (a click puts the clock there), and where it
   stands now (thinking for so long, the tools answering, or nothing written yet). The summary is the model's summary, not its
   thinking, and the panel says what a call was about, not its result; the result is a level deeper and am-llm's console's.
-- **The page fills the window.** The title and the player stand at the top, the time picture against the bottom edge, and
-  between them the block diagram, the turns and the design take the height that is left, the turns scrolling in their column
-  with the latest in view. The time picture is thus always in the same place however long the turns run.
+- **The page fills the window.** The title and the player (with the legend) at the top, the time picture a strip pinned to the
+  bottom as high as it needs (18 px a role), and between them the organisation in the left two thirds, scaled to its area and
+  never scrolled, and the right third stacking the result card or the awake role's turns, the design, what happened last and the
+  facts, scrolled inside; under 1200 px wide the right third goes below.
 - **The catalogue** lists the recorded runs by product, experiment and condition (negotiation, decision makers, when, how long,
   outcome). It reads the folders am-llm leaves today; with the frame it reads the frame's runs (`runs-1.json`) and their events (`events-1.json`),
   and shows running runs beside finished ones.
@@ -175,6 +176,10 @@ orders reach their scenarios' outcomes through it, the held one parked for the o
 and the placing of a decision maker (`next` is null, the alternatives the frame's configuration).
 
 Here, done:
+
+11. **The run's page laid out for what it shows** (3f16177; `../am-llm/probes/layout-build-report.md`): the organisation first, in
+    the left two thirds at the page's small size; the time strip small and pinned to the bottom, drawn in percent of its width;
+    the height shared, the side column scrolling; the same for playback and live.
 
 10. **The overview shows what is** (25765bf and c622ea8; `../am-llm/probes/overview-build-report.md`): the contract of a run's
     `result` in `runs-1` and `events-1`, an example of every outcome; each role's cell a being-box with its beings at the clock and
