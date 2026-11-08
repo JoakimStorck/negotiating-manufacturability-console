@@ -17,7 +17,9 @@
     xlsx export PRODUCT FILE | xlsx import FILE       the workbook; an import comes in as a draft and is checked
     reqif export PRODUCT FILE
     features list | add DIR                           the feature lists in the home
-    serve [--port 8770] [--log DIR] [--runs DIR]      the web app on 127.0.0.1
+    serve [--host 127.0.0.1] [--port 8770] [--log DIR] [--runs DIR]
+                                                      the web app, on this machine only unless --host says otherwise
+                                                      (0.0.0.0 every interface, or one address of this machine)
     runs [show RUN [--at T] | delete RUN]             the frame's runs, a run's state at a time (seconds from its start), or an
                                                       order's run deleted at the frame so that its version may be placed again
     runs set ROLE=MAKER                               a role's decision maker placed at the frame, as system operator: a model's
@@ -50,6 +52,19 @@ def _frame(args) -> Frame | None:
     if not args.frame:
         return None
     return Frame(args.frame, read_token(args.token_file), client=_client(args.frame))
+
+
+def _addresses(host: str, port: int) -> str:
+    """Where the web app is reached: for every interface, this machine's name and its addresses on the network."""
+    if host not in ("0.0.0.0", "::"):
+        return f"http://{host}:{port}/"
+    import socket
+    names = {socket.gethostname()}
+    try:
+        names |= {a[4][0] for a in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET) if not a[4][0].startswith("127.")}
+    except OSError:
+        pass
+    return ", ".join(f"http://{n}:{port}/" for n in sorted(names)) + f" (every interface, port {port})"
 
 
 def confirmed(order) -> bool:
@@ -140,6 +155,8 @@ def main(argv=None) -> int:
     fe.add_argument("what", choices=["list", "add"])
     fe.add_argument("dir", nargs="?")
     sv = sub.add_parser("serve")
+    sv.add_argument("--host", default="127.0.0.1",
+                    help="the address to listen on: 127.0.0.1 this machine only (the default), 0.0.0.0 every network interface")
     sv.add_argument("--port", type=int, default=8770)
     sv.add_argument("--log")
     sv.add_argument("--runs", help="the folder am-llm writes its runs under, read only, for the runs pages")
@@ -291,9 +308,12 @@ def _run(args, home: Home, ap) -> int:
         from .web.app import create_app
         frame = _frame(args)
         app = create_app(home, Path(args.log) if args.log else None, Path(args.runs) if args.runs else None, frame=frame)
-        print(f"am-order on http://127.0.0.1:{args.port}/ (home {home.root}, session {app.state.log.session}"
+        print(f"am-order on {_addresses(args.host, args.port)} (home {home.root}, session {app.state.log.session}"
               + (f", the frame at {frame.url}" if frame else "") + ")")
-        uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
+        if args.host not in ("127.0.0.1", "localhost", "::1"):
+            print("am-order: the web app has no login: whoever reaches it on the network can edit the products home"
+                  + (" and act at the frame with this tool's token" if frame else "") + "; serve it on a network you trust", file=sys.stderr)
+        uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
         return 0
     if cmd in ("runs", "place"):
         frame = _frame(args)

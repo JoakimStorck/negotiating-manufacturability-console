@@ -1,6 +1,7 @@
-"""The web app: the person's interface to the products home, served on 127.0.0.1 for one user, rendered on the server with htmx.
+"""The web app: the person's interface to the products home, rendered on the server with htmx; served on 127.0.0.1, or with
+`--host` on the network, without a login.
 
-    am-order [--frame URL --token-file FILE] serve [--home DIR] [--port 8770] [--log DIR] [--runs DIR] [--allow-own]
+    am-order [--frame URL --token-file FILE] serve [--home DIR] [--host 127.0.0.1] [--port 8770] [--log DIR] [--runs DIR] [--allow-own]
 
 Every page is a URL of its own. An edit goes to the product's draft and the page comes back with the checks' refusals beside what
 they concern; Save makes a version when no check fails, and a refused save keeps the draft. With `--log DIR` every action is one

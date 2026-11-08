@@ -44,3 +44,16 @@ def test_the_commands(home_dir, tmp_path, capsys):
 def test_the_version_is_the_packages():
     import am_order
     assert importlib.metadata.version("am-order") == am_order.__version__     # pyproject.toml reads it from the package
+
+
+def test_serve_listens_where_it_is_told(home_dir, monkeypatch, capsys):
+    import uvicorn
+    seen = {}
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kw: seen.update(kw))
+    assert main(["--home", str(home_dir), "serve"]) == 0
+    assert seen["host"] == "127.0.0.1" and seen["port"] == 8770
+    assert "no login" not in capsys.readouterr().err
+    assert main(["--home", str(home_dir), "serve", "--host", "0.0.0.0", "--port", "8771"]) == 0
+    assert seen["host"] == "0.0.0.0" and seen["port"] == 8771
+    out = capsys.readouterr()
+    assert "every interface, port 8771" in out.out and "the web app has no login" in out.err

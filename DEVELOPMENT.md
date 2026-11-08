@@ -227,6 +227,7 @@ Each build is written as `probes/<name>-build.md` in am-llm, built, and reported
 
 The conventions are am-llm's (`../am-llm/CLAUDE.md`): English in code and documents; no defensive writing; one item per commit;
 the tool never imports am-llm and am-llm's runs never import the tool; every contract's schema lives here, and a change to one is
-written into both plans before it is built; no JavaScript build, the web app on loopback for one user; the record and the runs
+written into both plans before it is built; no JavaScript build; the web app on loopback by default and on the network with `--host` (decided 2026-11-08, from the
+author: it must be reachable from another computer), without a login, so only on a network where that is meant; the record and the runs
 are read directly and read only where no frame serves them; a frame is read over HTTP only (build 7). Nothing in am-llm's working tree is touched
 from here.
