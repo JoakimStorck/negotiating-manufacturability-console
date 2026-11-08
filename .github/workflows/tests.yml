@@ -29,7 +29,7 @@ jobs:
           exit $code
       - if: always()
         shell: bash
+        # the runner's bash stops at a failing pipeline, and grep fails when nothing matches: hence the `|| true`
         run: |
-          grep -E "^(FAILED|ERROR) " pytest.txt | head -20 | sed 's/^/::error title=pytest::/'
-          grep -nE "^E |Timeout|^  File \"" pytest.txt | head -30 | sed 's/^/::error title=detail::/'
-          true
+          { grep -E "^(FAILED|ERROR) " pytest.txt || true; } | head -20 | sed 's/^/::error title=pytest::/'
+          { grep -nE "^E |Timeout|^  File \"" pytest.txt || true; } | head -30 | sed 's/^/::error title=detail::/'
