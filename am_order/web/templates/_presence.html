@@ -1,5 +1,5 @@
 {# the overview's empty state: the frame, its roles with their decision makers, the machines, the runs; refreshed at the page's interval #}
-<div id="presence" hx-get="/frame/presence" hx-trigger="every {{ refresh }}s" hx-swap="outerHTML">
+<div id="presence" hx-get="/frame/presence" hx-trigger="every {{ refresh }}s, makers-changed from:body" hx-swap="outerHTML">
 <style>
 #presence .state { font-size: .8rem; padding: 0 .35rem; border-radius: 3px; border: 1px solid var(--line); }
 #presence .state.present { background: var(--okbg); color: var(--ok); }
@@ -12,7 +12,7 @@
 {% set f = presence.frame %}
 <p><b>The frame {{ f.name }}</b> <span class="muted">· {{ frame_url }} · am-llm {{ f.version[:10] }} · up since {{ f.since[:19].replace("T", " ") }}Z{% if f.scenario %} · started with the scenario {{ f.scenario }}{% else %} · waiting for orders{% endif %} · read at {{ presence.at[11:19] }}Z on its clock</span></p>
 <svg class="cells" viewBox="0 0 {{ diagram.width }} {{ diagram.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14" style="width: 100%; max-width: 70rem; height: auto">
-{% from "_cells.html" import draw %}{{ draw(cells) }}
+{% from "_cells.html" import draw %}{{ draw(cells, selectable=true) }}
 </svg>
 <h3>Machines</h3>
 <table>

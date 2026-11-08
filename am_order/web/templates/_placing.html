@@ -2,6 +2,15 @@
 <div id="placing">
 {% if contact_note %}<div class="message bad">{{ contact_note }}</div>{% endif %}
 {% if message %}<div class="message {% if bad %}bad{% endif %}">{{ message }}</div>{% endif %}
+{% if takers %}
+<div class="takers">
+<p><b>Who will take the order</b> <span class="muted">· the frame's decision makers as they stand; placing does not change them. <a href="/runs">Change them in the overview first</a>, as system operator.</span></p>
+<ul>
+{% for t in takers %}<li>{{ t.title }}: {% if t.maker.kind == "none" and not t.next %}<span class="muted">nobody decides here: the frame stops there when a decision is needed</span>{% else %}{{ maker_text(t.maker) }}{% endif %}{% if t.next %} <span class="muted">→ {{ maker_text(t.next) }} from the role's next waking</span>{% endif %}</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
 {% if ready %}
 <form hx-post="/products/{{ lineage }}/place" hx-target="#placing" hx-swap="outerHTML" method="post" action="/products/{{ lineage }}/place">
   <button>Place revision {{ saved.data.revision }} at the frame</button> <span class="muted">{{ version[:12] }}, as the home holds it; the frame at {{ frame_url }} makes the run</span>

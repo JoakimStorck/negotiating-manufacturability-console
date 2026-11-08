@@ -73,6 +73,10 @@ it. It is one picture with two uses, the system operator's console and the demon
   the tool runs either alone or with am-llm.
 - **The empty state** is the overview's first picture: the frame up since a time, the roles with their decision makers, no order
   in preparation, the placed orders waiting. A demonstration starts there, and moves when the orderer places an order.
+- **The decision makers are set in the overview,** in the system operator's capacity, before an order is placed: a role's mark
+  opens a selector of the alternatives the frame reaches (`PUT /roles/<role>`), the choice standing as the role's `next` until it
+  wakes in a run going on and as its maker at once otherwise; the order's page says who will take the order and links here, and
+  placing changes none of them (built 2026-11-08).
 - **Decision makers.** Each role's cell says who fills it: a model by name, the scripted policy, a person, or none (the case stops
   at the frame when a decision is needed). The alternatives that are present are selectable by the system operator; a change is
   logged with the weight of a relaxation and takes effect at the role's next waking, so that the beings are never touched.
@@ -176,6 +180,10 @@ orders reach their scenarios' outcomes through it, the held one parked for the o
 and the placing of a decision maker (`next` is null, the alternatives the frame's configuration).
 
 Here, done:
+
+12. **The decision makers set from the overview** (`../am-llm/probes/makers-selector-build-report.md`): `Frame.set_maker`
+    (`PUT /roles/<role>`); a role's mark opening the selector in the empty state and in a run, as system operator, `next` shown
+    at the mark until it is the maker; who will take the order on its page; `runs set ROLE=MAKER`; the act logged with its capacity.
 
 11. **The run's page laid out for what it shows** (3f16177; `../am-llm/probes/layout-build-report.md`): the organisation first, in
     the left two thirds at the page's small size; the time strip small and pinned to the bottom, drawn in percent of its width;

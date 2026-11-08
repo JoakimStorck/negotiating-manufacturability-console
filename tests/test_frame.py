@@ -14,7 +14,7 @@ from am_order.frame import Frame, FrameError, Reading, part_state, read_token
 from am_order.picture import cells, empty_cells, overview
 from am_order.schema import schema
 from am_order.web.app import create_app
-from stub_frame import StubFrame, presence, record_events, run_document
+from stub_frame import StubFrame, presence, record_events, run_document, wake
 from test_runs import T0, at, make_run
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -207,7 +207,7 @@ def test_the_empty_state_shows_the_frame_its_roles_and_what_waits(tool):
     assert "scripted (reference)" in t and "claude-sonnet-5-5" in t
     assert 'class="state down"' in t and "virtual-nominal" in t and "no host is configured for its adapter" in t
     assert "parked for the owner&#39;s word" in t and "a showing from the design engineer waits for the requester" in t
-    assert 'hx-get="/frame/presence" hx-trigger="every 3.0s"' in t
+    assert 'hx-get="/frame/presence" hx-trigger="every 3.0s, makers-changed from:body"' in t
     fragment = tool.get("/frame/presence")
     assert fragment.status_code == 200 and fragment.text.lstrip().startswith('<div id="presence"') and "<html" not in fragment.text
 
@@ -351,7 +351,7 @@ def test_the_empty_state_draws_every_cell_with_its_beings_and_its_mark():
 def test_the_empty_state_page_draws_the_cells(tool):
     t = tool.get("/runs").text
     assert all(f'data-role="{role}"' in t for role in R.ROLES)
-    assert 'class="mark none"' in t and 'stroke-dasharray="4 3"' in t and "none yet" in t
+    assert 'class="mark none selectable"' in t and 'stroke-dasharray="4 3"' in t and "none yet" in t
 
 
 def test_a_cell_shows_what_it_holds_at_the_clock_and_the_mark_who_decides(folder, stub):
@@ -491,3 +491,79 @@ def test_the_command_line_deletes_an_orders_run(resulting, tmp_path, capsys, mon
     assert "bracket-mass@2 deleted" in capsys.readouterr().out and "bracket-mass@2" not in resulting.runs
     assert main(base + ["bracket-mass@2"]) == 1
     assert "no run bracket-mass@2" in capsys.readouterr().err
+
+
+
+# ------------------------------------------------------------------------ the decision makers set from the overview
+
+def test_a_marks_selector_lists_the_alternatives_and_the_current_maker(tool):
+    page = tool.get("/runs").text
+    assert 'hx-get="/frame/roles/design_engineer" hx-target="#maker-panel"' in page and '<div id="maker-panel" class="maker-panel"></div>' in page
+    panel = tool.get("/frame/roles/design_engineer").text
+    assert "As system operator, at the frame workshop-1" in panel and "The design engineer's decision maker" in panel
+    assert "Now: <b>claude-sonnet-5-5</b>" in panel and ">claude-haiku-5-5</button>" in panel
+    assert tool.get("/frame/roles/foreman").status_code == 404
+
+
+def test_a_choice_stands_as_next_until_the_role_wakes_then_as_its_maker(tool, stub, tmp_path):
+    stub.preparing = True
+    choice = json.dumps({"kind": "model", "name": "claude-haiku-5-5"})
+    placed = tool.post("/frame/roles/design_engineer", data={"maker": choice})
+    assert placed.status_code == 200 and placed.headers.get("HX-Trigger") == "makers-changed"
+    assert "Placed: claude-haiku-5-5 as the design engineer&#39;s decision maker, from the role&#39;s next waking." in placed.text
+    assert "PUT /roles/design_engineer" in stub.asked
+    drawn = tool.get("/frame/presence").text
+    assert "→ claude-haiku-5-5 from the next waking" in drawn
+    wake(stub, "design_engineer")
+    drawn = tool.get("/frame/presence").text
+    assert "→ claude-haiku-5-5 from the next waking" not in drawn and ">claude-haiku-5-5</text>" in drawn
+    log = [json.loads(line) for f in (tmp_path / "logs").glob("*.jsonl") for line in f.read_text().splitlines()]
+    acts = [e for e in log if e["action"] == "set maker"]
+    assert len(acts) == 1 and acts[0]["detail"]["capacity"] == "system operator" and acts[0]["detail"]["role"] == "design_engineer"
+    assert acts[0]["detail"]["maker"] == {"kind": "model", "name": "claude-haiku-5-5"} and "s3cret" not in json.dumps(log)
+
+
+def test_a_choice_with_no_run_being_prepared_stands_at_once(tool, stub):
+    placed = tool.post("/frame/roles/design_engineer", data={"maker": json.dumps({"kind": "model", "name": "claude-haiku-5-5"})})
+    assert "at once: no run is being prepared" in placed.text and "Now: <b>claude-haiku-5-5</b>" in placed.text
+
+
+def test_a_maker_the_frame_does_not_offer_is_refused_in_its_words(tool):
+    refused = tool.post("/frame/roles/design_engineer", data={"maker": json.dumps({"kind": "model", "name": "gpt-oss-120b"})})
+    assert refused.status_code == 422 and "Not placed" in refused.text
+    assert "maker: model gpt-oss-120b is not among the alternatives of the design_engineer: model claude-haiku-5-5" in refused.text
+    assert "HX-Trigger" not in refused.headers
+
+
+def test_a_role_without_alternatives_says_so(tool, stub):
+    next(p for p in stub.presence["parts"] if p["id"] == "process_planner")["role"]["alternatives"] = []
+    panel = tool.get("/frame/roles/process_planner").text
+    assert "The frame offers no other decision maker for this role" in panel and "<form" not in panel
+
+
+def test_the_run_page_marks_open_the_selector(tool):
+    page = tool.get(f"/frame/runs/{RUN}?at=45").text
+    assert 'hx-get="/frame/roles/process_planner"' in page and 'id="maker-panel"' in page and "htmx.process" in page
+
+
+def test_the_orders_page_says_who_will_take_the_order(tool, stub):
+    stub.preparing = True
+    tool.post("/frame/roles/design_engineer", data={"maker": json.dumps({"kind": "model", "name": "claude-haiku-5-5"})})
+    t = tool.get("/products/bracket-mass/frame").text
+    assert "Who will take the order" in t and '<a href="/runs">Change them in the overview first</a>' in t
+    assert "Requester: the scripted policy (reference)" in t
+    assert "Design engineer: claude-sonnet-5-5 <span class=\"muted\">→ claude-haiku-5-5 from the role's next waking</span>" in t
+    assert "Process planner: <span class=\"muted\">nobody decides here: the frame stops there when a decision is needed</span>" in t
+
+
+def test_the_command_line_sets_a_maker(stub, tmp_path, capsys, monkeypatch):
+    token = tmp_path / "token"
+    token.write_text("me=s3cret\n", encoding="utf-8")
+    app = stub.app()
+    monkeypatch.setattr("am_order.cli._client", lambda url: TestClient(app, base_url=url))
+    base = ["--frame", "http://frame.test", "--token-file", str(token), "runs", "set"]
+    assert main(base + ["design_engineer=claude-haiku-5-5"]) == 0
+    assert "design_engineer: claude-haiku-5-5" in capsys.readouterr().out
+    assert main(base + ["design_engineer=gpt-oss-120b"]) == 1
+    assert "is not among the alternatives" in capsys.readouterr().err
+    assert main(base + ["process_planner=none"]) == 0

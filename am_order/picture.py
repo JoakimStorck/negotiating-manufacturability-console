@@ -281,8 +281,10 @@ def _mark(role: str, run: Run | None, st: State | None, ctx: dict) -> dict:
         r = (part or {}).get("role") or {}
         mode = "awake" if r.get("awake") else "waiting" if r.get("waits") else "idle"
         doing = "at work" if r.get("awake") else f"a {r['waits'][0]['what']} waits" if r.get("waits") else "waiting for work"
+    pending = ((part or {}).get("role") or {}).get("next")
     return {"who": _maker_text(maker) if mode != "none" else "none", "doing": doing, "mode": mode, "dimmed": mode == "none",
-            "fill": FILLS[mode], "stroke": STROKES[mode]}
+            "fill": FILLS[mode], "stroke": STROKES[mode],
+            "next": _maker_text(_maker_word(pending)) if pending and pending.get("kind") != "none" else "none" if pending else None}
 
 
 def _place(cells: list[dict]) -> dict:

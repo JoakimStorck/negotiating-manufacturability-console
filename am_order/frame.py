@@ -184,6 +184,18 @@ class Frame:
         r = self._request("DELETE", f"/runs/{self._run_path(run_id)}")
         return self._body(r) or {}
 
+    def set_maker(self, role: str, maker: dict) -> dict:
+        """A role's decision maker placed at the frame (`PUT /roles/<role>`): one of the role's alternatives in presence, as presence
+        gives it. Nothing is started; it stands as the role's `next` until the role wakes in a run going on, else as its `maker` at
+        once. The answer is presence after the change, validated; the frame's 404 and 422 (the alternatives named) in its words."""
+        r = self._request("PUT", f"/roles/{quote(role)}", content=json.dumps(maker).encode("utf-8"), headers={"Content-Type": "application/json"})
+        doc = self._body(r)
+        try:
+            validate_presence(doc if isinstance(doc, dict) else {})
+        except SchemaError as e:
+            raise self._failed(FrameError("refused", "the frame's presence does not have the form of its schema", r.status_code, e.errors))
+        return doc
+
     def help_url(self) -> str:
         return self.url + "/"
 
@@ -240,13 +252,33 @@ class Reading:
         self.runs: dict[str, dict] = {}            # run id -> {"run": the run as it stands, "events": [...], "last": n}
         self.features: dict[tuple[str, str], dict] = {}
         self.orders: dict[str, dict] = {}
+        self._presence_read: datetime | None = None
 
-    def read_presence(self) -> FrameError | None:
+    def read_presence(self, max_age: float | None = None) -> FrameError | None:
+        """Presence read again, or, with `max_age`, only when what is held is older than that many seconds."""
+        if max_age is not None and self.presence is not None and self._presence_read is not None \
+                and (datetime.now(timezone.utc) - self._presence_read).total_seconds() < max_age:
+            return None
         try:
             self.presence = self.frame.presence()
+            self._presence_read = datetime.now(timezone.utc)
         except FrameError as e:
             return e
         return None
+
+    def set_maker(self, role: str, maker: dict) -> FrameError | None:
+        """A role's decision maker placed; the presence the frame answers with is what is held from then on."""
+        try:
+            self.presence = self.frame.set_maker(role, maker)
+            self._presence_read = datetime.now(timezone.utc)
+        except FrameError as e:
+            return e
+        return None
+
+    def role(self, role: str) -> dict | None:
+        """A role's part of the presence held: its maker, `next`, alternatives."""
+        part = next((p for p in (self.presence or {}).get("parts", []) if p["id"] == role and p["kind"] == "role"), None)
+        return part["role"] if part else None
 
     def read_catalogue(self) -> FrameError | None:
         try:

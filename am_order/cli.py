@@ -20,6 +20,8 @@
     serve [--port 8770] [--log DIR] [--runs DIR]      the web app on 127.0.0.1
     runs [show RUN [--at T] | delete RUN]             the frame's runs, a run's state at a time (seconds from its start), or an
                                                       order's run deleted at the frame so that its version may be placed again
+    runs set ROLE=MAKER                               a role's decision maker placed at the frame, as system operator: a model's
+                                                      key or name, scripted, reference or none; from the role's next waking
     place PRODUCT[@REVISION]                          a confirmed order version placed at the frame, as the home holds it
 
 The home is `--home` or `AM_ORDER_HOME`. An own product opens read only unless `--allow-own` is given. `--frame URL` is a
@@ -35,7 +37,7 @@ from pathlib import Path
 
 from . import Home, HomeError, Refused, bind, check, confirm, export, import_xlsx, reject, render
 from . import runs as R
-from .frame import Frame, FrameError, read_token, saved_version
+from .frame import Frame, FrameError, maker_text, read_token, saved_version
 from .render import TABLES
 
 
@@ -142,7 +144,7 @@ def main(argv=None) -> int:
     sv.add_argument("--log")
     sv.add_argument("--runs", help="the folder am-llm writes its runs under, read only, for the runs pages")
     rn = sub.add_parser("runs")
-    rn.add_argument("what", nargs="?", choices=["list", "show", "delete"], default="list")
+    rn.add_argument("what", nargs="?", choices=["list", "show", "delete", "set"], default="list")
     rn.add_argument("run", nargs="?")
     rn.add_argument("--at", help="seconds from the run's start, or an ISO time; the end when not given")
     pl = sub.add_parser("place")
@@ -312,6 +314,16 @@ def _runs(args, frame: Frame, ap) -> int:
         return 0
     if not args.run:
         ap.error(f"runs {args.what}: name the run")
+    if args.what == "set":
+        role, _, key = args.run.partition("=")
+        if not key:
+            ap.error("runs set: give ROLE=MAKER")
+        maker = {"none": {"kind": "none", "name": None}, "scripted": {"kind": "scripted", "name": "scripted"},
+                 "reference": {"kind": "scripted", "name": "reference"}}.get(key, {"kind": "model", "name": key})
+        presence = frame.set_maker(role, maker)
+        r = next(p["role"] for p in presence["parts"] if p["id"] == role)
+        print(f"{role}: {maker_text(r['maker'])}" + (f", {maker_text(r['next'])} from its next waking" if r.get("next") else ""))
+        return 0
     if args.what == "delete":
         frame.delete_run(args.run)
         print(f"{args.run} deleted at {frame.url}; its version may be placed again")

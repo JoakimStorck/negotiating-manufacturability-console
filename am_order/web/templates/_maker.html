@@ -1,0 +1,20 @@
+{# The selector of a role's decision maker, opened from its mark: the system operator's act on the frame, never the orderer's. #}
+<div class="maker-select" id="maker-select-{{ role }}">
+  <p class="capacity">As system operator{% if frame_name %}, at the frame {{ frame_name }}{% endif %}</p>
+  <h3>The {{ title|lower }}'s decision maker</h3>
+  {% if message %}<div class="message {% if bad %}bad{% endif %}">{{ message }}{% if reasons %}<br>{{ reasons|join("; ") }}{% endif %}</div>{% endif %}
+  {% if contact_note %}<div class="message bad">{{ contact_note }}</div>{% endif %}
+  {% if r %}
+  <p>Now: <b>{{ maker_text(r.maker) }}</b>{% if r.next %}; <b>{{ maker_text(r.next) }}</b> from the role's next waking{% endif %}</p>
+  {% if r.alternatives %}
+  <form method="post" action="/frame/roles/{{ role }}" hx-post="/frame/roles/{{ role }}" hx-target="#maker-panel" hx-swap="innerHTML">
+    {% for a in r.alternatives %}<button class="quiet" name="maker" value='{{ a|tojson }}'>{{ maker_text(a) }}</button> {% endfor %}
+    {% if r.next %}<button class="quiet" name="maker" value='{{ r.maker|tojson }}'>keep {{ maker_text(r.maker) }}</button>{% endif %}
+  </form>
+  <p class="muted">A choice takes effect at the role's next waking, in a run going on and in the runs that follow; nothing is started, and a model costs only when its role wakes.</p>
+  {% else %}
+  <p class="muted">The frame offers no other decision maker for this role: none of its models is within reach (no API key, no Ollama host answering, no Inferno token).</p>
+  {% endif %}
+  {% endif %}
+  <button class="quiet" type="button" onclick="document.getElementById('maker-panel').innerHTML = ''">Close</button>
+</div>

@@ -66,6 +66,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
   <span id="ending" class="ending"></span>
   <span class="legend">{% for name, c in pic.legend %}<span title="{{ name }}"><span class="swatch" style="background:{{ c }}"></span><span class="word">{{ name }}</span></span>{% endfor %}<span>·</span>{% for name, c in pic.act_legend %}<span title="{{ name }}"><span class="swatch" style="background:{{ c }}"></span><span class="word">{{ name }}</span></span>{% endfor %}</span>
 </div>
+<div id="maker-panel" class="maker-panel"></div>
 {% include "_overview.html" %}
 <script>
 (function () {
@@ -128,6 +129,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
         const holder = document.createElement("div"); holder.innerHTML = html;
         const open = new Set(Array.from(document.querySelectorAll("#overview details[open]")).map(d => d.id));
         document.getElementById("overview").replaceWith(holder.firstElementChild);
+        if (window.htmx) htmx.process(document.getElementById("overview"));   // the marks' selectors in the new picture
         for (const id of open) { const d = document.getElementById(id); if (d) d.open = true; }
         const playing = P.playing, speed = P.speed, follow = P.follow;
         readData(); if (!P.ended || P.live) { P.playing = playing; P.follow = follow; } P.speed = speed;
@@ -189,6 +191,8 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
     else if (k === "l" && follow) follow.click();
   });
 
+  // a decision maker placed from a mark: the picture is fetched again at the clock's time, the mark showing what is next
+  document.body.addEventListener("makers-changed", function () { fetchAt(P.at); });
   readData(); paint(); requestAnimationFrame(tick);
   // written last, so that the hint shows only when the player is up
   document.getElementById("player").title = "space play · ← → event · t T turn · d D decision · + − speed · Home End" + (follow ? " · l now" : "") + " · click the axis";

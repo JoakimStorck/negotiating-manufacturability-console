@@ -5,6 +5,8 @@
 <h1>Runs</h1>
 {% if framed %}
 <h2>The standing frame</h2>
+<div id="maker-panel" class="maker-panel"></div>
+<p class="muted">The decision makers belong to the frame, not to an order: set them here, as system operator, before an order is placed, by clicking a role's mark; a change in a run takes effect at the role's next waking.</p>
 {% with presence=framed.presence, parts=framed.parts, levels=framed.levels, waits=framed.waits, frame_url=framed.frame_url, contact_note=framed.contact_note, cells=framed.cells, diagram=framed.diagram %}
 {% include "_presence.html" %}
 {% endwith %}

@@ -714,6 +714,55 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         return {"presence": doc, "parts": parts, "levels": levels, "waits": waits, "frame_url": reading.frame.url, "cells": drawn, "diagram": diagram,
                 "contact_note": contact_note(error), "frame_error": error}
 
+    def maker_ctx(role: str, message: str | None = None, bad: bool = False, reasons=None, error: FrameError | None = None) -> dict:
+        reading = app.state.frame
+        presence = reading.presence or {}
+        return {"role": role, "title": R.TITLES.get(role, role), "r": reading.role(role), "message": message, "bad": bad, "reasons": reasons or [],
+                "contact_note": contact_note(error), "frame_name": (presence.get("frame") or {}).get("name")}
+
+    @app.get("/frame/roles/{role}", response_class=HTMLResponse)
+    def maker_select(request: Request, role: str):
+        """The selector of a role's decision maker, opened from its mark in the overview: the system operator's."""
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame; start it with --frame URL --token-file FILE")
+        error = reading.read_presence()
+        if reading.role(role) is None and error is None:
+            raise HTTPException(404, f"the frame has no role {role}")
+        return templates.TemplateResponse(request, "_maker.html", maker_ctx(role, error=error))
+
+    @app.post("/frame/roles/{role}", response_class=HTMLResponse)
+    async def maker_set(request: Request, role: str):
+        """A role's decision maker placed at the frame, in the system operator's capacity; the picture redraws from presence."""
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame")
+        form = await request.form()
+        try:
+            maker = json.loads(form.get("maker") or "")
+        except ValueError:
+            maker = None
+        if not isinstance(maker, dict) or "kind" not in maker:
+            return templates.TemplateResponse(request, "_maker.html", maker_ctx(role, "Not placed: no decision maker chosen.", True), status_code=400)
+        maker = {"kind": maker["kind"], "name": maker.get("name")}
+        error = reading.set_maker(role, maker)
+        r = reading.role(role) or {}
+        if error is None:
+            when = "from the role's next waking" if r.get("next") == maker else "at once: no run is being prepared" if r.get("maker") == maker else ""
+            message, bad, status = f"Placed: {maker_text(maker)} as the {R.TITLES.get(role, role).lower()}'s decision maker, {when}.".replace(", .", "."), False, 200
+            answer = {"next": r.get("next"), "maker": r.get("maker")}
+        else:
+            message, bad = f"Not placed: {error}", True
+            status = error.status if error.kind == "answer" and error.status else 503
+            answer = {"status": error.status, "kind": error.kind}
+        log.write(f"/frame/roles/{role}", "set maker", detail={"capacity": "system operator", "role": role, "maker": maker, "answer": answer})
+        response = templates.TemplateResponse(request, "_maker.html", maker_ctx(role, message, bad, error.reasons if error else None,
+                                                                                error if error is not None and error.kind != "answer" else None),
+                                              status_code=status)
+        if error is None:
+            response.headers["HX-Trigger"] = "makers-changed"
+        return response
+
     @app.get("/frame/presence", response_class=HTMLResponse)
     def frame_presence(request: Request):
         """The overview's empty state: what the page refreshes at its interval."""
@@ -763,8 +812,8 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         run, error = frame_run(run_id)
         if run is None:
             return page(request, "frame_down.html", None, "run", contact_note=contact_note(error), run_id=run_id, status=503)
-        if reading.presence is None and error is None:
-            reading.read_presence()               # once, for the frame's name, its machines and decision makers
+        if error is None:
+            reading.read_presence(max_age=2.0)    # the frame's name, its machines, its decision makers and what is placed next
         st = R.state(run, R.parse_at(run, at))
         accepted = None
         design = ((run.entry.result or {}).get("plan") or {}).get("design") or run.accepted_design
@@ -825,7 +874,9 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         runs = reading.runs_of(lineage)
         latest = next((r for r in runs if r.get("result") or r["status"] in ("done", "parked")), None)
         card = result_card(latest["outcome"] or latest["status"], latest.get("reason"), latest.get("result")) if latest else None
-        return {"lineage": lineage, "runs": runs, "card": card, "card_run": latest, "saved": saved, "version": held[0] if held else None,
+        takers = [{"title": R.TITLES.get(p["id"], p["id"]), "maker": p["role"]["maker"], "next": p["role"].get("next")}
+                  for p in (reading.presence or {}).get("parts", []) if p["kind"] == "role"]
+        return {"lineage": lineage, "runs": runs, "card": card, "card_run": latest, "saved": saved, "takers": takers, "version": held[0] if held else None,
                 "ready": ready, "why": why, "contact_note": contact_note(error), "frame_url": reading.frame.url,
                 "message": message, "bad": bad}
 

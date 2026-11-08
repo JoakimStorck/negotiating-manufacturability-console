@@ -126,6 +126,7 @@ class StubFrame:
         self.asked: list[str] = []
         self.refuse_with: list[str] | None = None      # the reasons of a 422, when set
         self.broken: str | None = None                 # a document served out of its schema's form
+        self.preparing = False                         # a run being prepared: a maker placed stands as `next`
 
     def add_run(self, run: dict, events: list[dict], makers: dict) -> None:
         self.runs[run["id"]] = {"run": run, "events": events, "makers": makers}
@@ -221,6 +222,27 @@ class StubFrame:
             self.presence["runs"] = [r for r in self.presence["runs"] if r["id"] != run_id]
             return {"deleted": run_id}
 
+        @api.put("/roles/{role}")
+        async def put_role(role: str, request: Request):
+            self.asked.append(f"PUT /roles/{role}")
+            if (refused := authorised(request)) is not None:
+                return refused
+            part = next((p for p in self.presence["parts"] if p["id"] == role and p["kind"] == "role"), None)
+            if part is None:
+                return JSONResponse({"error": f"no role {role} at this frame"}, 404)
+            maker = json.loads(await request.body())
+            r = part["role"]
+            if maker != r["maker"] and maker not in r.get("alternatives", []):
+                names = ", ".join(f"{m['kind']} {m['name']}" if m.get("name") else m["kind"] for m in r.get("alternatives", []))
+                return JSONResponse({"error": "the schema refuses the document",
+                                     "reasons": [f"maker: {maker.get('kind')} {maker.get('name')} is not among the alternatives of the {role}: {names}"]}, 422)
+            if self.preparing and maker != r["maker"]:
+                r["next"] = maker                               # a run is being prepared: it stands until the role wakes
+            else:
+                r["alternatives"] = [a for a in r.get("alternatives", []) if a != maker] + [r["maker"]]
+                r["maker"], r["next"] = maker, None
+            return self.presence
+
         @api.post("/orders", status_code=201)
         async def place(request: Request):
             if (refused := authorised(request)) is not None:
@@ -266,3 +288,11 @@ def presence(at: str, parked_run: str | None = None) -> dict:
              "outcome": None}] if parked_run else []
     return {"schema": "presence/1", "at": at, "down_after": 30.0, "frame": {"name": "workshop-1", "version": "9836798a5c6f", "since": since, "scenario": None},
             "parts": roles + machines, "runs": runs}
+
+
+def wake(stub: StubFrame, role: str) -> None:
+    """The role wakes in the run being prepared: the maker placed as `next` becomes its maker, as the frame's run takes it."""
+    r = next(p for p in stub.presence["parts"] if p["id"] == role)["role"]
+    if r.get("next"):
+        r["alternatives"] = [a for a in r.get("alternatives", []) if a != r["next"]] + [r["maker"]]
+        r["maker"], r["next"] = r["next"], None
