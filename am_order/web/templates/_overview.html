@@ -3,7 +3,7 @@
 <div id="overview" class="overview"
      data-at="{{ ax.seconds if ax.seconds is defined else 0 }}" data-next="{{ ax.next.seconds if ax.next else '' }}"
      data-end="{{ ax.end_seconds if ax.end_seconds is defined else 0 }}" data-span="{{ ax.span if ax.span is defined else 1 }}"
-     data-live="{{ '1' if ax.live else '' }}" data-skew="{{ skew or 0 }}" data-start-epoch="{{ ax.start_epoch if ax.start_epoch is defined else 0 }}"
+     data-live="{{ '1' if ax.live else '' }}" data-skew="{{ skew or 0 }}" data-ended="{{ ending.words if ending else '' }}" data-start-epoch="{{ ax.start_epoch if ax.start_epoch is defined else 0 }}"
      data-x0="{{ ax.x0 if ax.x0 is defined else 0 }}" data-x1="{{ ax.x1 if ax.x1 is defined else 1 }}"
      data-previous="{{ pic.jumps.previous if pic.jumps.previous is not none else '' }}" data-next-event="{{ pic.jumps.next if pic.jumps.next is not none else '' }}"
      data-previous-turn="{{ pic.jumps.previous_turn if pic.jumps.previous_turn is not none else '' }}" data-next-turn="{{ pic.jumps.next_turn if pic.jumps.next_turn is not none else '' }}"
@@ -14,17 +14,11 @@
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker>
   </defs>
+  {% from "_cells.html" import draw %}
+  {{ draw(pic.nodes, run.entry.href ~ "/picture" if picture else none) }}
   {% for e in pic.edges %}
   <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" stroke="{{ e.stroke }}" stroke-width="{{ 3.5 if e.bold else 1.5 }}" marker-end="url(#arrow)" {% if not e.bold %}opacity=".7"{% endif %}/>
   {% if e.words %}<text x="{{ e.label_x }}" y="{{ e.label_y }}" text-anchor="{{ e.anchor }}" fill="#5f6b76" font-size="12">{{ e.words }}</text>{% endif %}
-  {% endfor %}
-  {% for n in pic.nodes %}
-  <g class="cell {{ n.mode }}">
-    <rect x="{{ n.x }}" y="{{ n.y }}" width="{{ n.w }}" height="{{ n.h }}" rx="6" fill="{{ n.fill }}" stroke="{{ n.stroke }}" stroke-width="{{ 3 if n.mode in ('awake', 'waiting') else 1.5 }}"/>
-    <text x="{{ n.x + 12 }}" y="{{ n.y + 24 }}" font-weight="600" font-size="16" fill="#1d2125">{{ n.title }}</text>
-    <text x="{{ n.x + 12 }}" y="{{ n.y + 44 }}" fill="#5f6b76" font-size="12">{{ n.maker }}</text>
-    <text x="{{ n.x + 12 }}" y="{{ n.y + 62 }}" fill="{{ n.stroke if n.mode in ('awake', 'waiting') else '#5f6b76' }}" font-size="12">{{ n.note }}</text>
-  </g>
   {% endfor %}
 </svg>
 <div class="wakings">
@@ -47,6 +41,7 @@
 {% endfor %}
 </div>
 <aside style="border:0;padding:0">
+  {% if ending %}{% from "_result.html" import card %}{{ card(ending, run.entry.href ~ "/picture") }}{% endif %}
   {% if pic.design %}
   <h2>{{ pic.design }}</h2>
   {% if picture %}<img class="picture" src="{{ run.entry.href }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}

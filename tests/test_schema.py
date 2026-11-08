@@ -93,3 +93,9 @@ def test_a_runs_result_has_an_example_of_every_outcome_and_may_be_absent():
     parked = schema("events-1.json")["examples"][1]
     assert parked["run"]["result"]["waits"]["metrics"] == ["M13"]
     validate_events(parked)
+    # every outcome's result is as valid on events-1's run as on runs-1's
+    for r in catalogue["runs"]:
+        if r.get("result"):
+            done = json.loads(json.dumps(schema("events-1.json")["examples"][0]))
+            done["run"].update(status="done", result=r["result"])
+            validate_events(done)

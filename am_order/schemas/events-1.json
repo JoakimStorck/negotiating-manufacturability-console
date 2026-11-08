@@ -89,10 +89,10 @@
       }
     },
     "result": {
-      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/outcome"}],
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/result_outcome"}],
       "description": "The run's result: null while it runs; once it has ended or parked, what it came to. The frame computes it from the run's measures (`measures.json`) once, when the run ends or parks, and never changes it; a parked run has no measures yet, and its `waits` come from the dialogue. Every number carries its unit."
     },
-    "outcome": {
+    "result_outcome": {
       "type": "object",
       "required": ["outcome", "reason", "plan", "requirements", "waits", "showing"],
       "additionalProperties": false,
@@ -103,43 +103,50 @@
           "description": "Why it ended so, in words: the requester's reason for declining, the referral's, the error's"
         },
         "plan": {
-          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/plan"}],
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/result_plan"}],
           "description": "The accepted plan, for an accepted run; null otherwise"
         },
         "requirements": {
           "type": "array",
-          "items": {"$ref": "#/$defs/requirement"},
+          "items": {"$ref": "#/$defs/result_requirement"},
           "description": "The requirements as finally stated, for an accepted run; empty otherwise"
         },
         "waits": {
-          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/waits"}],
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/result_waits"}],
           "description": "What waits for whom, for a parked run; null otherwise"
         },
         "showing": {
-          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/showing"}],
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/result_showing"}],
           "description": "The last showing, for a declined or referred run, where there was one"
         }
       }
     },
-    "plan": {
+    "result_plan": {
       "type": "object",
-      "description": "A plan made and judged.",
-      "required": ["seq", "time", "kind", "id", "design", "machine_class", "verdict"],
+      "required": ["id", "design", "orientation", "settings", "print_time_s", "material_g", "verdict", "findings"],
       "additionalProperties": false,
       "properties": {
-        "seq": {"$ref": "#/$defs/seq"},
-        "time": {"$ref": "#/$defs/time"},
-        "kind": {"const": "plan"},
-        "source": {"$ref": "#/$defs/source"},
         "id": {"type": "string"},
-        "case": {"type": ["string", "null"]},
         "design": {"type": "string"},
-        "machine_class": {"type": "string"},
+        "orientation": {"type": ["string", "null"]},
+        "material": {"type": ["string", "null"]},
+        "settings": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/result_quantity"},
+          "description": "The plan's decision values by name, each with its unit (layer_height in mm, perimeters a count, fill_density in %)"
+        },
+        "print_time_s": {"type": "number", "minimum": 0, "description": "Print time in s"},
+        "material_g": {"type": "number", "minimum": 0, "description": "Material used in g"},
+        "mass_g": {"type": ["number", "null"], "minimum": 0, "description": "The printed part's mass in g, where the analysis gives it"},
         "verdict": {"enum": ["ok", "at_risk", "critical", "incomplete"]},
-        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}, "description": "The findings that are not ok"}
+        "findings": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/finding"},
+          "description": "The findings not ok against the requirements as finally stated"
+        }
       }
     },
-    "requirement": {
+    "result_requirement": {
       "type": "object",
       "required": ["requirement", "kind", "value"],
       "additionalProperties": false,
@@ -151,10 +158,10 @@
         "value": {"type": "object", "description": "The value in force, in the record's form (at_most, at_least, band, equals, holds)"},
         "margin": {"type": ["number", "null"], "description": "The margin in force where the order demands a reserve"},
         "unit": {"type": ["string", "null"]},
-        "relaxed": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/relaxed"}], "description": "Where it was relaxed in the run"}
+        "relaxed": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/result_relaxed"}], "description": "Where it was relaxed in the run"}
       }
     },
-    "relaxed": {
+    "result_relaxed": {
       "type": "object",
       "required": ["what", "from", "to", "by", "showing"],
       "additionalProperties": false,
@@ -188,7 +195,7 @@
         "within_mandate": {"type": ["boolean", "null"]}
       }
     },
-    "waits": {
+    "result_waits": {
       "type": "object",
       "required": ["what", "for", "since", "metrics"],
       "additionalProperties": false,
@@ -200,7 +207,7 @@
         "dialogue": {"type": ["string", "null"]}
       }
     },
-    "showing": {
+    "result_showing": {
       "type": "object",
       "required": ["dialogue", "design"],
       "additionalProperties": false,
@@ -211,7 +218,7 @@
         "text": {"type": ["string", "null"]}
       }
     },
-    "quantity": {
+    "result_quantity": {
       "type": "object",
       "required": ["value", "unit"],
       "additionalProperties": false,
@@ -435,6 +442,24 @@
         "made_by_role": {"$ref": "#/$defs/role"},
         "made_by_actor": {"enum": ["agent", "operator"]},
         "sha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "plan": {
+      "type": "object",
+      "description": "A plan made and judged.",
+      "required": ["seq", "time", "kind", "id", "design", "machine_class", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"$ref": "#/$defs/seq"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"const": "plan"},
+        "source": {"$ref": "#/$defs/source"},
+        "id": {"type": "string"},
+        "case": {"type": ["string", "null"]},
+        "design": {"type": "string"},
+        "machine_class": {"type": "string"},
+        "verdict": {"enum": ["ok", "at_risk", "critical", "incomplete"]},
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}, "description": "The findings that are not ok"}
       }
     },
     "case": {

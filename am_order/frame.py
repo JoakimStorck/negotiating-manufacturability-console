@@ -155,6 +155,11 @@ class Frame:
     def events(self, run_id: str, after: int = 0) -> dict:
         return self._document(f"/runs/{self._run_path(run_id)}/events", validate_events, f"events of {run_id}", after=after)
 
+    def order(self, ref: str) -> dict:
+        """An order version as placed (`GET /orders/<lineage>@<revision>`, order-1)."""
+        from .schema import validate_order
+        return self._document(f"/orders/{quote(ref, safe='@')}", validate_order, f"order {ref}")
+
     def features(self, run_id: str, design: str) -> dict:
         return self._document(f"/runs/{self._run_path(run_id)}/features/{quote(design, safe='@')}", validate_features,
                               f"feature list of {design}")
@@ -228,6 +233,7 @@ class Reading:
         self.catalogue: dict | None = None
         self.runs: dict[str, dict] = {}            # run id -> {"run": the run as it stands, "events": [...], "last": n}
         self.features: dict[tuple[str, str], dict] = {}
+        self.orders: dict[str, dict] = {}
 
     def read_presence(self) -> FrameError | None:
         try:
@@ -261,6 +267,15 @@ class Reading:
         self.runs[run_id] = kept
         return kept, None
 
+    def read_order(self, ref: str) -> dict | None:
+        """An order version as placed, read once; None where the frame does not give it."""
+        if ref not in self.orders:
+            try:
+                self.orders[ref] = self.frame.order(ref)
+            except FrameError:
+                return None
+        return self.orders[ref]
+
     def read_features(self, run_id: str, design: str) -> tuple[dict | None, FrameError | None]:
         key = (run_id, design)
         if key in self.features:
@@ -280,7 +295,8 @@ class Reading:
             if o.get("lineage") == lineage:
                 seen.add(r["id"])
                 out.append({"id": r["id"], "revision": o["revision"], "sha256": o["sha256"], "status": r["status"],
-                            "outcome": r.get("outcome"), "reason": r.get("reason"), "started": r.get("started"), "run": True})
+                            "outcome": r.get("outcome"), "reason": r.get("reason"), "started": r.get("started"), "run": True,
+                            "result": r.get("result")})
         for r in (self.presence or {}).get("runs", []):
             o = r.get("order") or {}
             if o.get("lineage") == lineage and r["id"] not in seen:

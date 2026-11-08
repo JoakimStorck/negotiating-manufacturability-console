@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 from am_order import runs as R
 from am_order.cli import main
 from am_order.frame import Frame, FrameError, Reading, part_state, read_token
-from am_order.picture import overview
+from am_order.picture import cells, empty_cells, overview
+from am_order.schema import schema
 from am_order.web.app import create_app
 from stub_frame import StubFrame, presence, record_events, run_document
 from test_runs import T0, at, make_run
@@ -203,7 +204,7 @@ def test_the_empty_state_shows_the_frame_its_roles_and_what_waits(tool):
     assert page.status_code == 200
     t = page.text
     assert "The frame workshop-1" in t and "waiting for orders" in t
-    assert "Requester" in t and "the scripted policy (reference)" in t and "claude-sonnet-5-5" in t and "no decision maker" in t
+    assert "scripted (reference)" in t and "claude-sonnet-5-5" in t
     assert 'class="state down"' in t and "virtual-nominal" in t and "no host is configured for its adapter" in t
     assert "parked for the owner&#39;s word" in t and "a showing from the design engineer waits for the requester" in t
     assert 'hx-get="/frame/presence" hx-trigger="every 3.0s"' in t
@@ -322,3 +323,125 @@ def test_a_version_is_placed_as_the_home_holds_it_whatever_the_line_endings(stub
     monkeypatch.setattr("am_order.cli._client", lambda url: TestClient(app, base_url=url))
     assert main(["--home", str(home_dir), "--frame", "http://frame.test", "--token-file", str(token), "place", "bracket-mass"]) == 0
     assert "bracket-mass@2" in capsys.readouterr().out
+
+
+
+# ------------------------------------------------------------------------ the beings and the decision makers
+
+ACCEPTED = schema("runs-1.json")["examples"][0]["runs"][1]["result"]
+PARKED = schema("runs-1.json")["examples"][0]["runs"][0]["result"]
+
+
+def test_the_empty_state_draws_every_cell_with_its_beings_and_its_mark():
+    drawn, size = empty_cells(presence(FRAME_AT, parked_run="bracket-mass@2"))
+    by = {c["role"]: c for c in drawn}
+    assert list(by) == list(R.ROLES) and size["width"] > 0 and size["height"] > 0
+    assert by["requester"]["lines"][0]["text"] == "order bracket-mass@2 parked: the owner's word is awaited"
+    assert by["design_engineer"]["lines"][0]["text"] == "design version: none yet"
+    assert by["process_planner"]["lines"][0]["text"] == "plan: none yet"
+    # the beings are drawn whether or not anybody decides over them; the mark says who does, dimmed where nobody does
+    planner = by["process_planner"]["mark"]
+    assert planner["who"] == "none" and planner["dimmed"] and "the frame stops here when a decision is needed" in by["process_planner"]["all"]
+    assert by["design_engineer"]["mark"]["who"] == "claude-sonnet-5-5" and not by["design_engineer"]["mark"]["dimmed"]
+    assert by["requester"]["mark"]["mode"] == "waiting"
+    machines = [l["text"] for l in by["machine_operator"]["lines"]]
+    assert "virtual-nominal: virtual, down" in machines and "core-one-1: instrumented, unavailable" in machines
+
+
+def test_the_empty_state_page_draws_the_cells(tool):
+    t = tool.get("/runs").text
+    assert all(f'data-role="{role}"' in t for role in R.ROLES)
+    assert 'class="mark none"' in t and 'stroke-dasharray="4 3"' in t and "none yet" in t
+
+
+def test_a_cell_shows_what_it_holds_at_the_clock_and_the_mark_who_decides(folder, stub):
+    kept, _ = Reading(frame_of(stub)).read_run(RUN)
+    run = R.from_events(kept["run"], kept["events"])
+    early, _ = cells(run, R.state(run, T0 + timedelta(seconds=30)))
+    by = {c["role"]: c for c in early}
+    assert by["design_engineer"]["lines"][0]["text"].startswith("bracket-mass@v1")
+    assert by["process_planner"]["lines"][0]["text"] == "latest candidate: plan-1@v3"
+    assert by["process_planner"]["mark"]["mode"] == "awake" and by["process_planner"]["mark"]["doing"] == "thinking"
+    assert by["requester"]["mark"]["mode"] == "idle" and by["requester"]["mark"]["doing"] == "asleep"
+    assert by["quality_engineer"]["mark"]["doing"] == "not woken in this run" and by["quality_engineer"]["lines"][0]["text"] == "measurements: none yet"
+    late, _ = cells(run, R.state(run, T0 + timedelta(seconds=595)))
+    by = {c["role"]: c for c in late}
+    assert by["design_engineer"]["lines"][0]["text"].startswith("bracket-mass@v2")
+    assert "1 version made in the run (shape 1)" in [l["text"] for l in by["design_engineer"]["lines"]]
+    assert by["process_planner"]["lines"][0]["text"] == "plan in force: plan-1@v3"
+
+
+def test_the_folder_gives_the_same_cells(folder, stub):
+    from_folder = R.read(folder.parents[1], "h1-bracket-mass/open-01")
+    kept, _ = Reading(frame_of(stub)).read_run(RUN)
+    from_frame = R.from_events(kept["run"], kept["events"])
+    for s in range(-5, 620, 13):
+        t = T0 + timedelta(seconds=s)
+        assert cells(from_frame, R.state(from_frame, t)) == cells(from_folder, R.state(from_folder, t)), s
+
+
+def test_a_plan_candidate_shows_its_settings_and_verdict(stub):
+    run_doc = stub.runs[RUN]["run"]
+    t0 = at(50)
+    events = [e for e in stub.runs[RUN]["events"] if e["kind"] != "ended"] + [
+        {"seq": 900, "time": t0, "kind": "call", "source": {"table": "call", "row": "c-pc"}, "id": "c-pc", "waking": None, "turn": None,
+         "tool": "plan_candidate", "seconds": 1.0, "error": False, "inputs": {"design": "bracket-mass@v2", "orientation": "-Z",
+                                                                             "settings": {"layer_height": 0.15, "perimeters": 3, "fill_density": 10}}},
+        {"seq": 901, "time": at(51), "kind": "plan", "source": {"table": "call", "row": "c-an"}, "id": "plan-bracket-mass-v2-mZ@v9", "case": "case-1",
+         "design": "bracket-mass@v2", "machine_class": "fff-3axis-0.4", "verdict": "at_risk",
+         "findings": [{"requirement": "req-14", "metric": "M8", "feature": "pin-hole", "status": "at_risk", "value": 0.838, "limit": 1.0, "margin": 0.6}]}]
+    run = R.from_events(dict(run_doc, status="running", ended=None), events)
+    drawn, _ = cells(run, R.state(run, T0 + timedelta(seconds=52)))
+    planner = [l["text"] for l in next(c for c in drawn if c["role"] == "process_planner")["lines"]]
+    assert planner[:4] == ["latest candidate: plan-bracket-mass-v2-mZ@v9", "-Z, 0.15 mm layers, 3 perimeters, 10 % fill", "verdict at risk",
+                           "M8 at pin-hole at risk"]
+
+
+# ------------------------------------------------------------------------ the end and the result
+
+@pytest.fixture
+def resulting(stub, folder):
+    """The stub's run with its result as the frame gives it, and a parked order's run beside it."""
+    stub.runs[RUN]["run"]["result"] = ACCEPTED
+    parked_folder = make_run(folder.parents[1] / "orders" / "bracket-mass@2")
+    run = run_document(parked_folder, "bracket-mass@2", None, {"lineage": "bracket-mass", "revision": 2, "sha256": "a" * 64})
+    events = [e for e in record_events(parked_folder) if e["kind"] != "ended"]
+    events.append({"seq": events[-1]["seq"] + 1, "time": at(601), "kind": "parked", "source": {"table": "call", "row": "c-park"}, "case": "case-1",
+                   "what": "showing", "dialogue": "call-accept", "metrics": ["M13"]})
+    stub.add_run(dict(run, status="parked", ended=None, outcome=None, reason=None, result=PARKED), events, {})
+    return stub
+
+
+def test_the_result_card_appears_when_the_clock_reaches_the_end(tool, resulting):
+    before = tool.get(f"/frame/runs/{RUN}?at=300").text
+    assert 'class="result' not in before and 'data-ended=""' in before
+    end = tool.get(f"/frame/runs/{RUN}").text
+    assert 'data-ended="Accepted: a plan for manufacturing"' in end and '<div class="result accepted">' in end
+    assert "55 min (3281 s)" in end and "21.4 g" in end and "19.85 g" in end and "bracket-mass@v3" in end
+    assert "the margin on M8 relaxed from 0.6 to 0.838 by the requester, within its mandate, on the showing of call-01M6XZQT7Y" in end
+    assert "M13 relaxed from at most 16 to at most 19.86 by the requester, within its mandate" in end
+    assert "1 other requirement as the order gave it" in end
+
+
+def test_a_run_without_a_result_says_so(tool):
+    end = tool.get(f"/frame/runs/{RUN}").text
+    assert "The frame has not given a result for this run; it ended accepted" in end
+
+
+def test_a_parked_runs_card_says_what_waits_for_whom(tool, resulting):
+    t = tool.get("/frame/runs/bracket-mass@2").text
+    assert '<div class="result parked">' in t and "Parked: the owner&#39;s word is awaited" in t
+    assert "A showing waits for the order&#39;s owner since 2026-11-08 16:26:51Z, on M13" in t
+    cells_now = tool.get("/frame/runs/bracket-mass@2").text
+    assert "waits for the owner&#39;s word: a showing on M13" in cells_now
+
+
+def test_the_catalogue_shows_a_plans_figures(tool, resulting):
+    t = tool.get("/runs").text
+    assert "55 min, 21.4 g material, 19.85 g" in t
+
+
+def test_the_orders_page_shows_the_result(tool, resulting):
+    # the order's latest revision at the frame is the run of revision 3, accepted
+    t = tool.get("/products/bracket-mass/frame").text
+    assert f"The result of {RUN}" in t and '<div class="result accepted">' in t and "the margin on M8 relaxed from 0.6 to 0.838" in t

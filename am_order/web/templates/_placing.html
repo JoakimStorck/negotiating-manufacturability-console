@@ -21,4 +21,8 @@
 </tbody>
 </table>
 {% else %}<p class="muted">No version of this order is at the frame.</p>{% endif %}
+{% if card %}{% from "_result.html" import card as result %}
+<h3>The result of {{ card_run.id }}</h3>
+{{ result(card, "/frame/runs/" ~ card_run.id ~ "/picture" if card_run.run else none) }}
+{% endif %}
 </div>

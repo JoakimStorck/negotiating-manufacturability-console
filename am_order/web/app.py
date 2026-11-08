@@ -32,7 +32,7 @@ from ..home import Home, HomeError, ReadOnly, Refused
 from ..order import Order
 from ..render import TABLES, TITLES, metric_name, table
 from .. import runs as R
-from ..picture import overview
+from ..picture import empty_cells, overview, plan_figures, result_card
 from ..frame import Frame, FrameError, Reading, maker_text, part_state, saved_version
 
 HERE = Path(__file__).parent
@@ -180,7 +180,14 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
     app.state.home, app.state.log = home, log
     app.state.runs_root = Path(runs_root).resolve() if runs_root else None
     app.state.frame = Reading(frame) if frame else None
-    templates.env.globals.update(maker_text=maker_text, refresh=refresh)
+    templates.env.globals.update(maker_text=maker_text, refresh=refresh, plan_figures=plan_figures, result_card=result_card)
+
+    def ending_of(run, st):
+        """The run's end at the clock: once the clock has reached the end of a run that has ended or parked, what the result card
+        shows; before that, nothing, so that playback shows the card when the clock reaches the end and not before."""
+        if run.entry.status not in ("done", "parked") or run.end is None or st.at < run.end:
+            return None
+        return result_card(run.entry.outcome if run.entry.status == "done" else "parked", run.entry.reason, run.entry.result, run)
 
     def features_of(order: Order):
         return home.features(order.data["design"]) if order.data.get("design") else None
@@ -703,7 +710,8 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         for p in parts:
             for w in (p.get("role") or {}).get("waits") or []:
                 waits.setdefault(w["run"], []).append({**w, "for": p["role"]["title"]})
-        return {"presence": doc, "parts": parts, "levels": levels, "waits": waits, "frame_url": reading.frame.url,
+        drawn, diagram = empty_cells(doc) if doc is not None else ([], None)
+        return {"presence": doc, "parts": parts, "levels": levels, "waits": waits, "frame_url": reading.frame.url, "cells": drawn, "diagram": diagram,
                 "contact_note": contact_note(error), "frame_error": error}
 
     @app.get("/frame/presence", response_class=HTMLResponse)
@@ -712,6 +720,29 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         if app.state.frame is None:
             raise HTTPException(404, "the tool is not connected to a frame; start it with --frame URL --token-file FILE")
         return templates.TemplateResponse(request, "_presence.html", presence_ctx())
+
+    def run_ctx(run, reading: Reading | None = None) -> dict:
+        """What a run's cells show beyond its events: the order's document (the frame's, else the home's), the feature counts the
+        home or the frame knows, and the frame's presence (its machines, its decision makers)."""
+        order = None
+        if run.order:
+            ref = f"{run.order[0]}@{run.order[1]}"
+            order = reading.read_order(ref) if reading is not None else None
+            if order is None and home.folder(run.order[0]) is not None:
+                try:
+                    order = home.load(ref).data
+                except HomeError:
+                    order = None
+        features = {}
+        for _, d in run.designs:
+            f = home.features(d)
+            if f is not None:
+                features[d] = len(f["features"])
+        if reading is not None:
+            for (rid, d), f in reading.features.items():
+                if rid == run.entry.id and f is not None:
+                    features[d] = len(f["features"])
+        return {"order": order, "features": features, "presence": reading.presence if reading is not None else None}
 
     def frame_run(run_id: str):
         reading = app.state.frame
@@ -732,16 +763,17 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         run, error = frame_run(run_id)
         if run is None:
             return page(request, "frame_down.html", None, "run", contact_note=contact_note(error), run_id=run_id, status=503)
-        st = R.state(run, R.parse_at(run, at))
-        pic = overview(run, st)
-        accepted = None
-        if run.entry.outcome == "accepted" and run.accepted_design:
-            features, ferror = reading.read_features(run_id, run.accepted_design)
-            accepted = {"design": run.accepted_design, "features": features, "error": str(ferror) if ferror else None}
         if reading.presence is None and error is None:
-            reading.read_presence()               # once, for the frame's name
+            reading.read_presence()               # once, for the frame's name, its machines and decision makers
+        st = R.state(run, R.parse_at(run, at))
+        accepted = None
+        design = ((run.entry.result or {}).get("plan") or {}).get("design") or run.accepted_design
+        if run.entry.outcome == "accepted" and design:
+            features, ferror = reading.read_features(run_id, design)
+            accepted = {"design": design, "features": features, "error": str(ferror) if ferror else None}
+        pic = overview(run, st, run_ctx(run, reading))
         presence = reading.presence or {}
-        return page(request, template, None, "run", run=run, state=st, pic=pic, picture=True, accepted=accepted,
+        return page(request, template, None, "run", run=run, state=st, pic=pic, picture=True, accepted=accepted, ending=ending_of(run, st),
                     skew=reading.frame.contact.skew.total_seconds(), frame_name=(presence.get("frame") or {}).get("name") or reading.frame.url,
                     contact_note=contact_note(error))
 
@@ -790,7 +822,10 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         why = None if ready else ("the order has no saved version yet" if saved is None else
                                   "the draft has changes not yet saved" if facets["state"] == "draft" else
                                   f"the order is {facets['state']}, not confirmed: bind it to a design and confirm every binding")
-        return {"lineage": lineage, "runs": reading.runs_of(lineage), "saved": saved, "version": held[0] if held else None,
+        runs = reading.runs_of(lineage)
+        latest = next((r for r in runs if r.get("result") or r["status"] in ("done", "parked")), None)
+        card = result_card(latest["outcome"] or latest["status"], latest.get("reason"), latest.get("result")) if latest else None
+        return {"lineage": lineage, "runs": runs, "card": card, "card_run": latest, "saved": saved, "version": held[0] if held else None,
                 "ready": ready, "why": why, "contact_note": contact_note(error), "frame_url": reading.frame.url,
                 "message": message, "bad": bad}
 
@@ -832,8 +867,9 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         if run is None:
             raise HTTPException(404, f"{run_id} is not a run under the runs root")
         st = R.state(run, R.parse_at(run, at))
-        pic = overview(run, st)
-        return page(request, template, None, "run", run=run, state=st, pic=pic, picture=R.picture_of(run, st.design) is not None)
+        pic = overview(run, st, run_ctx(run))
+        return page(request, template, None, "run", run=run, state=st, pic=pic, picture=R.picture_of(run, st.design) is not None,
+                    ending=ending_of(run, st))
 
     @app.get("/runs/{run_id:path}/view", response_class=HTMLResponse)
     def run_fragment(request: Request, run_id: str, at: str | None = None):

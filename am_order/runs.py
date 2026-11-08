@@ -42,6 +42,8 @@ DIALOGUE = {"brief": (True, "brief"), "ask_requester": (False, "question"), "ans
 # what counts as a decision: the orderer's side of the dialogue, a plan accepted, an order declined, a mandate changed
 DECISIONS = {"answer", "acceptance", "order declined", "consent", "accepted", "extended mandate", "relaxed"}
 ORDER_NOTE = re.compile(r"\border ([a-z0-9][a-z0-9-]*)@(\d+)\b")
+# the calls whose inputs say what a cell holds: the means a design version was made by, the settings a plan was made with
+MAKING = ("reshape", "plan_candidate")
 # what a role does between its words, from the tools it calls while awake: a family for the colour and a word for the reader;
 # the tools that say something (send_*, the dialogue) are events and are not activities
 ACTS = {"analyse": ("analyse", "analysing"), "sensitivity": ("analyse", "analysing"), "survey_orientations": ("analyse", "analysing"),
@@ -115,6 +117,7 @@ class Entry:
     decision_makers: dict = field(default_factory=dict)
     source: str = "folder"        # folder, or frame: where the run is read from
     last: int = 0                 # the frame's: the last sequence number of the run's events
+    result: dict | None = None    # the frame's: what the run came to (runs-1's `result`), once it has ended or parked
 
     @property
     def href(self) -> str:
@@ -288,6 +291,8 @@ class Run:
     plans: dict = field(default_factory=dict)   # the frame's: plan id -> {design, verdict, findings}
     parked: dict | None = None                  # the frame's: the case parked for the owner's word, while it is
     now: datetime | None = None                 # the frame's clock when its events were last read, for a live run
+    jobs: list = field(default_factory=list)    # (time, job id, machine, status) as each job's status changed
+    made: list = field(default_factory=list)    # the calls that make a cell's beings: {start, end, tool, inputs} of reshape, plan_candidate
 
     @property
     def accepted_design(self) -> str | None:
@@ -308,7 +313,7 @@ class Run:
         """The last time the log knows: the run's end when it has ended, else the latest row."""
         if self.entry.ended:
             return self.entry.ended
-        times = [e.time for e in self.events] + [b.end or b.start for b in self.bars]
+        times = [e.time for e in self.events] + [b.end or b.start for b in self.bars] + ([self.parked["time"]] if self.parked else [])
         return max(times) if times else None
 
     @property
@@ -375,6 +380,7 @@ def read(root: Path, run_id: str) -> Run | None:
     designs: list[tuple[datetime, str]] = []
     makers: dict[str, str] = {}
     mandate, accepted, order = None, None, None
+    jobs, made = [], []
     conn = _connect(folder / "record.db")
     try:
         tables = _tables(conn)
@@ -468,6 +474,21 @@ def read(root: Path, run_id: str) -> Run | None:
                 a, b = ("requester", "design_engineer") if down else ("design_engineer", "requester")
                 events.append(Event(_time(r["time"]), "dialogue", a, b, word, _dialogue_text(r["tool"], inputs, {}), True,
                                     word in DECISIONS, r["id"]))
+        if "call" in tables:
+            marks = ",".join("?" * len(MAKING))
+            for r in conn.execute(f"SELECT tool, time, seconds, inputs FROM call WHERE tool IN ({marks}) AND error = 0 ORDER BY time, rowid", MAKING):
+                try:
+                    inputs = json.loads(r["inputs"] or "{}")
+                except ValueError:
+                    inputs = {}
+                t = _time(r["time"])
+                made.append({"start": t, "end": t + timedelta(seconds=r["seconds"] or 0), "tool": r["tool"], "inputs": inputs})
+        if "job" in tables:
+            for r in conn.execute("SELECT id, machine, status, started, ended FROM job ORDER BY rowid"):
+                if r["started"]:
+                    jobs.append((_time(r["started"]), r["id"], r["machine"], "running" if r["ended"] else r["status"]))
+                if r["ended"]:
+                    jobs.append((_time(r["ended"]), r["id"], r["machine"], r["status"]))
         if "design" in tables:
             for r in conn.execute("SELECT id, time, made_by_role, made_by_actor FROM design ORDER BY time, version"):
                 t = _time(r["time"])
@@ -492,7 +513,9 @@ def read(root: Path, run_id: str) -> Run | None:
     used = {x.sender for x in events if x.sender} | {x.recipient for x in events if x.recipient} | {b.role for b in bars}
     roles = [r for r in ROLES if r in used or r in ("requester", "design_engineer", "process_planner")]
     e.decision_makers = makers
-    return Run(e, folder, events, bars, designs, roles, makers, mandate, accepted, order)
+    made.sort(key=lambda m: (m["start"], m["end"]))
+    jobs.sort(key=lambda j: j[0])
+    return Run(e, folder, events, bars, designs, roles, makers, mandate, accepted, order, jobs=jobs, made=made)
 
 
 # -------------------------------------------------------------------- the state at a time
@@ -592,7 +615,7 @@ def entry_of(doc: dict) -> Entry:
                  lineages=list(doc.get("lineages") or ([order["lineage"]] if order else [])), started=_time(doc.get("started")),
                  ended=_time(doc.get("ended")), status=status, outcome=doc.get("outcome"), reason=doc.get("reason"),
                  negotiation=settings.get("negotiation"), held=settings.get("held"), decision_makers=makers, source="frame",
-                 last=int(doc.get("last") or 0))
+                 last=int(doc.get("last") or 0), result=doc.get("result"))
 
 
 def _maker_word(maker: dict | None) -> str:
@@ -613,7 +636,7 @@ def from_events(doc_run: dict, events: list[dict], now: datetime | None = None) 
     makers: dict[str, str] = {}
     plans: dict[str, dict] = {}
     mandate, accepted, parked = None, None, None
-    calls, turns = [], []
+    calls, turns, jobs, made = [], [], [], []
     for ev in events:
         k, t = ev["kind"], _time(ev["time"])
         if k == "message":
@@ -641,6 +664,10 @@ def from_events(doc_run: dict, events: list[dict], now: datetime | None = None) 
             turns.append(ev)
         elif k == "call":
             calls.append(ev)
+            if ev["tool"] in MAKING and not ev.get("error"):
+                made.append({"start": t, "end": t + timedelta(seconds=ev.get("seconds") or 0), "tool": ev["tool"], "inputs": ev.get("inputs") or {}})
+        elif k == "job":
+            jobs.append((t, ev["id"], ev["machine"], ev["status"]))
         elif k == "dialogue":
             tool, inputs = ev["tool"], ev.get("inputs") or {}
             if tool not in DIALOGUE:
@@ -657,7 +684,7 @@ def from_events(doc_run: dict, events: list[dict], now: datetime | None = None) 
             designs.append((t, ev["id"]))
             out.append(Event(t, "design", ev["made_by_role"], None, "design", f"{ev['id']} made", ref=ev["id"]))
         elif k == "plan":
-            plans[ev["id"]] = {"design": ev["design"], "verdict": ev["verdict"], "findings": ev.get("findings") or []}
+            plans[ev["id"]] = {"time": t, "design": ev["design"], "verdict": ev["verdict"], "findings": ev.get("findings") or []}
         elif k == "case":
             accepted, mandate = ev.get("accepted_plan"), ev.get("mandate") or None
         elif k == "parked":
@@ -706,5 +733,7 @@ def from_events(doc_run: dict, events: list[dict], now: datetime | None = None) 
     roles = [r for r in ROLES if r in used or r in ("requester", "design_engineer", "process_planner")]
     e.decision_makers = makers
     order = doc_run.get("order")
+    made.sort(key=lambda m: (m["start"], m["end"]))
+    jobs.sort(key=lambda j: j[0])
     return Run(e, None, out, bars, designs, roles, makers, mandate, accepted, (order["lineage"], order["revision"]) if order else None,
-               plans, parked if e.status == "parked" else None, now)
+               plans, parked if e.status == "parked" else None, now, jobs, made)

@@ -5,13 +5,13 @@
 <h1>Runs</h1>
 {% if framed %}
 <h2>The standing frame</h2>
-{% with presence=framed.presence, parts=framed.parts, levels=framed.levels, waits=framed.waits, frame_url=framed.frame_url, contact_note=framed.contact_note %}
+{% with presence=framed.presence, parts=framed.parts, levels=framed.levels, waits=framed.waits, frame_url=framed.frame_url, contact_note=framed.contact_note, cells=framed.cells, diagram=framed.diagram %}
 {% include "_presence.html" %}
 {% endwith %}
 <h2>The frame's runs</h2>
 {% if not framed.entries %}<p class="muted">The frame holds no run{% if product %} of {{ product }}{% endif %}.</p>{% else %}
 <table>
-<thead><tr><th>Run</th><th>From</th><th>Origin</th><th>Decision makers</th><th>Started</th><th class="num">Minutes</th><th>Status</th><th>Outcome</th><th class="num">Events</th></tr></thead>
+<thead><tr><th>Run</th><th>From</th><th>Origin</th><th>Decision makers</th><th>Started</th><th class="num">Minutes</th><th>Status</th><th>Outcome</th><th>Plan</th><th class="num">Events</th></tr></thead>
 <tbody>
 {% for r in framed.entries %}
 {% set o = framed.origins.get(r.id) %}
@@ -23,7 +23,8 @@
   <td>{{ r.started.strftime("%Y-%m-%d %H:%M") if r.started else "" }}</td>
   <td class="num">{{ "%.0f"|format(r.minutes) if r.minutes is not none else "" }}</td>
   <td>{{ r.status }}</td>
-  <td>{{ r.outcome or "" }}{% if r.reason %} <span class="muted">({{ r.reason }})</span>{% endif %}</td>
+  <td>{{ r.outcome or "" }}{% if r.reason %} <span class="muted">({{ r.reason }})</span>{% endif %}{% if r.status == "done" and not r.result %} <span class="muted">· no result given</span>{% endif %}</td>
+  <td>{{ plan_figures(r.result) }}</td>
   <td class="num">{{ r.last }}</td>
 </tr>
 {% endfor %}

@@ -1,5 +1,10 @@
-"""The overview of a run at a time, as geometry for the page to draw: the roles as cells in their ranks with their decision makers,
-the traffic between them, what is awake and what waits, and the time axis with every event marked and the clock's position on it.
+"""The overview of a run at a time, as geometry for the page to draw: the roles' cells in their ranks, each a being-box holding what
+the cell has at the clock's time, with the decision maker over it as a mark joined to the box; the traffic between them, what is
+awake and what waits, and the time axis with every event marked and the clock's position on it.
+
+The beings exist whether or not a decision maker stands over them (ARTI): a cell shows what it holds, "none yet" where it holds
+nothing, and the mark above it who decides over it, dimmed where nobody does. The same drawing serves the frame's empty state,
+from its presence alone (`empty_cells`), and a run at any time in it (`cells`).
 
 Nothing here reads a file; it takes a `runs.Run` and a `runs.State` and returns plain dicts and lists the template turns into SVG.
 """
@@ -8,10 +13,12 @@ from __future__ import annotations
 import math
 from datetime import datetime, timedelta
 
-from .runs import DIALOGUE, RANK, TITLES, Event, Run, State
+import re
+
+from .diff import mandate_text, value_text
+from .runs import DIALOGUE, RANK, ROLES, TITLES, Event, Run, State
 
 WIDTH = 1200
-BOX_W, BOX_H = 230, 74
 AXIS_X0, AXIS_X1 = 150, 1130
 LANE_H = 24                      # a role's activity line, parallel to the time axis above it
 # thinking has one colour on every line, apart from the calls' colours; the calls are what the model chose, the thinking is the model
@@ -20,8 +27,12 @@ ACT_WORDS = (("thinking", "think"), ("reading", "read"), ("analysing", "analyse"
 COLOURS = {"assignment": "#2a78d6", "proposal": "#eb6834", "query": "#1baf7a", "answer": "#eda100", "report": "#e87ba4",
            "escalation": "#008300", "status": "#6250d6", "dialogue": "#52514e", "design": "#0b0b0b", "refused": "#e34948",
            "woke": "#b9c2cc", "slept": "#b9c2cc", "plan": "#8a8f94"}
-FILLS = {"awake": "#dce8f7", "waiting": "#fff1c7", "idle": "#f3f5f7", "absent": "#ffffff"}
-STROKES = {"awake": "#1f5fa8", "waiting": "#b7791f", "idle": "#c5ccd3", "absent": "#d4d9de"}
+FILLS = {"awake": "#dce8f7", "waiting": "#fff1c7", "idle": "#f3f5f7", "absent": "#ffffff", "none": "#ffffff", "down": "#fdeceb"}
+STROKES = {"awake": "#1f5fa8", "waiting": "#b7791f", "idle": "#8a94a0", "absent": "#c5ccd3", "none": "#a0a8b0", "down": "#b3261e"}
+# a cell: the being-box with its lines, and above it the decision maker's mark, a rounded badge joined to the box by a short line
+CELL_W, CELL_GAP, LINE_H, CELL_PAD, SIDE = 240, 40, 15, 30, 90
+MARK_W, MARK_H, MARK_RISE = 150, 34, 46
+CELL_LINES = 7                                   # a cell's lines at most; the rest in its tooltip
 
 
 def colour(e: Event) -> str:
@@ -47,20 +58,6 @@ def _span(d: timedelta) -> str:
     return f"{s} s"
 
 
-def ranks(run: Run) -> list[int]:
-    """The ranks that have a role in the run, top down; the rows of the picture."""
-    return sorted({RANK.get(r, 3) for r in run.roles})
-
-
-def diagram_width(run: Run) -> float:
-    """The block diagram's width: the widest rank's cells, with room beside them for the arrows' labels."""
-    by_rank: dict[int, int] = {}
-    for r in run.roles:
-        by_rank[RANK.get(r, 3)] = by_rank.get(RANK.get(r, 3), 0) + 1
-    widest = max(by_rank.values(), default=1)
-    return widest * BOX_W + (widest - 1) * 60 + 2 * 270
-
-
 def lanes_top(run: Run) -> float:
     """The activity lines start at the top of the time picture, with room above them for the clock and "next in"."""
     return 36
@@ -71,35 +68,253 @@ def axis_y(run: Run) -> float:
     return lanes_top(run) + len(run.roles) * LANE_H + 40
 
 
-def nodes(run: Run, st: State) -> list[dict]:
-    """A cell per role: its place by rank, its decision maker, its state at the time."""
-    by_rank: dict[int, list[str]] = {}
-    for r in run.roles:
-        by_rank.setdefault(RANK.get(r, 3), []).append(r)
-    rows = {rank: 36 + i * 150 for i, rank in enumerate(ranks(run))}
-    width = diagram_width(run)
-    out = []
-    for rank, roles in by_rank.items():
-        n = len(roles)
-        gap = 60
-        total = n * BOX_W + (n - 1) * gap
+def _maker_text(maker: str | None) -> str:
+    """A decision maker in words, from the word the run readers give (`_short`)."""
+    return {"operator": "a person", "none": "none", "scripted": "the scripted policy", "reference": "scripted (reference)"}.get(maker, maker) \
+        if maker else "not known"
+
+
+def _maker_word(maker: dict | None) -> str | None:
+    """A presence-1 decision maker as the word the run readers give."""
+    if not maker:
+        return None
+    if maker.get("kind") == "model":
+        return maker.get("name")
+    if maker.get("kind") == "scripted" and maker.get("name") not in (None, "scripted"):
+        return maker["name"]
+    return maker.get("kind")
+
+
+def _metric_lines(order: dict) -> list[str]:
+    """The order's metrics with their values and mandates, those with a mandate first, alike ones joined (M6–M9)."""
+    rows = []
+    for m in order.get("metrics") or []:
+        if m.get("dropped"):
+            continue
+        mandate = m.get("mandate") or {"form": "held"}
+        rows.append((m["id"], f"{(m.get('quantity') or '').replace('_', ' ')} {value_text(m.get('value'), m.get('unit'))}",
+                     mandate_text(mandate, m.get("unit")), mandate.get("form") != "held"))
+    out, held = [], 0
+    i = 0
+    while i < len(rows):
+        j = i
+        while j + 1 < len(rows) and rows[j + 1][1:] == rows[i][1:]:
+            j += 1
+        ids = rows[i][0] if i == j else f"{rows[i][0]}–{rows[j][0]}"
+        if rows[i][3]:
+            out.append(f"{ids} {rows[i][1]} · {rows[i][2]}")
+        else:
+            held += j - i + 1
+        i = j + 1
+    return out + ([f"{held} metrics held"] if held else [])
+
+
+def _orientation(plan_id: str | None) -> str | None:
+    m = re.search(r"-([mp])([XYZ])@", plan_id or "")
+    return f"{'-' if m.group(1) == 'm' else '+'}{m.group(2)}" if m else None
+
+
+def _settings_text(settings: dict) -> str:
+    def v(x):
+        return x["value"] if isinstance(x, dict) else x
+    parts = []
+    if "layer_height" in settings:
+        parts.append(f"{v(settings['layer_height']):g} mm layers")
+    if "perimeters" in settings:
+        parts.append(f"{v(settings['perimeters'])} perimeters")
+    if "fill_density" in settings:
+        parts.append(f"{v(settings['fill_density']):g} % fill")
+    return ", ".join(parts)
+
+
+def plan_at(run: Run, st: State) -> tuple[str | None, bool]:
+    """The plan in force at the clock (the latest accepted), else the latest candidate made or analysed; and whether it is in force."""
+    accepted = None
+    for e in run.events:
+        if e.time > st.at:
+            break
+        if e.kind == "message" and e.valid and e.type == "status" and e.text.startswith("accepted · "):
+            accepted = e.text.split(" · ", 1)[1]
+    if accepted:
+        return accepted, True
+    latest, when = None, None
+    for b in run.bars:
+        for a in b.acts:
+            if a.word == "analysing" and a.detail.startswith("plan") and a.start <= st.at and (when is None or a.start >= when):
+                latest, when = a.detail, a.start
+    for pid, p in run.plans.items():
+        if p["time"] <= st.at and (when is None or p["time"] >= when):
+            latest, when = pid, p["time"]
+    return latest, False
+
+
+def _settings_of(run: Run, plan_id: str) -> tuple[str | None, dict]:
+    """The orientation and settings a plan was made with: the latest plan_candidate call ended before the plan was first analysed."""
+    first = run.plans.get(plan_id, {}).get("time")
+    if first is None:
+        first = min((a.start for b in run.bars for a in b.acts if a.word == "analysing" and a.detail == plan_id), default=None)
+    if first is None:
+        return _orientation(plan_id), {}
+    made = [m for m in run.made if m["tool"] == "plan_candidate" and m["end"] <= first + timedelta(seconds=0.01)]
+    if not made:
+        return _orientation(plan_id), {}
+    inputs = made[-1]["inputs"]
+    return inputs.get("orientation") or _orientation(plan_id), dict(inputs.get("settings") or {})
+
+
+def beings(role: str, run: Run | None, st: State | None, ctx: dict) -> tuple[list[dict], str | None]:
+    """What a role's cell holds at the clock, as lines ({text, kind}), and the design version whose picture it shows."""
+    def line(text, kind=""):
+        return {"text": text, "kind": kind}
+    order, presence = ctx.get("order"), ctx.get("presence")
+    at = st.at if st is not None else None
+    out, picture = [], None
+    if role == "requester":
+        if run is not None and run.order:
+            name = ((order or {}).get("product") or {}).get("name") or (order or {}).get("title")
+            out.append(line(f"order {run.order[0]}@{run.order[1]}" + (f": {name}" if name else ""), "head"))
+            out += [line(t) for t in _metric_lines(order)] if order else [line("its metrics: the order is not read", "muted")]
+        elif run is not None:
+            out.append(line("a scenario's brief, no order", "muted"))
+        else:
+            words = {"placed": "placed, waiting for the frame", "preparing": "being prepared", "parked": "parked: the owner's word is awaited"}
+            held = [r for r in (presence or {}).get("runs", []) if r.get("order") and r["state"] in words]
+            out += [line(f"order {r['order']['lineage']}@{r['order']['revision']} {words[r['state']]}", "bad" if r["state"] == "parked" else "head")
+                    for r in held] or [line("order: none yet", "muted")]
+        if run is not None and run.parked and at >= run.parked["time"]:
+            out.append(line(f"waits for the owner's word: a {run.parked['what']}" + (f" on {', '.join(run.parked['metrics'])}" if run.parked["metrics"] else ""), "bad"))
+        elif st is not None and st.waiting.get("requester"):
+            out.append(line(f"waits: {st.waiting['requester']}", "bad"))
+    elif role == "design_engineer":
+        design = st.design if st is not None else None
+        if design:
+            picture = design
+            bound = (order or {}).get("design")
+            n = (ctx.get("features") or {}).get(design)
+            out.append(line(f"{design}" + (f", {n} features" if n is not None else ""), "head"))
+            made = [m for m in run.made if m["tool"] == "reshape" and m["end"] <= at and m["start"] >= (run.start or m["start"])]
+            means: dict[str, int] = {}
+            for m in made:
+                means[m["inputs"].get("means") or "shape"] = means.get(m["inputs"].get("means") or "shape", 0) + 1
+            versions = sum(1 for t, d in run.designs if run.start and run.start <= t <= at)
+            if versions:
+                out.append(line(f"{versions} version{'s' if versions > 1 else ''} made in the run"
+                                + (f" ({', '.join(f'{k} {v}' for k, v in sorted(means.items()))})" if means else "")))
+            if bound:
+                out.append(line(f"bound version {bound}" if bound != design else "the order's bound version", "muted"))
+        else:
+            out.append(line("design version: none yet", "muted"))
+    elif role == "process_planner":
+        plan, in_force = plan_at(run, st) if run is not None else (None, False)
+        if plan:
+            orientation, settings = _settings_of(run, plan)
+            out.append(line(f"{'plan in force' if in_force else 'latest candidate'}: {plan}", "head"))
+            text = ", ".join(x for x in (orientation, _settings_text(settings)) if x)
+            if text:
+                out.append(line(text))
+            p = run.plans.get(plan)
+            if p:
+                out.append(line(f"verdict {p['verdict'].replace('_', ' ')}", "bad" if p["verdict"] != "ok" else ""))
+                for f in p["findings"][:3]:
+                    out.append(line(f"{f.get('metric') or f['requirement']}{' at ' + f['feature'] if f.get('feature') else ''} {f['status'].replace('_', ' ')}", "bad"))
+        else:
+            out.append(line("plan: none yet", "muted"))
+    elif role == "production_planner":
+        latest: dict[str, tuple] = {}
+        for t, jid, machine, status in (run.jobs if run is not None else []):
+            if t <= at:
+                latest[jid] = (machine, status)
+        live = [(j, m, s) for j, (m, s) in latest.items() if s in ("queued", "running", "paused")]
+        out += [line(f"{j} on {m}, {s}") for j, m, s in live] or [line("jobs: none yet" if not latest else f"{len(latest)} jobs done, none queued", "muted")]
+    elif role == "machine_operator":
+        machines = [p for p in (presence or {}).get("parts", []) if p["kind"] == "machine"]
+        if machines:
+            from .frame import part_state
+            for m in machines:
+                state = part_state(m, presence)
+                out.append(line(f"{m['id']}: {m['machine']['adapter']}, {state}" + (f", {m['machine']['job']}" if m["machine"].get("job") else ""),
+                                "bad" if state in ("down", "unavailable") else ""))
+        else:
+            known = sorted({m for _, _, m, _ in (run.jobs if run is not None else [])})
+            out += [line(f"{m}") for m in known] or [line("machines: not known here", "muted")]
+    elif role == "quality_engineer":
+        out.append(line("measurements: none yet", "muted"))
+    elif role == "maintenance_technician":
+        out.append(line("capability entries: none yet", "muted"))
+    return out, picture
+
+
+def _mark(role: str, run: Run | None, st: State | None, ctx: dict) -> dict:
+    """The decision maker over a cell: who, and its state at the clock (awake with what it does, waiting, not woken, left, down)."""
+    presence = ctx.get("presence")
+    part = next((p for p in (presence or {}).get("parts", []) if p["id"] == role), None)
+    maker = (run.decision_makers.get(role) if run is not None else None) or _maker_word((part or {}).get("role", {}).get("maker"))
+    state = None
+    if part is not None and st is None:
+        from .frame import part_state
+        state = part_state(part, presence)
+    if maker == "none" or (maker is None and part is not None):
+        mode = "none"
+        doing = "nobody decides here"
+    elif st is not None and role in st.awake:
+        mode, doing = "awake", _doing(st.activity.get(role))
+    elif st is not None and role in st.waiting:
+        mode, doing = "waiting", st.waiting[role]
+    elif state in ("left", "down", "unavailable"):
+        mode, doing = "down", state
+    elif run is not None and role in run.decision_makers:
+        mode, doing = "idle", "asleep"
+    elif run is not None:
+        mode, doing = "absent", "not woken in this run"
+    else:
+        r = (part or {}).get("role") or {}
+        mode = "awake" if r.get("awake") else "waiting" if r.get("waits") else "idle"
+        doing = "at work" if r.get("awake") else f"a {r['waits'][0]['what']} waits" if r.get("waits") else "waiting for work"
+    return {"who": _maker_text(maker) if mode != "none" else "none", "doing": doing, "mode": mode, "dimmed": mode == "none",
+            "fill": FILLS[mode], "stroke": STROKES[mode]}
+
+
+def _place(cells: list[dict]) -> dict:
+    """The cells placed in their ranks, top down, the marks above the boxes; the diagram's size."""
+    by_rank: dict[int, list[dict]] = {}
+    for c in cells:
+        by_rank.setdefault(RANK.get(c["role"], 3), []).append(c)
+    widest = max((len(v) for v in by_rank.values()), default=1)
+    width = widest * CELL_W + (widest - 1) * CELL_GAP + 2 * SIDE
+    y = 20
+    for rank in sorted(by_rank):
+        row = by_rank[rank]
+        h = max(CELL_PAD + LINE_H * len(c["lines"]) + (70 if c["picture"] else 0) for c in row)
+        total = len(row) * CELL_W + (len(row) - 1) * CELL_GAP
         x0 = (width - total) / 2
-        for i, role in enumerate(roles):
-            if role in st.awake:
-                mode = "awake"
-            elif role in st.waiting:
-                mode = "waiting"
-            elif role in run.decision_makers:
-                mode = "idle"
-            else:
-                mode = "absent"
-            maker = run.decision_makers.get(role)
-            out.append({"role": role, "title": TITLES.get(role, role), "x": x0 + i * (BOX_W + gap), "y": rows[rank],
-                        "w": BOX_W, "h": BOX_H, "mode": mode, "fill": FILLS[mode], "stroke": STROKES[mode],
-                        "maker": {"operator": "a person", "none": "no decision maker", "scripted": "the scripted policy"}.get(maker, maker)
-                        if maker else "not woken in this run",
-                        "note": st.waiting.get(role) or (_doing(st.activity.get(role)) if mode == "awake" else "")})
-    return out
+        for i, c in enumerate(row):
+            c.update(x=x0 + i * (CELL_W + CELL_GAP), y=y + MARK_RISE, w=CELL_W, h=h)
+            c["mark"].update(x=c["x"] + CELL_W - MARK_W - 6, y=y, w=MARK_W, h=MARK_H)
+        y += MARK_RISE + h + 40
+    return {"width": width, "height": y}
+
+
+def _cell(role: str, run: Run | None, st: State | None, ctx: dict) -> dict:
+    lines, picture = beings(role, run, st, ctx)
+    mark = _mark(role, run, st, ctx)
+    if mark["mode"] == "none":
+        lines.append({"text": "the frame stops here when a decision is needed", "kind": "muted"})
+    shown = lines[:CELL_LINES] if len(lines) <= CELL_LINES else lines[:CELL_LINES - 1] + [{"text": f"and {len(lines) - CELL_LINES + 1} more", "kind": "muted"}]
+    return {"role": role, "title": TITLES.get(role, role), "lines": shown, "all": "\n".join(l["text"] for l in lines), "picture": picture,
+            "mark": mark, "mode": mark["mode"], "maker": mark["who"], "note": mark["doing"] if mark["mode"] in ("awake", "waiting") else ""}
+
+
+def cells(run: Run, st: State, ctx: dict | None = None) -> tuple[list[dict], dict]:
+    """Every role's cell at the clock's time, placed; and the diagram's size."""
+    out = [_cell(role, run, st, ctx or {}) for role in ROLES]
+    return out, _place(out)
+
+
+def empty_cells(presence: dict, ctx: dict | None = None) -> tuple[list[dict], dict]:
+    """Every role's cell in the frame's empty state, from its presence alone."""
+    ctx = {**(ctx or {}), "presence": presence}
+    out = [_cell(role, None, None, ctx) for role in ROLES]
+    return out, _place(out)
 
 
 def _doing(act) -> str:
@@ -112,11 +327,11 @@ def _doing(act) -> str:
 
 
 def _anchor(a: dict, b: dict) -> tuple[float, float]:
-    """Where an arrow leaves box a towards box b: the middle of the facing side."""
+    """Where an arrow leaves box a towards box b: the facing side, left of the mark that stands over a box's top."""
     if b["y"] > a["y"]:
-        return a["x"] + a["w"] / 2, a["y"] + a["h"]
+        return a["x"] + a["w"] * 0.28, a["y"] + a["h"]
     if b["y"] < a["y"]:
-        return a["x"] + a["w"] / 2, a["y"]
+        return a["x"] + a["w"] * 0.28, a["y"]
     if b["x"] > a["x"]:
         return a["x"] + a["w"], a["y"] + a["h"] / 2
     return a["x"], a["y"] + a["h"] / 2
@@ -150,9 +365,12 @@ def _edge(by_role, a, b, counts, bold, last):
         dx, dy = -dx, -dy
     words = ", ".join(f"{n} {t}{'s' if n > 1 and not t.endswith('s') else ''}" for t, n in sorted(counts.items(), key=lambda kv: -kv[1]))
     stroke = colour(last) if bold and last is not None else "#8a94a0"
+    if dx:
+        # between ranks the marks stand to the right of the lines: both directions' words go to the left, one above the other
+        return {"x1": x1 + dx, "y1": y1, "x2": x2 + dx, "y2": y2, "words": words, "bold": bold, "stroke": stroke,
+                "label_x": min(x1, x2) - 24, "label_y": (y1 + y2) / 2 + (-4 if dx < 0 else 12), "anchor": "end"}
     return {"x1": x1 + dx, "y1": y1 + dy, "x2": x2 + dx, "y2": y2 + dy, "words": words, "bold": bold, "stroke": stroke,
-            "label_x": (x1 + x2) / 2 + dx + (10 if dx > 0 else -10 if dx < 0 else 0), "label_y": (y1 + y2) / 2 + dy + (-6 if dy < 0 else 14 if dy > 0 else 4),
-            "anchor": "start" if dx > 0 else "end" if dx < 0 else "middle"}
+            "label_x": (x1 + x2) / 2, "label_y": (y1 + y2) / 2 + dy + (-6 if dy < 0 else 14 if dy > 0 else 4), "anchor": "middle"}
 
 
 def axis(run: Run, st: State) -> dict:
@@ -344,12 +562,50 @@ def wakings(run: Run, st: State) -> list[dict]:
     return out
 
 
-def overview(run: Run, st: State) -> dict:
-    cells = nodes(run, st)
-    return {"width": WIDTH, "height": axis_y(run) + 60, "diagram": {"width": diagram_width(run), "height": 36 + len(ranks(run)) * 150 - 40},
-            "nodes": cells, "edges": edges(run, st, cells), "axis": axis(run, st),
+def overview(run: Run, st: State, ctx: dict | None = None) -> dict:
+    """The run at the clock's time, for the page: `ctx` gives what the run's events do not hold (the order's document, the frame's
+    presence for the machines and the decision makers, the feature counts known)."""
+    placed, size = cells(run, st, ctx)
+    return {"width": WIDTH, "height": axis_y(run) + 60, "diagram": size,
+            "nodes": placed, "edges": edges(run, st, placed), "axis": axis(run, st),
             "jumps": jumps(run, st), "sentences": sentences(st, run.start), "design": st.design, "outcome": st.outcome,
             "wakings": wakings(run, st),
             "legend": [(t, COLOURS[t]) for t in ("assignment", "report", "status", "query", "answer", "proposal", "escalation")]
             + [("dialogue", COLOURS["dialogue"]), ("design version", COLOURS["design"]), ("refused", COLOURS["refused"])],
             "act_legend": [(w, ACT_COLOURS[f]) for w, f in ACT_WORDS]}
+
+
+OUTCOME_WORDS = {"accepted": "Accepted: a plan for manufacturing", "declined": "Declined by the requester",
+                 "parked": "Parked: the owner's word is awaited", "referred": "Referred: the case stalled",
+                 "stopped": "Stopped: a decision was needed and nobody decides", "error": "Ended by an error",
+                 "closed": "Closed", "waiting": "Waiting"}
+
+
+def relaxation_text(q: dict, showings: dict | None = None) -> str:
+    """A requirement as finally stated, relaxed in the run, in words: what, from, to, by whom, on which showing."""
+    r = q["relaxed"]
+    name = q.get("metric") or q["requirement"]
+    who = {"owner": "the order's owner"}.get(r["by"]["actor"]) or \
+        f"the {TITLES.get(r['by']['role'], r['by']['role']).lower()}" + (", a person" if r["by"]["actor"] == "operator" else "")
+    within = {True: ", within its mandate", False: ", beyond its mandate"}.get(r.get("within_mandate"), "")
+    showing = (showings or {}).get(r["showing"]) or r["showing"]
+    head = f"the margin on {name}" if r["what"] == "margin" else name
+    return f"{head} relaxed from {_value(r['from'])} to {_value(r['to'])} by {who}{within}" + (f", on the showing of {showing}" if showing else "")
+
+
+def result_card(outcome: str | None, reason: str | None, result: dict | None, run: Run | None = None) -> dict:
+    """What the page's result card shows: the outcome's words, the result as served, each relaxation in words."""
+    word = (result or {}).get("outcome") or outcome or "ended"
+    showings = {}
+    if run is not None:
+        showings = {e.ref: e.text or e.ref for e in run.events if e.kind == "dialogue" and e.type == "showing" and e.ref}
+    relaxations = [relaxation_text(q, showings) for q in (result or {}).get("requirements") or [] if q.get("relaxed")]
+    return {"outcome": word, "words": OUTCOME_WORDS.get(word, word), "reason": reason, "result": result, "relaxations": relaxations}
+
+
+def plan_figures(result: dict | None) -> str:
+    """An accepted run's plan in one line for the catalogue: its time, material and mass."""
+    p = (result or {}).get("plan")
+    if not p:
+        return ""
+    return f"{p['print_time_s'] / 60:.0f} min, {p['material_g']:.1f} g material" + (f", {p['mass_g']:.2f} g" if p.get("mass_g") is not None else "")

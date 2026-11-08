@@ -1,13 +1,6 @@
 {# the overview's empty state: the frame, its roles with their decision makers, the machines, the runs; refreshed at the page's interval #}
 <div id="presence" hx-get="/frame/presence" hx-trigger="every {{ refresh }}s" hx-swap="outerHTML">
 <style>
-#presence .cells { display: grid; gap: .6rem; margin: .4rem 0 .8rem; }
-#presence .row { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
-#presence .cell { flex: 0 1 15rem; border: 1.5px solid var(--line); border-radius: 6px; padding: .4rem .6rem; background: #fff; font-size: .9rem; }
-#presence .cell h3 { margin: 0 0 .1rem; font-size: 1rem; }
-#presence .cell.awake { border-color: #1f5fa8; border-width: 3px; }
-#presence .cell.waits { border-color: #b26b00; border-width: 3px; }
-#presence .cell.down, #presence .cell.left { border-style: dashed; color: var(--muted); }
 #presence .state { font-size: .8rem; padding: 0 .35rem; border-radius: 3px; border: 1px solid var(--line); }
 #presence .state.present { background: var(--okbg); color: var(--ok); }
 #presence .state.down, #presence .state.unavailable { background: var(--badbg); color: var(--bad); }
@@ -18,24 +11,9 @@
 {% if presence %}
 {% set f = presence.frame %}
 <p><b>The frame {{ f.name }}</b> <span class="muted">· {{ frame_url }} · am-llm {{ f.version[:10] }} · up since {{ f.since[:19].replace("T", " ") }}Z{% if f.scenario %} · started with the scenario {{ f.scenario }}{% else %} · waiting for orders{% endif %} · read at {{ presence.at[11:19] }}Z on its clock</span></p>
-<div class="cells">
-{% for level in levels %}
-<div class="row">
-{% for p in parts if p.kind == "role" and p.role.level == level %}
-{% set r = p.role %}
-<div class="cell {{ p.reader_state }}{% if r.awake %} awake{% elif r.waits %} waits{% endif %}">
-  <h3>{{ r.title }}</h3>
-  <div>{{ maker_text(r.maker) }}{% if r.next %} <span class="muted">→ {{ maker_text(r.next) }} at its next waking</span>{% endif %}</div>
-  <div><span class="state {{ p.reader_state }}">{{ p.reader_state }}</span> <span class="muted">seen {{ p.seen_ago }}</span></div>
-  {% if p.note %}<div class="note">{{ p.note }}</div>{% endif %}
-  {% if r.awake %}<div>at work in <a href="/frame/runs/{{ r.awake.run }}">{{ r.awake.run }}</a> since {{ r.awake.since[11:19] }}Z</div>{% endif %}
-  {% for w in r.waits %}<div>waits: a {{ w.what }}{% if w.from %} from the {{ w.from.replace("_", " ") }}{% endif %} in {{ w.run }}, since {{ w.since[11:19] }}Z</div>{% endfor %}
-  {% if r.alternatives %}<div class="muted" style="font-size:.8rem">also present: {% for a in r.alternatives %}{{ maker_text(a) }}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}
-</div>
-{% endfor %}
-</div>
-{% endfor %}
-</div>
+<svg class="cells" viewBox="0 0 {{ diagram.width }} {{ diagram.height }}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14" style="width: 100%; max-width: 70rem; height: auto">
+{% from "_cells.html" import draw %}{{ draw(cells) }}
+</svg>
 <h3>Machines</h3>
 <table>
 <thead><tr><th>Machine</th><th>Class</th><th>Adapter</th><th>State</th><th>Job</th></tr></thead>

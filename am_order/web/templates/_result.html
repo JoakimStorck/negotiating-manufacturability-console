@@ -1,0 +1,35 @@
+{# A run's result as one card: the outcome in words; for an accepted run the plan's figures with its design version's picture and the
+   requirements as finally stated, every relaxation said; for a parked run what waits for whom; for a declined or referred run the
+   reason. `ending` is from `result_card` in the app. #}
+{% macro card(ending, picture_href=none) %}
+{% set r = ending.result %}
+<div class="result {{ ending.outcome }}">
+  <h2>{{ ending.words }}</h2>
+  {% if not r %}
+  <p class="muted">The frame has not given a result for this run{% if ending.outcome %}; it ended {{ ending.outcome }}{% if ending.reason %} ({{ ending.reason }}){% endif %}{% endif %}.</p>
+  {% else %}
+  {% if r.reason %}<p>{{ r.reason }}</p>{% endif %}
+  {% if r.plan %}{% set p = r.plan %}
+  <p><b>{{ p.design }}</b>{% if p.orientation %}, {{ p.orientation }}{% endif %}{% if p.material %}, {{ p.material }}{% endif %} <span class="muted">· {{ p.id }}</span></p>
+  {% if picture_href %}<img class="picture" src="{{ picture_href }}/{{ p.design }}" alt="{{ p.design }}" style="max-height: 9rem">{% endif %}
+  <table class="figures">
+    {% for name, q in p.settings.items() %}<tr><td>{{ name.replace("_", " ") }}</td><td class="num">{{ q.value }} {{ "" if q.unit in ("1", "-") else q.unit }}</td></tr>{% endfor %}
+    <tr><td>print time</td><td class="num">{{ "%.0f"|format(p.print_time_s / 60) }} min ({{ "%.0f"|format(p.print_time_s) }} s)</td></tr>
+    <tr><td>material</td><td class="num">{{ "%.1f"|format(p.material_g) }} g</td></tr>
+    {% if p.mass_g is not none %}<tr><td>printed mass</td><td class="num">{{ "%.2f"|format(p.mass_g) }} g</td></tr>{% endif %}
+    <tr><td>verdict</td><td>{{ p.verdict.replace("_", " ") }}{% for f in p.findings %}<br><span class="bad">{{ f.metric or f.requirement }}{% if f.feature %} at {{ f.feature }}{% endif %} {{ f.status.replace("_", " ") }}</span>{% endfor %}</td></tr>
+  </table>
+  {% endif %}
+  {% if r.requirements %}
+  {% set relaxed = r.requirements|selectattr("relaxed")|list %}
+  <h3>The requirements as finally stated</h3>
+  {% for q in relaxed %}<p class="relaxed">{{ ending.relaxations[loop.index0] }}</p>{% endfor %}
+  <p class="muted">{{ r.requirements|length - relaxed|length }} other requirement{{ "" if r.requirements|length - relaxed|length == 1 else "s" }} as the order gave {{ "it" if r.requirements|length - relaxed|length == 1 else "them" }}.</p>
+  {% endif %}
+  {% if r.waits %}{% set w = r.waits %}
+  <p>A {{ w.what }} waits for the {{ "order's owner" if w["for"] == "owner" else "requester" }} since {{ w.since[:19].replace("T", " ") }}Z{% if w.metrics %}, on {{ w.metrics|join(", ") }}{% endif %}. The owner's word is given in the dialogue's build of the tool, still to come.</p>
+  {% endif %}
+  {% if r.showing %}<p class="muted">The last showing: {{ r.showing.design or "" }}{% if r.showing.plan %} with {{ r.showing.plan }}{% endif %}{% if r.showing.text %}, "{{ r.showing.text }}"{% endif %} ({{ r.showing.dialogue }}).</p>{% endif %}
+  {% endif %}
+</div>
+{% endmacro %}

@@ -17,7 +17,7 @@ main.wide > section { height: 100%; display: flex; flex-direction: column; min-h
 .player .keys { color: var(--muted); font-size: .85rem; margin-left: auto; }
 .overview { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .top { flex: 1 1 auto; min-height: 0; display: flex; gap: 1.2rem; align-items: stretch; }
-.top svg#diagram { flex: none; height: 100%; width: auto; max-width: 40%; }
+.top svg#diagram { flex: none; height: 100%; width: auto; max-width: 52%; }
 .wakings { flex: 1 1 18rem; min-width: 0; min-height: 0; overflow-y: auto; padding-right: .4rem; }
 .wakings h2 { margin-top: 0; } .wakings h2 .muted { font-weight: normal; font-size: .85rem; }
 .turns { padding: 0; margin: 0; font-size: .9rem; }
@@ -38,6 +38,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
 .events .note { color: #4a4a6a; font-size: .85rem; margin: .1rem 0 0; }
 .events .certificate { font-size: .85rem; margin: .2rem 0 0; padding: .2rem .4rem; background: var(--soft); border: 1px solid var(--line); }
 .facts .bad { color: var(--bad); }
+.player .ending { font-weight: 600; color: var(--ok); }
 .facts { margin: .8rem 0 0; font-size: .9rem; } .facts dt { color: var(--muted); font-size: .8rem; margin-top: .3rem; } .facts dd { margin: 0; }
 .time { flex: none; margin-top: .4rem; }
 .time svg#picture { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
@@ -46,8 +47,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
 .bar span.off { color: var(--muted); }
 .bar .legend { margin-left: auto; font-size: .8rem; color: var(--muted); } .bar .legend > span { margin-left: .5rem; white-space: nowrap; }
 .bar .legend .swatch { width: .7rem; height: .7rem; margin-right: .2rem; }
-.cell.awake rect { animation: none; }
-.cell.waiting rect { animation: pulse 1.6s ease-in-out infinite; }
+.mark.waiting rect { animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
 </style>
 <p class="muted crumbs"><a href="/runs">Runs</a> › {% if run.entry.source == "frame" %}the frame{% if run.entry.experiment != "orders" %} › {{ run.entry.experiment }}{% endif %}{% else %}<a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a>{% endif %} › {{ run.entry.condition }}</p>
@@ -56,6 +56,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
   <button id="play" title="space">▶ play</button>
   <button id="slower" title="-">−</button><span class="speed" id="speed">×1</span><button id="faster" title="+">+</button>
   {% if run.live %}<button id="follow" title="l">follow now</button>{% endif %}
+  <span id="ending" class="ending"></span>
   <span class="keys" id="keys">without script the links under the picture step through the run</span>
 </div>
 {% include "_overview.html" %}
@@ -78,6 +79,10 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
       a.addEventListener("click", function (ev) { ev.preventDefault(); goTo(parseFloat(a.dataset.seconds)); });
     }
     for (const w of document.querySelectorAll("#overview .wakings")) w.scrollTop = w.scrollHeight;
+    // the run's end, once the clock has reached it: said where the clock is, and a run followed live stops there
+    P.ended = d.ended || "";
+    document.getElementById("ending").textContent = P.ended ? "The run has ended: " + P.ended : "";
+    if (P.ended && !P.live) { P.follow = false; P.playing = false; }
     const axis = document.getElementById("axis");
     if (axis) axis.addEventListener("click", function (ev) {
       const svg = document.getElementById("picture");
@@ -118,7 +123,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
         document.getElementById("overview").replaceWith(holder.firstElementChild);
         for (const id of open) { const d = document.getElementById(id); if (d) d.open = true; }
         const playing = P.playing, speed = P.speed, follow = P.follow;
-        readData(); P.playing = playing; P.speed = speed; P.follow = follow;
+        readData(); if (!P.ended || P.live) { P.playing = playing; P.follow = follow; } P.speed = speed;
       }
     } finally { P.fetching = false; P.lastFetch = performance.now(); paint(); }
   }
