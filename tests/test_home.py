@@ -172,3 +172,25 @@ def test_one_writer_at_a_time_in_the_home(home, home_dir):
     t.join()
     assert released and saved[0] > released[0]                     # the other home's write came after the lock was let go
     assert (home_dir / ".lock").exists() and "waited" in home.facets("shared")["tags"]
+
+
+def test_the_tree_reads_an_order_once_until_it_changes(home, monkeypatch):
+    reads = []
+    original = Home._read
+    monkeypatch.setattr(Home, "_read", lambda self, path, lineage: reads.append(path.name) or original(self, path, lineage))
+    first = home.tree(archived=True)
+    assert len(reads) == len(first) > 0
+    reads.clear()
+    assert home.tree(archived=True) == first and reads == []                 # the second tree reads no order
+    home.derive("plate", "p3")
+    reads.clear()
+    home.tree(archived=True)
+    assert reads == ["order.json"]                                           # only the new one
+    home.edit("p3", lambda o: o.data.update(tags=["fresh"]))
+    reads.clear()
+    rows = {r["lineage"]: r for r in home.tree(archived=True)}
+    assert reads == ["order.json"] and rows["p3"]["tags"] == ["fresh"]      # the changed one is read again, and read right
+    home.add_group("Trials")
+    home.move("p3", "Trials")
+    reads.clear()
+    assert {r["lineage"]: r["group"] for r in home.tree(archived=True)}["p3"] == "Trials" and reads == ["order.json"]

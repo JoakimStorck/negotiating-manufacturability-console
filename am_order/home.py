@@ -138,6 +138,7 @@ class Home:
         self._guard = threading.RLock()
         self._depth = 0
         self._fd: int | None = None
+        self._facets: dict[str, tuple[tuple, dict]] = {}     # path -> (the file's signature, its facets), for the tree
 
     @contextlib.contextmanager
     def writing(self):
@@ -518,8 +519,8 @@ class Home:
     def _write_groups(self, groups: dict) -> None:
         write_atomic(self.root / "groups.json", (json.dumps({"groups": groups}, indent=1, sort_keys=True, ensure_ascii=False) + "\n").encode())
 
-    def group_path(self, gid: str | None) -> str:
-        groups, parts = self.groups(), []
+    def group_path(self, gid: str | None, groups: dict | None = None) -> str:
+        groups, parts = self.groups() if groups is None else groups, []
         while gid and gid in groups:
             parts.append(groups[gid]["name"])
             gid = groups[gid]["parent"]
@@ -596,32 +597,44 @@ class Home:
     def _summary_order(self, lineage: str) -> Order:
         return self.draft(lineage) or self.load(lineage)
 
-    def facets(self, lineage: str) -> dict:
-        """What is read from the order itself: its state, its design, its material, its counts."""
+    def facets(self, lineage: str, groups: dict | None = None) -> dict:
+        """What is read from the order itself: its state, its design, its material, its counts. Kept per file signature
+        (inode, time, size, which the atomic write renews), so that the tree reads an order once until it changes."""
         folder = self._folder(lineage)
         draft = (folder / "draft.json").exists()
-        order = self._summary_order(lineage)
-        metrics = order.metrics()
-        design = order.data.get("design")
-        if draft:
-            state = "draft"
-        elif design:
-            bound = [f for b in order.data.get("bindings", []) if b["design"] == design for f in b["features"]]
-            state = "confirmed" if bound and all(f["confirmed"] for f in bound) else "bound"
-        else:
-            state = "checked"
-        material = next((str(next(iter((m.get("value") or {"": None}).values()))) for m in metrics if m.get("quantity") == "material"), None)
-        return {"lineage": lineage, "title": order.data.get("title"), "category": folder.parent.name, "state": state, "design": design,
-                "material": material, "group": self.group_path(order.data.get("group")), "tags": list(order.data.get("tags", [])),
-                "demands": sum(m.get("class") == "demand" for m in metrics), "wishes": sum(m.get("class") == "wish" for m in metrics),
-                "mandates": sum(order.mandate(m)["form"] != "held" for m in metrics)}
+        path = folder / ("draft.json" if draft else "order.json")
+        st = path.stat()
+        signature = (st.st_ino, st.st_mtime_ns, st.st_size)
+        kept = self._facets.get(str(path))
+        if kept is None or kept[0] != signature:
+            order = self._read(path, lineage)
+            metrics = order.metrics()
+            design = order.data.get("design")
+            if draft:
+                state = "draft"
+            elif design:
+                bound = [f for b in order.data.get("bindings", []) if b["design"] == design for f in b["features"]]
+                state = "confirmed" if bound and all(f["confirmed"] for f in bound) else "bound"
+            else:
+                state = "checked"
+            material = next((str(next(iter((m.get("value") or {"": None}).values()))) for m in metrics if m.get("quantity") == "material"), None)
+            kept = (signature, {"lineage": lineage, "title": order.data.get("title"), "category": folder.parent.name, "state": state,
+                                "design": design, "material": material, "group_id": order.data.get("group"),
+                                "tags": list(order.data.get("tags", [])),
+                                "demands": sum(m.get("class") == "demand" for m in metrics), "wishes": sum(m.get("class") == "wish" for m in metrics),
+                                "mandates": sum(order.mandate(m)["form"] != "held" for m in metrics)})
+            self._facets[str(path)] = kept
+        f = dict(kept[1])
+        f["group"] = self.group_path(f.pop("group_id"), groups)
+        f["tags"] = list(f["tags"])
+        return f
 
     def tree(self, tag: str | None = None, state: str | None = None, find: str | None = None, facet: dict | None = None,
              archived: bool = False) -> list[dict]:
         """The products with their facets, filtered, each with its group's path."""
-        out = []
+        out, groups = [], self.groups()
         for lineage in self.lineages():
-            f = self.facets(lineage)
+            f = self.facets(lineage, groups)
             if f["category"] == "archive" and not archived and state != "archived":
                 continue
             if tag and tag not in f["tags"]:
