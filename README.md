@@ -1,6 +1,9 @@
-# am-order: the order tool
+# am-order: the person's console
 
-A product's requirements, stated by an established method, checked, and bound to the features of a design.
+The person's side of a negotiating organisation, in two capacities. As the orderer: a product's requirements, stated by an
+established method, checked, and bound to the features of a design, placed as an order with its mandate. As the system
+operator: the overview of the organisation at work, the roles and their decision makers, what is awake and what waits, live
+or played back from the record, down to the model's turns.
 
 - **Pahl & Beitz:** the requirements list: demands and wishes under the checklist's headings, each with its source, in a living list whose changes are recorded.
 - **Ulrich & Eppinger:** the customer needs with their importance, the metrics with their ideal values, the needs–metrics matrix between them, and in each metric the mandate: the ideal held, an interval to a marginal value, or the metric released.

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "am-order"
 dynamic = ["version"]                       # one place: am_order/__init__.py
-description = "The order tool: a product's requirements by Pahl & Beitz, Ulrich & Eppinger and ISO/IEC/IEEE 29148, bound to a design's features"
+description = "The person's console against a negotiating organisation: the order (requirements by Pahl & Beitz, Ulrich & Eppinger and ISO/IEC/IEEE 29148, bound to a design's features) and the overview of the organisation at work"
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "fastapi==0.162.0",

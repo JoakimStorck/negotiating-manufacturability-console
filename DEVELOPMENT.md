@@ -6,15 +6,16 @@ document is the level above both: what the tool is for, the shape it takes, what
 
 ## 1. What the tool is for
 
-The tool is the orderer's instrument against am-llm. A person specifies a product and places the order; am-llm's requester takes
-it and the organisation below prepares the product; the person decides what only the owner of a requirement may decide, and in
-the end approves a product for manufacturing, bound to a version. The tool must work seamlessly against am-llm, be intuitive for a
+The tool is the person's console against am-llm: everything a person does to the organisation and everything they are shown of
+it. The order is its core. A person specifies a product and places the order; am-llm's requester takes it and the organisation
+below prepares the product; the person decides what only the owner of a requirement may decide, and in the end approves a
+product for manufacturing, bound to a version. The tool must work seamlessly against am-llm, be intuitive for a
 person who writes no code, implement the established methods (Pahl & Beitz, Ulrich & Eppinger, ISO/IEC/IEEE 29148) and carry
 Johansson's backtracking from a metric to the needs it serves. The mandate and the traceability are central: what the organisation
 may decide on its own, and where every value came from.
 
-Its second use is to show the system: at a demonstration or a conference, what the organisation does with an order, as it happens
-or played back.
+Its other side is the overview: the organisation at work, for the person as system operator and for a demonstration or a
+conference, what the organisation does with an order, as it happens or played back.
 
 ## 2. Two views, two authorities
 
