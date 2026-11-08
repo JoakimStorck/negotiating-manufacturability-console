@@ -40,6 +40,20 @@ the operator a person filling a role, and the tool keeps both meanings.
 The overview is the ARTI cube on the screen: the resource instances present now, and over each role the decision maker that fills
 it. It is one picture with two uses, the system operator's console and the demonstration.
 
+- **A cell shows what it holds, the mark who decides over it.** The beings exist whether or not a decision maker stands over them,
+  and the frame produces within itself with its beings; the decision makers come to it from outside (ARTI, and the paper's A1
+  figure). Each role's cell is drawn as a being-box holding what it has at the clock's time: the order with its metrics and
+  mandates and what waits for the owner; the design version in force with its picture and the means it was made by; the plan in
+  force or the latest candidate with its settings and verdict; the jobs; the machines; the measurements and capability entries;
+  "none yet" for what it does not have. The decision maker is a mark joined above the box (a rounded badge): who it is and its
+  state (awake with what it does, waiting, asleep, not woken in this run, down), dimmed and dashed where nobody decides, the cell
+  then saying that the frame stops there when a decision is needed. The empty state and a run are the same drawing.
+- **The end is announced and the result shown.** When a followed run ends or parks, the player says so where the clock is and the
+  clock stops; a result card stands beside the picture once the clock reaches the end: the outcome in words, for an accepted run
+  the plan's figures with its design version's picture and every relaxation by whom and on which showing, for a parked run what
+  waits for whom, for a declined or referred run the reason. The card is the run's `result` as the frame serves it (`runs-1`,
+  `events-1`), computed once by the frame from the run's measures; the tool computes none.
+
 - **The frame stands before the order.** am-llm is started empty: the frame comes up with its roles and their decision makers,
   announces itself, and waits. A placed order in the products home is what it reacts to: it makes a run for that order version,
   translates the order into the brief and the reservation through the adapter, prepares, writes the order its outcome, and waits
@@ -155,6 +169,12 @@ orders reach their scenarios' outcomes through it, the held one parked for the o
 and the placing of a decision maker (`next` is null, the alternatives the frame's configuration).
 
 Here, done:
+
+10. **The overview shows what is** (25765bf and c622ea8; `../am-llm/probes/overview-build-report.md`): the contract of a run's
+    `result` in `runs-1` and `events-1`, an example of every outcome; each role's cell a being-box with its beings at the clock and
+    the decision maker as a mark joined above it, dimmed where nobody decides, the same drawing for the empty state and a run;
+    the end announced where the clock is and the result as one card, in the catalogue's row (the plan's time, material and mass)
+    and on the order's page. am-llm serves `result` next.
 
 7. **The tool connected to the frame** (3a13fd5 and b08d587; `../am-llm/probes/frame-client-build-report.md`): one client
    (`am_order.frame`, `--frame URL --token-file FILE`) reading `presence-1`, `runs-1` and `events-1` and validating each as it
