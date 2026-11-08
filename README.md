@@ -12,7 +12,7 @@ The tool runs on its own. Its contracts with a design system are two versioned J
 
 ## Install
 
-Python 3.12.
+Python 3.12 or 3.13.
 
 ```bash
 python3.12 -m venv .venv
