@@ -154,17 +154,19 @@ accepted version's `features-1` with its picture and models, and the picture of 
 orders reach their scenarios' outcomes through it, the held one parked for the owner's word. Not served yet: the dialogue,
 and the placing of a decision maker (`next` is null, the alternatives the frame's configuration).
 
+Here, done:
+
+7. **The tool connected to the frame** (3a13fd5 and b08d587; `../am-llm/probes/frame-client-build-report.md`): one client
+   (`am_order.frame`, `--frame URL --token-file FILE`) reading `presence-1`, `runs-1` and `events-1` and validating each as it
+   arrives, a refused token said in the frame's words, a frame that does not answer a state of the page, which keeps what it last
+   read; the Runs page opening on the frame's presence, the empty state with `down` inferred on the frame's clock, and its
+   catalogue beside the folders'; a run read from the frame's events into the same picture the folders give, played back and
+   followed after the last number read, its pictures, findings, relaxations, certificate and accepted version through the tool;
+   an order's confirmed version placed from its page; `runs`, `runs show` and `place` on the command line. Tried against a frame
+   of am-llm standing outside its tree: the plate's order placed, prepared and accepted, read through every page.
+
 Here, in this order:
 
-7. **The tool connected to the frame**, next, since it waits on nothing: `am-order serve --frame URL --token-file FILE`, one
-   client (the frame's 401 named in words, the frame unreachable a state of the page, not an error); the overview's empty state
-   from `presence-1` (the frame since a time, the roles with their decision makers, the machines, the runs placed, preparing and
-   parked, what waits), the three states of a part with `down` inferred on the frame's clock; the catalogue from `runs-1` beside
-   the folders; a run read from `events-1` into the same picture the folders give today, played back from the start and followed
-   live after the last number, the pictures from the frame; an order version placed from the order view (`POST /orders`), the
-   order showing its run and the run's state, parked meaning that the owner's word is awaited and given in build 6. The reading
-   of the folders stays for the runs that have no frame. Held on am-llm's side: `tests/test_order_runs.py` reads one run both
-   ways through the tool and finds the same picture.
 5. **Order 2**: the type and the instance in the schema, the brief as intent with the objects `fixed` or `free` (`may_change` and
    `may_relax` gone), the mandate per metric, the answering policy, the requirements in force; migration from order 1 with the
    examples re-written; am-llm's adapter follows and the pin moves.
@@ -187,5 +189,5 @@ Each build is written as `probes/<name>-build.md` in am-llm, built, and reported
 The conventions are am-llm's (`../am-llm/CLAUDE.md`): English in code and documents; no defensive writing; one item per commit;
 the tool never imports am-llm and am-llm's runs never import the tool; every contract's schema lives here, and a change to one is
 written into both plans before it is built; no JavaScript build, the web app on loopback for one user; the record and the runs
-are read directly and read only until the tool reads them from the frame (build 6). Nothing in am-llm's working tree is touched
+are read directly and read only where no frame serves them; a frame is read over HTTP only (build 7). Nothing in am-llm's working tree is touched
 from here.

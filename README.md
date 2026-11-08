@@ -35,6 +35,23 @@ The web app listens on 127.0.0.1 only and serves one user. Every page is a URL o
 
 With `--runs DIR`, the folder am-llm writes its runs under, the Runs page catalogues the recorded runs by experiment and condition (product, negotiation, decision makers per role, when, how long, outcome), and a run opens as the overview of the organisation at a time in it: the roles as cells with their decision makers, which is awake and which waits, the traffic between them, the design version at that time with its picture, and the time axis with every event marked and the clock's position on it. The time is chosen with `?at=` in seconds from the run's start, and the page links to the previous and next event, the next decision, the start and the end. The record is read directly and read only; the tool never imports am-llm, and a run that is still being written is read the same way, up to the last row it holds.
 
+### Connected to a standing frame
+
+am-llm can stand as a frame (`python -m agents stand`): its roles with their decision makers up and waiting, serving its contracts over HTTP with a personal token. The tool connects to it with its URL and a token file, the same on the frame's own machine as across the network:
+
+```bash
+am-order --home examples --frame http://127.0.0.1:8780 --token-file ~/.config/am-order/frame-token serve
+am-order --frame URL --token-file FILE runs                      # the frame's runs
+am-order --frame URL --token-file FILE runs show RUN --at 300    # a run's state 300 s after its start
+am-order --home examples --frame URL --token-file FILE place bracket-mass   # the order's saved version placed at the frame
+```
+
+The token file holds one line `NAME=TOKEN` (or the token alone); without `--token-file` the token is read from `AM_FRAME_TOKEN`. It is sent as a bearer token and never logged or shown. How to obtain one is on the frame's help page, its URL in a browser.
+
+Connected, the Runs page opens on the frame as it stands, refreshed every few seconds: the frame and since when it is up, each role as a cell with its decision maker and the alternatives present, each part's state (present, unavailable with why, left, or down when its latest sign of life is older than the frame's limit, measured on the frame's clock), the machines, and the orders placed, being prepared and parked, with what waits for whom. Below it the frame's runs, each linking to its order in the products home where the tool holds that version, beside the folders' runs. A run from the frame opens as the same overview a folder's run gives, played back from its start or followed live; it also shows what the frame's events carry beyond the folder's tables: a showing's findings and its certificate of exhausted means, the relaxations an acceptance makes ("the margin on M8 relaxed from 0.6 to 0.838 within its mandate"), the accepted version's feature list with its picture and models, and a case parked for the owner's word.
+
+An order's page has a section *At the frame*: a confirmed order's saved version is placed there with one button, exactly as the home holds it, and the section lists the runs of the product's versions with their states. The frame makes the run; the tool starts nothing and writes nothing at the frame but the order placed. A frame that does not answer is said on the page, which keeps what it last read; a token it refuses, or a document out of its schema's form, is said in the frame's words.
+
 The same is available from the command line and from Python:
 
 ```bash
