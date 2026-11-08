@@ -41,9 +41,14 @@ it. It is one picture with two uses, the system operator's console and the demon
   translates the order into the brief and the reservation through the adapter, prepares, writes the order its outcome, and waits
   again. The experiment runner becomes the special case of a frame started with a scenario instead of an order. Today it is the
   other way round, the runner makes the frame per run, which is why no run reads an order.
-- **Presence.** Each part of the system announces itself on the shared surface (who, what kind, since when, latest sign of life,
-  declared state); an empty frame has no record to be read from, so presence has a place of its own, as small as a file per part
-  that the part writes every few seconds and the tool reads. Three states are kept apart: *left*, with a farewell; *down*,
+- **The frame serves, the tool reads.** The tool and am-llm need share no folder: the tool may run on a person's Windows laptop
+  and the frame on a Linux machine in the workshop. The standing frame serves every contract over HTTP as JSON documents by hash,
+  with a personal bearer token (as Inferno's), and its root is a help page that says what the frame is, how to obtain a token
+  (contact Joakim Storck, joc@du.se) and how to connect the tool; the tool points at it with `--frame URL` and a token file, the
+  same locally against `127.0.0.1` as across the network, one client and no second path. Decided 2026-11-08
+  (`../am-llm/LLM-hierarchy-AM-design-document.md` 2.6).
+- **Presence.** Each part of the system announces itself through the frame (who, what kind, since when, latest sign of life,
+  declared state); an empty frame has no record to be read from, so presence is the frame's own endpoint. Three states are kept apart: *left*, with a farewell; *down*,
   inferred by the reader from a sign of life older than a limit, because nobody writes "I am crashing"; *unavailable*, declared by
   the part itself. The organisation under a present requester being down is a state of the system, not a configuration of its own:
   the tool runs either alone or with am-llm.
@@ -71,8 +76,8 @@ it. It is one picture with two uses, the system operator's console and the demon
   between them the block diagram, the turns and the design take the height that is left, the turns scrolling in their column
   with the latest in view. The time picture is thus always in the same place however long the turns run.
 - **The catalogue** lists the recorded runs by product, experiment and condition (negotiation, decision makers, when, how long,
-  outcome). It reads the folders am-llm leaves today; when the requester stands and registers runs on the shared surface, it
-  becomes a view of that contract and shows running runs beside finished ones.
+  outcome). It reads the folders am-llm leaves today; with the frame it reads the frame's runs and their events since a time, and
+  shows running runs beside finished ones.
 
 ## 4. The order view
 
@@ -98,10 +103,17 @@ The order is the activity instance of a product type, and the tool keeps the two
 Settled in discussion: everything in sections 2 to 4 as direction; English on the screen; the demonstration case is the engine
 bracket with the mass demand and its held variant.
 
-Open, waiting for the author's reading of the data model review: the type authored inside the ARTI cube; one store for type and
-instance or two; the order's `brief` section shrinking to the order's intent; where the limit and the at-risk share live; the form of
-"held, and a relaxation declines the order"; the console duplication between the repositories; licence; a remote; Python 3.13; the
-default home. These decide the order-2 schema and the dialogue contract, and nothing below waits on them except what says so.
+Decided 2026-11-08 (the author, from the data model review; written in `../am-llm/LLM-hierarchy-AM-design-document.md` 2.6 and
+`../am-llm/TODO.md` 3 B): the type authored inside the ARTI cube, the orderer its requirement part and the design engineer its
+design; one requirement, many attachments, where an order exists; two stores, the products home holding what is decided (the orders,
+the bindings to the design versions the requester accepted, the accepted plan's metadata, the dialogue's log) and am-llm's record a
+run's course; the brief the order's intent (text, objective, quantity), the bounds metrics, relaxation by the metric's mandate, and
+what may change said on the objects, each `fixed` or `free`; a metric's value the limit and all the order asks, a margin only where
+the order demands a reserve beneath a physical limit (a utilisation), as the adapter already reads it; `held` with the owner's
+answering policy deciding between parking the case for the owner and declining on the evidence; this tool the only console toward a
+person, am-llm on its own through its command line; Apache-2.0 here and in am-llm, the shim AGPL in its own repository; the tool with
+a products home of its own, connected to the frame over HTTP (section 3). Open: the source of the L-bracket's margin 0.5 on its
+toleranced requirements.
 
 ## 6. The builds
 
@@ -118,10 +130,11 @@ Done:
 On am-llm's side, as soon as the review is read, in parallel with the builds here; it depends on the brief's form and on where the
 mandate becomes the reservation, and on nothing else that is open:
 
-- **The standing frame** (`python -m agents stand`, or so): the frame started empty, presence written for itself and its roles
-  with their decision makers from the command line, a placed order version taken from the products home and prepared as a run
-  under a folder named by the order version, the outcome written back, the experiment runner on the same code. The presence
-  contract is the first of the four contracts written, since the empty frame has nothing else to be seen by.
+- **The standing frame** (`python -m agents stand`, or so): the frame started empty and serving over HTTP with a personal
+  token: presence (its roles with their decision makers), the help page at its root, an order version placed and prepared as a run
+  named by it, the run's events since a time, the accepted version's feature list, the dialogue both ways; the experiment runner
+  the frame started with a scenario; am-llm's interactive console removed. Presence and the help page come first, since the
+  empty frame has nothing else to be seen by.
 
 Then, independent of the open decisions:
 
@@ -131,11 +144,12 @@ Then, independent of the open decisions:
 
 After the decisions:
 
-5. **Order 2.** The type and the instance in the schema, one requirement with many attachments, the mandate per metric, the
-   answering policy; migration from order 1 with the examples re-written.
-6. **The dialogue contract** and the order view against it: placing, parking, answering, consenting, approving, bound to versions.
-7. **Presence and decision makers** in the overview, against what the standing frame publishes: the empty state, the three
-   states of a part, the decision makers selectable where the frame reads its setting at the role's next waking.
+5. **Order 2.** The type and the instance in the schema, the brief as intent with the objects `fixed` or `free`, the mandate per
+   metric, the answering policy; migration from order 1 with the examples re-written.
+6. **The dialogue contract** over the frame and the order view against it: placing, parking, answering, consenting, approving,
+   bound to versions; the catalogue and the overview reading the frame's events instead of the folders.
+7. **Presence and decision makers** in the overview, against the frame's endpoint: the empty state, the three states of a
+   part, the decision makers selectable where the frame reads its setting at the role's next waking; `--frame URL` with its token.
 8. **Johansson's layers** as the 1.1 build in am-llm describes them, on the order-2 type.
 
 Each build is written as `probes/<name>-build.md` in am-llm, built, and reported, as the first version was.
