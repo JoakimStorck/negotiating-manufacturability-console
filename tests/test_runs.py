@@ -330,3 +330,49 @@ def test_the_player_fragment_carries_the_clock(client):
     live = client.get("/runs/h1-plate-20261101T000000Z/closed-01?at=900").text
     assert "follow now" in live and 'data-live="1"' in live and 'data-end="900.0"' in live     # live, the clock at now is the axis's end
     assert ">now</text>" in live and "following" in live
+
+
+# ------------------------------------------------------------------------ the run's page laid out for what it shows
+
+RUN_ID = "h1-bracket-mass-20261103T044650Z/open-01"
+
+
+def test_the_organisation_takes_two_thirds_and_the_side_the_rest(client):
+    page = client.get(f"/runs/{RUN_ID}?at=45").text
+    assert ".top { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);" in page
+    assert '<div class="org">' in page and '<div class="side">' in page
+    assert "@media (max-width: 1199px)" in page and ".top { grid-template-columns: minmax(0, 1fr); }" in page   # the side goes below
+    # the cells drawn at the page's small size, the picture scaled to its area and never past its natural size by much
+    assert 'font-size="11"' in page and 'font-size="12.5"' in page and "max-width: " in page
+    assert 'class="legend"' in page and 'id="keys"' not in page                                   # the legend in the player's line
+
+
+def test_the_side_holds_the_turns_or_the_result_and_nobody_at_work_is_one_line(client):
+    awake = client.get(f"/runs/{RUN_ID}?at=45").text
+    assert "Process planner at work" in awake and 'class="result' not in awake
+    quiet = client.get(f"/runs/{RUN_ID}?at=120.5").text          # the planner asleep, the design engineer not yet awake
+    assert '<p class="nobody muted">Nobody at work: the roles sleep; a message or an answer wakes the next.</p>' in quiet
+    assert "<h2>Nobody at work</h2>" not in quiet
+    end = client.get(f"/runs/{RUN_ID}").text
+    assert '<div class="result accepted">' in end and "Nobody at work" not in end
+
+
+def test_the_time_strip_is_as_high_as_it_needs(client, root):
+    page = client.get(f"/runs/{RUN_ID}?at=45").text
+    assert '<div class="strip" style="height: 114px">' in page                      # three roles: 18 + 3 × 18 + 12 + 30
+    assert 'text-anchor="middle" font-size="11"' in page and 'font-size="13" font-weight="600" fill="#b3261e"' in page
+    run = R.read(root, RUN_ID)
+    run.roles = list(R.ROLES)
+    from am_order.picture import strip_height
+    assert strip_height(run) == 114 + 4 * 18                                        # seven roles: 18 px for each further role
+    pic = overview(run, R.state(run, T0 + timedelta(seconds=45)))
+    assert pic["height"] == 186 and all(l["h"] == 18 for l in pic["axis"]["lanes"])
+
+
+def test_the_strip_is_drawn_in_percent_of_its_width(client):
+    view = client.get(f"/runs/{RUN_ID}/view?at=300").text
+    assert 'data-x0="0.0" data-x1="100.0"' in view
+    head = re.search(r'<line id="playhead" x1="([0-9.]+)%"', view)
+    assert head and 0 < float(head.group(1)) < 100
+    late = client.get(f"/runs/{RUN_ID}/view?at=590").text
+    assert 'id="clock"' in late and 'text-anchor="end"' in late.split('id="clock"')[1].split(">")[0]

@@ -18,9 +18,12 @@ import re
 from .diff import mandate_text, value_text
 from .runs import DIALOGUE, RANK, ROLES, TITLES, Event, Run, State
 
-WIDTH = 1200
-AXIS_X0, AXIS_X1 = 150, 1130
-LANE_H = 24                      # a role's activity line, parallel to the time axis above it
+# the time picture is a strip pinned to the page's bottom: x in percent of the axis's width (the strip's width is the window's),
+# y in pixels, so that its lines and words keep their size whatever the width
+AXIS_X0, AXIS_X1 = 0.0, 100.0
+LANE_H = 18                      # a role's activity line, parallel to the time axis above it
+STRIP_TOP = 18                   # room above the lines for the clock
+MARKS_H = 10                     # the event marks standing on the axis
 # thinking has one colour on every line, apart from the calls' colours; the calls are what the model chose, the thinking is the model
 ACT_COLOURS = {"think": "#b9a7e2", "read": "#b9c7d6", "analyse": "#7aa7d9", "make": "#f2b05e", "other": "#c9c9c9"}
 ACT_WORDS = (("thinking", "think"), ("reading", "read"), ("analysing", "analyse"), ("reshaping, planning", "make"))
@@ -30,9 +33,12 @@ COLOURS = {"assignment": "#2a78d6", "proposal": "#eb6834", "query": "#1baf7a", "
 FILLS = {"awake": "#dce8f7", "waiting": "#fff1c7", "idle": "#f3f5f7", "absent": "#ffffff", "none": "#ffffff", "down": "#fdeceb"}
 STROKES = {"awake": "#1f5fa8", "waiting": "#b7791f", "idle": "#8a94a0", "absent": "#c5ccd3", "none": "#a0a8b0", "down": "#b3261e"}
 # a cell: the being-box with its lines, and above it the decision maker's mark, a rounded badge joined to the box by a short line
-CELL_W, CELL_GAP, LINE_H, CELL_PAD, SIDE = 240, 40, 15, 30, 90
-MARK_W, MARK_H, MARK_RISE = 150, 34, 46
-CELL_LINES = 7                                   # a cell's lines at most; the rest in its tooltip
+# in the diagram's units, drawn at about one pixel each: the cells' lines at 11, the titles at 12.5, so that the picture is read at
+# its natural size and scaled down only as far as a laptop's window needs (layout build)
+CELL_W, CELL_GAP, LINE_H, CELL_TOP, CELL_BOTTOM, SIDE, ROW_GAP = 230, 30, 12.5, 40, 6, 60, 20
+MARK_W, MARK_H = 140, 26                         # the mark sits on the box's top edge, half above it
+CELL_LINES = 4                                   # a cell's lines at most; the rest in its tooltip
+PICTURE_W = 64                                   # the design version's picture, beside the lines in its cell
 
 
 def colour(e: Event) -> str:
@@ -59,13 +65,18 @@ def _span(d: timedelta) -> str:
 
 
 def lanes_top(run: Run) -> float:
-    """The activity lines start at the top of the time picture, with room above them for the clock and "next in"."""
-    return 36
+    """The activity lines start at the top of the time picture, with room above them for the clock."""
+    return STRIP_TOP
 
 
 def axis_y(run: Run) -> float:
-    """The time axis sits below the activity lines, one per role, with room for the marks that stand on it."""
-    return lanes_top(run) + len(run.roles) * LANE_H + 40
+    """The time axis sits below the activity lines, one per role, with the row of the event marks standing on it."""
+    return lanes_top(run) + len(run.roles) * LANE_H + MARKS_H + 2
+
+
+def strip_height(run: Run) -> float:
+    """The time picture's height in pixels: the clock's room, a line per role, the marks, the axis's labels, the start and the end."""
+    return axis_y(run) + 30
 
 
 def _maker_text(maker: str | None) -> str:
@@ -281,17 +292,19 @@ def _place(cells: list[dict]) -> dict:
         by_rank.setdefault(RANK.get(c["role"], 3), []).append(c)
     widest = max((len(v) for v in by_rank.values()), default=1)
     width = widest * CELL_W + (widest - 1) * CELL_GAP + 2 * SIDE
-    y = 20
+    y = 4
     for rank in sorted(by_rank):
         row = by_rank[rank]
-        h = max(CELL_PAD + LINE_H * len(c["lines"]) + (70 if c["picture"] else 0) for c in row)
+        h = max(CELL_TOP + LINE_H * max(len(c["lines"]), 3 if c["picture"] else 1) + CELL_BOTTOM for c in row)
         total = len(row) * CELL_W + (len(row) - 1) * CELL_GAP
         x0 = (width - total) / 2
         for i, c in enumerate(row):
-            c.update(x=x0 + i * (CELL_W + CELL_GAP), y=y + MARK_RISE, w=CELL_W, h=h)
+            c.update(x=x0 + i * (CELL_W + CELL_GAP), y=y + MARK_H / 2, w=CELL_W, h=h, chars=30 if c["picture"] else 40)
             c["mark"].update(x=c["x"] + CELL_W - MARK_W - 6, y=y, w=MARK_W, h=MARK_H)
-        y += MARK_RISE + h + 40
-    return {"width": width, "height": y}
+            if c["picture"]:
+                c["thumb"] = {"x": c["x"] + CELL_W - PICTURE_W - 6, "y": c["y"] + MARK_H / 2 + 4, "w": PICTURE_W, "h": h - MARK_H / 2 - 8}
+        y += MARK_H / 2 + h + ROW_GAP
+    return {"width": width, "height": y - ROW_GAP + 4}
 
 
 def _cell(role: str, run: Run | None, st: State | None, ctx: dict) -> dict:
@@ -389,13 +402,13 @@ def axis(run: Run, st: State) -> dict:
     marks = []
     for e in run.events:
         if e.kind in ("woke", "slept"):
-            h = 5
+            h = 3
         elif e.decision:
-            h = 26
+            h = MARKS_H
         elif e.kind == "design":
-            h = 9
+            h = 5
         else:
-            h = 16
+            h = 7
         marks.append({"x": x_of(e.time), "h": h, "colour": colour(e), "past": e.time <= st.at, "dashed": not e.valid,
                       "title": f"{_clock(e.time, start)} {e.type}" + (f": {e.text}" if e.text else "")})
     step = _tick_step(span)
@@ -426,10 +439,10 @@ def lanes(run: Run, st: State, x_of, end: datetime) -> list[dict]:
             if b.role != role:
                 continue
             b_end = b.end or (st.at if st.at > b.start else end)
-            bars.append({"x1": x_of(b.start), "x2": max(x_of(b_end), x_of(b.start) + 1), "past": b.start <= st.at,
+            bars.append({"x1": x_of(b.start), "x2": max(x_of(b_end), x_of(b.start) + 0.1), "past": b.start <= st.at,
                          "title": f"{_clock(b.start, start)}–{_clock(b_end, start) if b.end else '…'} awake" + (f" · {b.model}" if b.model else "")})
             for a in b.acts:
-                acts.append({"x1": x_of(a.start), "x2": max(x_of(a.end), x_of(a.start) + 1.5), "colour": ACT_COLOURS[a.family],
+                acts.append({"x1": x_of(a.start), "x2": max(x_of(a.end), x_of(a.start) + 0.15), "colour": ACT_COLOURS[a.family],
                              "past": a.start <= st.at, "now": a.start <= st.at <= a.end,
                              "title": f"{_clock(a.start, start)}–{_clock(a.end, start)} {a.word}" + (f" ×{a.count}" if a.count > 1 else "")
                              + (f" · {a.detail}" if a.detail else "") + (f" · {_span(a.end - a.start)}" if a.family == "think" else "")})
@@ -566,7 +579,7 @@ def overview(run: Run, st: State, ctx: dict | None = None) -> dict:
     """The run at the clock's time, for the page: `ctx` gives what the run's events do not hold (the order's document, the frame's
     presence for the machines and the decision makers, the feature counts known)."""
     placed, size = cells(run, st, ctx)
-    return {"width": WIDTH, "height": axis_y(run) + 60, "diagram": size,
+    return {"height": strip_height(run), "diagram": size,
             "nodes": placed, "edges": edges(run, st, placed), "axis": axis(run, st),
             "jumps": jumps(run, st), "sentences": sentences(st, run.start), "design": st.design, "outcome": st.outcome,
             "wakings": wakings(run, st),

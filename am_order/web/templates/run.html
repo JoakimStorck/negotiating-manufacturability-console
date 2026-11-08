@@ -3,23 +3,30 @@
 {% block mainclass %}wide{% endblock %}
 {% block content %}
 <style>
-/* the page fills the window: the title and the player at the top, the time picture against the bottom, and between them the
-   block diagram, the turns and the design, taking the height that is left; the turns scroll inside their column */
+/* the page fills the window: the title and the player at the top, the time strip pinned to the bottom as high as it needs, and
+   between them the organisation in the left two thirds (scaled to its area, never scrolled) and the right third stacking the result
+   card or the turns, the design, what happened last and the facts (scrolled inside); under 1200 px wide the right third goes below */
 html, body { height: 100%; }
 body { display: flex; flex-direction: column; overflow: hidden; }
-main.wide { flex: 1 1 auto; min-height: 0; display: block; padding: .5rem 1rem .6rem; }
+main.wide { flex: 1 1 auto; min-height: 0; display: block; padding: .4rem 1rem .5rem; }
 main.wide > section { height: 100%; display: flex; flex-direction: column; min-height: 0; }
-.crumbs { margin: 0 0 .1rem; } h1 { margin: 0 0 .3rem; }
-.player { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: 0 0 .5rem; flex: none; }
-.player button { display: inline-block; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); color: var(--accent); font: inherit; cursor: pointer; }
+.crumbs { margin: 0; font-size: .85rem; } h1 { margin: 0 0 .2rem; font-size: 1.15rem; }
+.player { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; margin: 0 0 .35rem; flex: none; font-size: .9rem; }
+.player button { display: inline-block; padding: .1rem .45rem; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); color: var(--accent); font: inherit; cursor: pointer; }
 .player button.on { background: var(--accent); color: #fff; }
-.player .speed { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: center; }
-.player .keys { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.player .speed { font-variant-numeric: tabular-nums; min-width: 2.5rem; text-align: center; }
+.player .ending { font-weight: 600; color: var(--ok); }
+.player .legend { margin-left: auto; font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; gap: .1rem .45rem; align-items: center; }
+.player .legend .swatch { display: inline-block; width: 9px; height: 9px; margin-right: .2rem; vertical-align: -1px; }
+@media (max-width: 1699px) { .player .legend .word { display: none; } }
 .overview { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.top { flex: 1 1 auto; min-height: 0; display: flex; gap: 1.2rem; align-items: stretch; }
-.top svg#diagram { flex: none; height: 100%; width: auto; max-width: 52%; }
-.wakings { flex: 1 1 18rem; min-width: 0; min-height: 0; overflow-y: auto; padding-right: .4rem; }
-.wakings h2 { margin-top: 0; } .wakings h2 .muted { font-weight: normal; font-size: .85rem; }
+.top { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1rem; }
+.org { min-width: 0; min-height: 0; display: flex; align-items: flex-start; justify-content: center; }
+.org svg#diagram { width: 100%; height: 100%; }
+.side { min-width: 0; min-height: 0; overflow-y: auto; padding-right: .3rem; font-size: .9rem; }
+.side h2 { margin: .2rem 0 .3rem; font-size: 1rem; } .side .picture { display: block; max-width: 100%; }
+.wakings h2 .muted { font-weight: normal; font-size: .85rem; }
+.wakings .nobody { margin: .2rem 0 .6rem; }
 .turns { padding: 0; margin: 0; font-size: .9rem; }
 .turns li { list-style: none; margin: .3rem 0; padding-left: .6rem; border-left: 3px solid #b9a7e2; }
 .turns li.now { border-left-style: dashed; color: var(--muted); }
@@ -28,8 +35,6 @@ details.more { display: inline; } details.more summary { display: inline; color:
 details.more summary::before { content: "… "; color: var(--muted); } details.more[open] summary::before { content: ""; } details.more[open] summary { display: none; }
 .turns .acts a { display: inline-block; margin: 0 .5rem .15rem 0; padding: 0 .35rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; font-size: .85rem; }
 .turns .acts a.future { opacity: .45; }
-.top aside { flex: none; width: 22rem; min-height: 0; overflow-y: auto; }
-.top aside h2 { margin: 0 0 .3rem; } .top aside .picture { display: block; }
 .events h2 { margin: .8rem 0 .3rem; font-size: 1rem; }
 .events ul { padding: 0; margin: 0; }
 .events li { list-style: none; margin: .2rem 0; padding-left: .6rem; border-left: 3px solid var(--line); font-size: .9rem; }
@@ -37,27 +42,29 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
 .events .decision { font-weight: 600; }
 .events .note { color: #4a4a6a; font-size: .85rem; margin: .1rem 0 0; }
 .events .certificate { font-size: .85rem; margin: .2rem 0 0; padding: .2rem .4rem; background: var(--soft); border: 1px solid var(--line); }
-.facts .bad { color: var(--bad); }
-.player .ending { font-weight: 600; color: var(--ok); }
 .facts { margin: .8rem 0 0; font-size: .9rem; } .facts dt { color: var(--muted); font-size: .8rem; margin-top: .3rem; } .facts dd { margin: 0; }
-.time { flex: none; margin-top: .4rem; }
-.time svg#picture { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
-.bar { display: flex; flex-wrap: wrap; gap: .3rem .5rem; align-items: center; margin: 0 0 .3rem; }
-.bar a, .bar span.off { display: inline-block; padding: .05rem .45rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; font-size: .9rem; }
+.facts .bad { color: var(--bad); }
+.time { flex: none; margin-top: .3rem; }
+.bar { display: flex; flex-wrap: wrap; gap: .25rem .4rem; align-items: center; margin: 0 0 .2rem; }
+.bar a, .bar span.off { display: inline-block; padding: 0 .4rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; font-size: 11px; line-height: 1.6; }
 .bar span.off { color: var(--muted); }
-.bar .legend { margin-left: auto; font-size: .8rem; color: var(--muted); } .bar .legend > span { margin-left: .5rem; white-space: nowrap; }
-.bar .legend .swatch { width: .7rem; height: .7rem; margin-right: .2rem; }
+.strip { display: grid; grid-template-columns: 120px minmax(0, 1fr); padding: 0 28px 0 0; border: 1px solid var(--line); background: #fff; }
+.strip svg { display: block; }
 .mark.waiting rect { animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
+@media (max-width: 1199px) {
+  html, body { height: auto; } body { overflow: auto; } main.wide > section { height: auto; }
+  .top { grid-template-columns: minmax(0, 1fr); } .org svg#diagram { height: auto; } .side { overflow: visible; }
+}
 </style>
 <p class="muted crumbs"><a href="/runs">Runs</a> › {% if run.entry.source == "frame" %}the frame{% if run.entry.experiment != "orders" %} › {{ run.entry.experiment }}{% endif %}{% else %}<a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a>{% endif %} › {{ run.entry.condition }}</p>
-<h1>{{ run.entry.lineages|join(", ") or run.entry.condition }} <span class="muted">· {{ run.entry.negotiation or "" }} negotiation{% if run.entry.held and run.entry.held != "off" %}, held {{ run.entry.held }}{% endif %}{% if run.live %}, running{% elif run.is_parked %}, parked for the owner's word{% endif %}</span></h1>
-<div class="player" id="player">
+<h1>{{ run.entry.lineages|join(", ") or run.entry.condition }} <span class="muted">· {{ run.entry.negotiation or "" }} negotiation{% if run.entry.held and run.entry.held != "off" %}, held {{ run.entry.held }}{% endif %}<span id="liveword">{% if run.live %}, running{% elif run.is_parked %}, parked for the owner's word{% endif %}</span></span></h1>
+<div class="player" id="player" title="without script the links under the picture step through the run">
   <button id="play" title="space">▶ play</button>
   <button id="slower" title="-">−</button><span class="speed" id="speed">×1</span><button id="faster" title="+">+</button>
   {% if run.live %}<button id="follow" title="l">follow now</button>{% endif %}
   <span id="ending" class="ending"></span>
-  <span class="keys" id="keys">without script the links under the picture step through the run</span>
+  <span class="legend">{% for name, c in pic.legend %}<span title="{{ name }}"><span class="swatch" style="background:{{ c }}"></span><span class="word">{{ name }}</span></span>{% endfor %}<span>·</span>{% for name, c in pic.act_legend %}<span title="{{ name }}"><span class="swatch" style="background:{{ c }}"></span><span class="word">{{ name }}</span></span>{% endfor %}</span>
 </div>
 {% include "_overview.html" %}
 <script>
@@ -82,13 +89,11 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
     // the run's end, once the clock has reached it: said where the clock is, and a run followed live stops there
     P.ended = d.ended || "";
     document.getElementById("ending").textContent = P.ended ? "The run has ended: " + P.ended : "";
-    if (P.ended && !P.live) { P.follow = false; P.playing = false; }
+    if (P.ended && !P.live) { P.follow = false; P.playing = false; const w = document.getElementById("liveword"); if (w) w.textContent = ""; }
     const axis = document.getElementById("axis");
     if (axis) axis.addEventListener("click", function (ev) {
-      const svg = document.getElementById("picture");
-      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-      goTo(Math.max(0, Math.min(1, (p.x - P.x0) / (P.x1 - P.x0))) * P.span);
+      const box = document.getElementById("picture").getBoundingClientRect();
+      goTo(Math.max(0, Math.min(1, (ev.clientX - box.left) / box.width)) * P.span);
     });
   }
 
@@ -98,11 +103,13 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
   function paint() {
     const head = document.getElementById("playhead"), cap = document.getElementById("playhead-cap"), clock = document.getElementById("clock"), nxt = document.getElementById("next-in");
     if (!head) return;
-    const x = P.x0 + (P.x1 - P.x0) * Math.max(0, Math.min(1, P.at / P.span));
+    // the strip's x is in percent of its width
+    const x = (P.x0 + (P.x1 - P.x0) * Math.max(0, Math.min(1, P.at / P.span))) + "%";
     head.setAttribute("x1", x); head.setAttribute("x2", x);
-    const top = parseFloat(head.getAttribute("y1"));
-    cap.setAttribute("points", (x - 6) + "," + (top - 8) + " " + (x + 6) + "," + (top - 8) + " " + x + "," + top);
-    clock.setAttribute("x", x); clock.textContent = hms(P.at);
+    cap.setAttribute("x", x);
+    const late = P.at / P.span > 0.85;               // near the end the clock's words stand left of the playhead
+    clock.setAttribute("x", x); clock.setAttribute("dx", late ? -8 : 8); clock.setAttribute("text-anchor", late ? "end" : "start");
+    clock.textContent = hms(P.at);
     if (P.next !== null) nxt.textContent = "next in " + span(P.next - P.at) + " · " + nxt.textContent.replace(/^next in [^·]*·\s*/, "");
     document.getElementById("play").textContent = P.playing ? "❚❚ pause" : "▶ play";
     document.getElementById("play").classList.toggle("on", P.playing);
@@ -184,7 +191,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
 
   readData(); paint(); requestAnimationFrame(tick);
   // written last, so that the hint shows only when the player is up
-  document.getElementById("keys").textContent = "space play · ← → event · t T turn · d D decision · + − speed · Home End" + (follow ? " · l now" : "") + " · click the axis";
+  document.getElementById("player").title = "space play · ← → event · t T turn · d D decision · + − speed · Home End" + (follow ? " · l now" : "") + " · click the axis";
 })();
 </script>
 {% endblock %}
