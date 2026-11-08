@@ -17,9 +17,9 @@ may decide on its own, and where every value came from.
 Its other side is the overview: the organisation at work, for the person as system operator and for a demonstration or a
 conference, what the organisation does with an order, as it happens or played back.
 
-## 2. Two views, two authorities
+## 2. Three views, three authorities
 
-The person at the tool acts in two capacities, and the view says which.
+The person at the tool acts in one of three capacities, and the view says which.
 
 - **The overview.** The person is the *system operator*: they see the resources and the decision makers over them, their state, and
   the traffic between them, and they may place or remove a decision maker. This is ARTI's super user with rights over assets.
@@ -27,9 +27,13 @@ The person at the tool acts in two capacities, and the view says which.
 - **The order view.** The person is the *orderer*: the owner of the product's requirements, the decision maker over the order
   instance, who gives the mandate, answers the requester, consents to a relaxation and approves. Entering it is a visible change of
   capacity ("as orderer of order X"), and leaving it is the way back.
+- **The role view.** The person is an *operator* in am-llm's sense: they fill a role (design engineer, process planner, machine
+  operator) in place of an agent, placed there by the system operator as the role's decision maker, and act through the role's
+  tools as forms, validated by the frame as an agent's calls are. It is a later build; until it exists am-llm's interactive console
+  stays, and its command line (`inbox|act|ack ROLE`) serves experiments (decided 2026-11-08).
 
-The tool's interaction log records the capacity with every act. In am-llm's words the orderer is the requirement's owner;
-"operator" there means a person filling a role in place of an agent, and the tool keeps that meaning.
+The tool's interaction log records the capacity with every act. In am-llm's words the orderer is the requirement's owner and
+the operator a person filling a role, and the tool keeps both meanings.
 
 ## 3. The overview
 
@@ -48,9 +52,10 @@ it. It is one picture with two uses, the system operator's console and the demon
   same locally against `127.0.0.1` as across the network, one client and no second path. Decided 2026-11-08
   (`../am-llm/LLM-hierarchy-AM-design-document.md` 2.6).
 - **Presence.** Each part of the system announces itself through the frame (who, what kind, since when, latest sign of life,
-  declared state); an empty frame has no record to be read from, so presence is the frame's own endpoint. Three states are kept apart: *left*, with a farewell; *down*,
-  inferred by the reader from a sign of life older than a limit, because nobody writes "I am crashing"; *unavailable*, declared by
-  the part itself. The organisation under a present requester being down is a state of the system, not a configuration of its own:
+  declared state); an empty frame has no record to be read from, so presence is the frame's own endpoint (`presence-1.json`).
+  Three states are kept apart: *left*, with a farewell; *down*, inferred by the reader from a sign of life older than the limit the
+  frame states, measured on the frame's clock and not the reader's, because nobody writes "I am crashing"; *unavailable*, declared
+  by the part itself. The organisation under a present requester being down is a state of the system, not a configuration of its own:
   the tool runs either alone or with am-llm.
 - **The empty state** is the overview's first picture: the frame up since a time, the roles with their decision makers, no order
   in preparation, the placed orders waiting. A demonstration starts there, and moves when the orderer places an order.
@@ -76,8 +81,12 @@ it. It is one picture with two uses, the system operator's console and the demon
   between them the block diagram, the turns and the design take the height that is left, the turns scrolling in their column
   with the latest in view. The time picture is thus always in the same place however long the turns run.
 - **The catalogue** lists the recorded runs by product, experiment and condition (negotiation, decision makers, when, how long,
-  outcome). It reads the folders am-llm leaves today; with the frame it reads the frame's runs and their events since a time, and
-  shows running runs beside finished ones.
+  outcome). It reads the folders am-llm leaves today; with the frame it reads the frame's runs and their events (`events-1.json`),
+  and shows running runs beside finished ones.
+- **The events** are the run as the frame serves it: one list in the order the frame wrote them, each with its time and a sequence
+  number, fetched after the last number read, so that a row written late (a turn written as it ends, a call as it answers) is
+  never missed. Nothing in the list changes once served: a waking's end, a call's answer and a case's new state are events of
+  their own. Playback reads the list from the start, live follows it; the clock's now is the frame's.
 
 ## 4. The order view
 
@@ -86,15 +95,24 @@ The order is the activity instance of a product type, and the tool keeps the two
 - **The type** is the product's requirements as the person writes them: objects, needs, metrics with ideal and limit, the bindings
   to a design's features. One requirement, many attachments: the metric is the canonical requirement and everything else cites it.
 - **The instance** is the order: quantity, objective, the mandate per metric (an interval the organisation may decide within
-  without asking), the owner's answering policy (now, later, never), the dialogue so far, the accepted plan.
+  without asking), the owner's answering policy (now, later, never), the dialogue so far, the requirements in force (the type's
+  values with each relaxation made within the mandate, by whom and on which showing), the accepted plan.
 - **The flow.** The person places the order, a state of the order beside draft, checked, bound and confirmed; the tool never
   starts a run, the standing frame does, one run per order version, and the order carries the pointer to it. The requester
   translates the order downward into the brief and the organisation prepares. A question the mandate does not cover parks the case at the frame until the owner answers in the
   order view; a change of the order (a relaxation, a design change) is the answer and preparation resumes. Success is a product
   approved for manufacturing, bound to a version hash. A later change reopens preparation on a new version.
-- **The dialogue** between the tool and the requester is the third contract between the repositories, beside the order and the
-  feature list: the instance log, with the placing, the mandate in force, the questions and answers, the consents and the approval.
-  Presence is the fourth.
+- **A plan at risk** (R12, decided 2026-11-08) is accepted only by relaxing the margin it exceeds to what the plan reaches, within
+  the metric's mandate, recorded as that relaxation. The order view offers no "accept the risk": it shows the findings with their
+  values against the margin, and the acceptance names the relaxation it makes. A critical finding is never accepted.
+- **The showing's certificate.** A showing that relaxes a requirement carries the secretary's statement of exhausted means, written
+  from the record (the versions tried, the means used, the lightest version holding the rest with its figures). The order view
+  shows it as one line with its citations, and the owner asks for no other evidence.
+- **The dialogue** between the tool and the requester is a contract of its own (`dialogue-1.json`, after order 2): the instance
+  log, with the placing, the mandate in force, the questions and answers, the showings with their findings and certificates, the
+  relaxations, the consents and the approval. The contracts between the repositories are the order, the feature list, presence,
+  the events and the dialogue, every one a schema in `am_order/schemas/`, which am-llm reads through the library and proposes
+  changes to (decided 2026-11-08).
 - **Backtracking** (Johansson) is computed from the type's citations, never stored: from a metric to the needs, from a finding in
   a run to the requirement it judges to the need that requirement serves.
 
@@ -111,9 +129,10 @@ run's course; the brief the order's intent (text, objective, quantity), the boun
 what may change said on the objects, each `fixed` or `free`; a metric's value the limit and all the order asks, a margin only where
 the order demands a reserve beneath a physical limit (a utilisation), as the adapter already reads it; `held` with the owner's
 answering policy deciding between parking the case for the owner and declining on the evidence; this tool the only console toward a
-person, am-llm on its own through its command line; Apache-2.0 here and in am-llm, the shim AGPL in its own repository; the tool with
-a products home of its own, connected to the frame over HTTP (section 3). Open: the source of the L-bracket's margin 0.5 on its
-toleranced requirements.
+person, am-llm on its own through its command line, its interactive console staying until the role view exists; Apache-2.0 here
+and in am-llm, the shim AGPL in its own repository; the tool with a products home of its own, connected to the frame over HTTP
+(section 3); every contract's schema here. With them, from stage 1 of am-llm's experiment: R12 and the showing's certificate
+(section 4). Open: the source of the L-bracket's margin 0.5 on its toleranced requirements.
 
 ## 6. The builds
 
@@ -127,35 +146,39 @@ Done:
    every push, in `negotiating-manufacturability-console` on GitHub; `logs/` ignored; the version in one place; `Home.derive`
    leaving no half-made product; the writer lock on the home; the tree reading an order once until it changes.
 
-On am-llm's side, as soon as the review is read, in parallel with the builds here; it depends on the brief's form and on where the
-mandate becomes the reservation, and on nothing else that is open:
+On am-llm's side, next, once `presence-1.json` and `events-1.json` are sketched here:
 
 - **The standing frame** (`python -m agents stand`, or so): the frame started empty and serving over HTTP with a personal
-  token: presence (its roles with their decision makers), the help page at its root, an order version placed and prepared as a run
-  named by it, the run's events since a time, the accepted version's feature list, the dialogue both ways; the experiment runner
-  the frame started with a scenario; am-llm's interactive console removed. Presence and the help page come first, since the
-  empty frame has nothing else to be seen by.
+  token: presence (its roles with their decision makers, the machines), the help page at its root, an order version (`order-1`)
+  placed and prepared as a run named by it, the run's events (an acceptance with its relaxation among them), the accepted version's
+  feature list; the experiment runner the frame started with a scenario. The dialogue waits for its contract (build 6); the
+  console stays. Presence and the help page come first, since the empty frame has nothing else to be seen by.
 
-Then, independent of the open decisions:
+Here, in this order:
 
 4. **The web app for a person.** Partial page updates instead of whole-body swaps; confirmations before anything is lost; error
    pages in words, including the workbook import's; the message colour from the outcome, not from a word in the text; one log per
    session with the proposals logged; the word tables (synonyms, kinds, compatibility) as data beside the vocabularies.
 
-After the decisions:
-
-5. **Order 2.** The type and the instance in the schema, the brief as intent with the objects `fixed` or `free`, the mandate per
-   metric, the answering policy; migration from order 1 with the examples re-written.
-6. **The dialogue contract** over the frame and the order view against it: placing, parking, answering, consenting, approving,
-   bound to versions; the catalogue and the overview reading the frame's events instead of the folders.
-7. **Presence and decision makers** in the overview, against the frame's endpoint: the empty state, the three states of a
-   part, the decision makers selectable where the frame reads its setting at the role's next waking; `--frame URL` with its token.
+5. **Order 2**, in parallel with the frame: the type and the instance in the schema, the brief as intent with the objects `fixed`
+   or `free` (`may_change` and `may_relax` gone), the mandate per metric, the answering policy, the requirements in force;
+   migration from order 1 with the examples re-written; am-llm's adapter follows and the pin moves.
+6. **The dialogue contract** (`dialogue-1.json`) over the frame and the order view against it: placing, parking, answering,
+   consenting, the acceptance of a plan at risk as a relaxation, the certificate, approving, bound to versions; the catalogue and
+   the overview reading the frame's events instead of the folders.
+7. **Presence and decision makers** in the overview, against the frame's endpoint, as soon as the frame stands (it waits on
+   nothing else): the empty state, the three states of a part, the decision makers selectable where the frame reads its setting at
+   the role's next waking; `--frame URL` with its token.
 8. **Johansson's layers** as the 1.1 build in am-llm describes them, on the order-2 type.
+9. **The role view**: a person filling a role, placed by the system operator, with the role's tools as forms; am-llm's
+   interactive console goes with it.
 
 Each build is written as `probes/<name>-build.md` in am-llm, built, and reported, as the first version was.
 
 ## 7. How work is done here
 
 The conventions are am-llm's (`../am-llm/CLAUDE.md`): English in code and documents; no defensive writing; one item per commit;
-the tool never imports am-llm and am-llm's runs never import the tool; no JavaScript build, loopback, one user; the record and the
-runs are read directly and read only. Nothing in am-llm's working tree is touched from here.
+the tool never imports am-llm and am-llm's runs never import the tool; every contract's schema lives here, and a change to one is
+written into both plans before it is built; no JavaScript build, the web app on loopback for one user; the record and the runs
+are read directly and read only until the tool reads them from the frame (build 6). Nothing in am-llm's working tree is touched
+from here.
