@@ -38,7 +38,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "The run's name, as `events-1` and the events' address use it: `<lineage>@<revision>` for an order, `<experiment>/<condition>` for a scenario"
+          "description": "The run's name, as `events-1` and the events' address use it: `<lineage>@<revision>` for an order, `<experiment>/<condition>-<nn>` for a scenario's repetition, as its folder is named"
         },
         "order": {
           "oneOf": [
@@ -113,7 +113,7 @@
           "last": 412
         },
         {
-          "id": "h1-plate/default",
+          "id": "h1-plate/default-01",
           "order": null,
           "scenario": {"experiment": "h1-plate", "condition": "default"},
           "lineages": ["plate"],

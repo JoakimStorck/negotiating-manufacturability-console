@@ -292,7 +292,7 @@
     },
     "design": {
       "type": "object",
-      "description": "A design version made in the run, or one the run began with (its `time` before the run's start).",
+      "description": "A design version made in the run, or one the run began with (its `time` before the run's start). Its picture is served for every version the run made; its feature list only for the version the run accepted, which the case's accepted plan names.",
       "required": ["seq", "time", "kind", "id", "made_by_role", "made_by_actor", "sha256"],
       "additionalProperties": false,
       "properties": {
@@ -304,8 +304,7 @@
         "parent": {"type": ["string", "null"]},
         "made_by_role": {"$ref": "#/$defs/role"},
         "made_by_actor": {"enum": ["agent", "operator"]},
-        "sha256": {"$ref": "#/$defs/sha"},
-        "features": {"type": "boolean", "description": "Its feature list (`features-1`) can be fetched from the frame"}
+        "sha256": {"$ref": "#/$defs/sha"}
       }
     },
     "plan": {
@@ -445,8 +444,7 @@
           "parent": "bracket-mass@v15",
           "made_by_role": "design_engineer",
           "made_by_actor": "agent",
-          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-          "features": true
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
         },
         {
           "seq": 4,

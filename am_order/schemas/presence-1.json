@@ -142,7 +142,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "The run's name: the order version's for an order (`<lineage>@<revision>`), the experiment's and condition's for a scenario"
+          "description": "The run's name: the order version's for an order (`<lineage>@<revision>`), `<experiment>/<condition>-<nn>` for a scenario's repetition, as runs-1 names it"
         },
         "order": {
           "oneOf": [
