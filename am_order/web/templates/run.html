@@ -24,6 +24,8 @@ main.wide > section { height: 100%; display: flex; flex-direction: column; min-h
 .turns li { list-style: none; margin: .3rem 0; padding-left: .6rem; border-left: 3px solid #b9a7e2; }
 .turns li.now { border-left-style: dashed; color: var(--muted); }
 .turns .thinking { margin: .15rem 0; color: #4a4a6a; font-size: .9rem; } .turns p { margin: .15rem 0; }
+details.more { display: inline; } details.more summary { display: inline; color: var(--accent); cursor: pointer; margin-left: .3rem; font-size: .85rem; }
+details.more summary::before { content: "… "; color: var(--muted); } details.more[open] summary::before { content: ""; } details.more[open] summary { display: none; }
 .turns .acts a { display: inline-block; margin: 0 .5rem .15rem 0; padding: 0 .35rem; border: 1px solid var(--line); border-radius: 3px; text-decoration: none; font-size: .85rem; }
 .turns .acts a.future { opacity: .45; }
 .top aside { flex: none; width: 22rem; min-height: 0; overflow-y: auto; }
@@ -109,7 +111,9 @@ main.wide > section { height: 100%; display: flex; flex-direction: column; min-h
       if (r.ok) {
         const html = await r.text();
         const holder = document.createElement("div"); holder.innerHTML = html;
+        const open = new Set(Array.from(document.querySelectorAll("#overview details[open]")).map(d => d.id));
         document.getElementById("overview").replaceWith(holder.firstElementChild);
+        for (const id of open) { const d = document.getElementById(id); if (d) d.open = true; }
         const playing = P.playing, speed = P.speed, follow = P.follow;
         readData(); P.playing = playing; P.speed = speed; P.follow = follow;
       }

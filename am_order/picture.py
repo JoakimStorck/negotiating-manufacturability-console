@@ -276,6 +276,16 @@ def sentences(st: State, start: datetime | None) -> list[dict]:
     return out
 
 
+def _fold(text: str, n: int = 320) -> tuple[str, str]:
+    """A text as a lead and a rest: the lead ends at a word before `n` characters; a short text is all lead."""
+    text = text or ""
+    if len(text) <= n + 40:
+        return text, ""
+    cut = text.rfind(" ", 0, n)
+    cut = cut if cut > n // 2 else n
+    return text[:cut], text[cut:].lstrip()
+
+
 def wakings(run: Run, st: State) -> list[dict]:
     """What each awake role is doing, for the reader to inspect: what woke it, its turns so far (the thinking, the calls), and
     where it stands at the clock. A turn is shown when it has ended, since that is when the record writes it."""
@@ -283,7 +293,7 @@ def wakings(run: Run, st: State) -> list[dict]:
     out = []
     for role, b in st.awake.items():
         done = [t for t in b.turns if t.end <= st.at]
-        turns = [{"n": i, "clock": _clock(t.end, start), "seconds": f"{t.seconds:.0f} s", "thinking": t.thinking, "text": t.text,
+        turns = [{"n": i, "seq": t.seq, "clock": _clock(t.end, start), "seconds": f"{t.seconds:.0f} s", "thinking": _fold(t.thinking), "text": _fold(t.text),
                   "acts": [{"word": a.word, "count": a.count, "detail": a.detail, "seconds": f"{(a.start - start).total_seconds():.6f}",
                             "clock": _clock(a.start, start), "future": a.start > st.at} for a in t.acts]}
                  for i, t in enumerate(done, 1)]
@@ -295,7 +305,7 @@ def wakings(run: Run, st: State) -> list[dict]:
         else:
             last_end = (done[-1].results_end or done[-1].end) if done else b.start
             now = f"at work for {_span(st.at - last_end)}, nothing written yet" if st.at > last_end else None
-        out.append({"role": role, "title": TITLES.get(role, role), "since": _clock(b.start, start), "model": b.model, "prompt": b.prompt,
+        out.append({"role": role, "title": TITLES.get(role, role), "since": _clock(b.start, start), "model": b.model, "prompt": _fold(b.prompt),
                     "turns": turns, "now": now})
     return out
 

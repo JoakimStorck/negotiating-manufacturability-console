@@ -236,8 +236,8 @@ class Turn:
     start: datetime               # the end less the model's seconds, never before the turn before
     end: datetime                 # when the model's turn ended, as the record writes it
     seconds: float
-    thinking: str                 # the model's summary of its thinking, where it gives one
-    text: str                     # what the model said in words, where it did
+    thinking: str                 # the model's summary of its thinking, where it gives one; whole, as the record keeps it
+    text: str                     # what the model said in words, where it did; whole
     acts: list = field(default_factory=list)
     results_end: datetime | None = None   # when the last of its calls had answered
 
@@ -381,7 +381,7 @@ def read(root: Path, run_id: str) -> Run | None:
                 except ValueError:
                     prompt = {}
                 bars.append(Bar(r["role"], r["actor"], label, _time(r["started"]), _time(r["ended"]), r["id"],
-                                prompt=_cut((prompt.get("text") if isinstance(prompt, dict) else str(prompt)) or "", 240)))
+                                prompt=((prompt.get("text") if isinstance(prompt, dict) else str(prompt)) or "").strip()))
                 events.append(Event(_time(r["started"]), "woke", r["role"], None, "woke", f"{TITLES.get(r['role'], r['role'])} wakes"))
                 if r["ended"]:
                     events.append(Event(_time(r["ended"]), "slept", r["role"], None, "slept", f"{TITLES.get(r['role'], r['role'])} sleeps"))
@@ -396,7 +396,7 @@ def read(root: Path, run_id: str) -> Run | None:
                     if r["kind"] == "model":
                         floor = bar.turns[-1].results_end or bar.turns[-1].end if bar.turns else bar.start
                         start = max(floor, t - timedelta(seconds=r["seconds"] or 0))
-                        bar.turns.append(Turn(r["seq"], start, t, r["seconds"] or 0, _cut(r["thinking"] or "", 600), _cut(r["text"] or "", 600)))
+                        bar.turns.append(Turn(r["seq"], start, t, r["seconds"] or 0, (r["thinking"] or "").strip(), (r["text"] or "").strip()))
                     elif r["kind"] == "results" and bar.turns:
                         bar.turns[-1].results_end = t
             if "call" in tables:

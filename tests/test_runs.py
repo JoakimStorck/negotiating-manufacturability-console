@@ -1,6 +1,7 @@
 """The runs of am-llm as the tool reads them: a record made here in the record's own tables (the tool never imports am-llm),
 catalogued, read into events, its state asked at times through the run, and the runs pages served."""
 import json
+import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -68,7 +69,7 @@ def make_run(folder: Path, *, running: bool = False, decision_free: bool = False
     # the model's turns: it thinks, then its calls follow, then the results; the record writes a turn as it ends
     for seq, kind, t, secs, thinking in ((1, "model", 3, 1, "Read the design first."), (2, "results", 3.2, 0.2, None),
                                          (3, "model", 10, 6, "Three plans to compare on time."), (4, "results", 16, 6, None),
-                                         (5, "model", 40, 20, "The -Z orientation is the candidate."), (6, "results", 43, 3, None),
+                                         (5, "model", 40, 20, "The -Z orientation is the candidate. " + "It stands on the plate with the lugs up, which keeps the underside clean. " * 8), (6, "results", 43, 3, None),
                                          (7, "model", 100, 50, "Report the binding constraint."), (8, "results", 100.1, 0.1, None)):
         db.execute("INSERT INTO turn (run_id, seq, kind, time, seconds, thinking) VALUES (?,?,?,?,?,?)", ("run-1", seq, kind, at(t), secs, thinking))
     for cid, tool, t, secs, turn, inputs in (("call-r1", "read_design", 3, 0.2, 1, {"design": "bracket-mass@v1"}), ("call-a1", "analyse", 10, 2, 3, {"plan": "plan-1@v1"}),
@@ -272,6 +273,11 @@ def test_the_turns_can_be_stepped_and_inspected(root, client):
     page = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=12")
     assert "Process planner at work" in page.text and "Three plans to compare on time." in page.text and 'data-next-turn="40.000000"' in page.text
     assert "Woken by: New in case-1" in page.text and "the tools answer" in page.text
+    assert "<details" not in page.text                                    # short summaries stand whole
+    later = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=45").text
+    assert '<details class="more" id="more-process_planner-5-thinking"><summary>more</summary>' in later   # a long one folds, whole
+    whole = re.sub(r"<[^>]+>", " ", later.replace("<summary>more</summary>", " "))
+    assert len(re.findall(r"keeps\s+the\s+underside\s+clean", whole)) == 8                          # nothing is cut away
     assert "Nobody at work" in client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=400").text
 
 

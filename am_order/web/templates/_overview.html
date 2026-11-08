@@ -30,15 +30,16 @@
 <div class="wakings">
 {% for w in pic.wakings %}
 <h2>{{ w.title }} at work <span class="muted">since {{ w.since }}{% if w.model %} · {{ w.model }}{% endif %}</span></h2>
-{% if w.prompt %}<p class="muted">Woken by: {{ w.prompt }}</p>{% endif %}
+{% macro fold(pair, id, cls="") %}<div class="{{ cls }}">{{ pair[0] }}{% if pair[1] %}<details class="more" id="{{ id }}"><summary>more</summary>{{ pair[1] }}</details>{% endif %}</div>{% endmacro %}
+{% if w.prompt[0] %}{{ fold(("Woken by: " ~ w.prompt[0], w.prompt[1]), "more-" ~ w.role ~ "-prompt", "muted") }}{% endif %}
 <ol class="turns">
 {% for t in w.turns %}
-<li><span class="clock">{{ t.clock }}</span><b>turn {{ t.n }}</b> <span class="muted">· thought {{ t.seconds }}</span>
-{% if t.thinking %}<p class="thinking">{{ t.thinking }}</p>{% endif %}{% if t.text %}<p>{{ t.text }}</p>{% endif %}
+<li><span class="clock">{{ t.clock }}</span> <b>turn {{ t.n }}</b> <span class="muted">· thought {{ t.seconds }}</span>
+{% if t.thinking[0] %}{{ fold(t.thinking, "more-" ~ w.role ~ "-" ~ t.seq ~ "-thinking", "thinking") }}{% endif %}{% if t.text[0] %}{{ fold(t.text, "more-" ~ w.role ~ "-" ~ t.seq ~ "-text") }}{% endif %}
 {% if t.acts %}<p class="acts">{% for a in t.acts %}<a href="/runs/{{ run.entry.id }}?at={{ a.seconds }}" data-seconds="{{ a.seconds }}" {% if a.future %}class="future"{% endif %}>{{ a.word }}{% if a.count > 1 %} ×{{ a.count }}{% endif %}{% if a.detail %} <span class="muted">{{ a.detail }}</span>{% endif %}</a>{% endfor %}</p>{% endif %}
 </li>
 {% endfor %}
-{% if w.now %}<li class="now"><span class="clock">{{ ax.clock }}</span>{{ w.now }}</li>{% endif %}
+{% if w.now %}<li class="now"><span class="clock">{{ ax.clock }}</span> {{ w.now }}</li>{% endif %}
 </ol>
 {% else %}
 <h2>Nobody at work</h2>
