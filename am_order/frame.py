@@ -178,6 +178,12 @@ class Frame:
         r = self._request("POST", "/orders", content=body, headers={"Content-Type": "application/json"})
         return self._body(r) or {}
 
+    def delete_run(self, run_id: str) -> dict:
+        """An order's run deleted at the frame (`DELETE /runs/<id>`): its record and the order version placed go, so that the version
+        may be placed again. The frame refuses a run that is not an order's (403) and one it is preparing (409), in its words."""
+        r = self._request("DELETE", f"/runs/{self._run_path(run_id)}")
+        return self._body(r) or {}
+
     def help_url(self) -> str:
         return self.url + "/"
 
@@ -285,6 +291,14 @@ class Reading:
         except FrameError as e:
             return None, e
         return self.features[key], None
+
+    def forget(self, run_id: str) -> None:
+        """A run deleted at the frame forgotten here, so that nothing of it is shown again."""
+        self.runs.pop(run_id, None)
+        self.features = {k: v for k, v in self.features.items() if k[0] != run_id}
+        for doc, key in ((self.catalogue, "runs"), (self.presence, "runs")):
+            if doc is not None:
+                doc[key] = [r for r in doc[key] if r["id"] != run_id]
 
     def runs_of(self, lineage: str) -> list[dict]:
         """The frame's runs of a product's orders, from the catalogue and, for an order placed and not yet a run, presence; each

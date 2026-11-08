@@ -18,7 +18,8 @@
     reqif export PRODUCT FILE
     features list | add DIR                           the feature lists in the home
     serve [--port 8770] [--log DIR] [--runs DIR]      the web app on 127.0.0.1
-    runs [show RUN [--at T]]                          the frame's runs, or a run's state at a time (seconds from its start)
+    runs [show RUN [--at T] | delete RUN]             the frame's runs, a run's state at a time (seconds from its start), or an
+                                                      order's run deleted at the frame so that its version may be placed again
     place PRODUCT[@REVISION]                          a confirmed order version placed at the frame, as the home holds it
 
 The home is `--home` or `AM_ORDER_HOME`. An own product opens read only unless `--allow-own` is given. `--frame URL` is a
@@ -141,7 +142,7 @@ def main(argv=None) -> int:
     sv.add_argument("--log")
     sv.add_argument("--runs", help="the folder am-llm writes its runs under, read only, for the runs pages")
     rn = sub.add_parser("runs")
-    rn.add_argument("what", nargs="?", choices=["list", "show"], default="list")
+    rn.add_argument("what", nargs="?", choices=["list", "show", "delete"], default="list")
     rn.add_argument("run", nargs="?")
     rn.add_argument("--at", help="seconds from the run's start, or an ISO time; the end when not given")
     pl = sub.add_parser("place")
@@ -310,7 +311,11 @@ def _runs(args, frame: Frame, ap) -> int:
                   f"{e.outcome or ''}{f' ({e.reason})' if e.reason else ''}")
         return 0
     if not args.run:
-        ap.error("runs show: name the run")
+        ap.error(f"runs {args.what}: name the run")
+    if args.what == "delete":
+        frame.delete_run(args.run)
+        print(f"{args.run} deleted at {frame.url}; its version may be placed again")
+        return 0
     doc = frame.events(args.run, 0)
     run = R.from_events(doc["run"], doc["events"], frame.contact.frame_now() if doc["run"]["status"] == "running" else None)
     st = R.state(run, R.parse_at(run, args.at))

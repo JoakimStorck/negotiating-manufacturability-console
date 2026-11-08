@@ -205,6 +205,22 @@ class StubFrame:
                     "picture": {"file": "picture.png", "sha256": "0" * 64},
                     "models": [{"format": "stl", "file": "model.stl", "sha256": "0" * 64}, {"format": "3mf", "file": "model.3mf", "sha256": "0" * 64}]}
 
+        @api.delete("/runs/{run_id:path}")
+        def delete(run_id: str, request: Request):
+            self.asked.append(f"DELETE /runs/{run_id}")
+            if (refused := authorised(request)) is not None:
+                return refused
+            if run_id not in self.runs and run_id not in self.orders:
+                return JSONResponse({"error": f"no run {run_id}"}, 404)
+            if run_id in self.runs and not self.runs[run_id]["run"].get("order"):
+                return JSONResponse({"error": f"{run_id} is an experiment's run, not an order's: the frame deletes only orders' runs"}, 403)
+            if run_id in self.runs and self._status_at(run_id)["status"] == "running":
+                return JSONResponse({"error": f"the run {run_id} is being prepared; it can be deleted once it has ended or parked"}, 409)
+            self.runs.pop(run_id, None)
+            self.orders.pop(run_id, None)
+            self.presence["runs"] = [r for r in self.presence["runs"] if r["id"] != run_id]
+            return {"deleted": run_id}
+
         @api.post("/orders", status_code=201)
         async def place(request: Request):
             if (refused := authorised(request)) is not None:
@@ -217,7 +233,7 @@ class StubFrame:
             except (ValueError, SchemaError) as e:
                 return JSONResponse({"error": "the schema refuses the document", "reasons": getattr(e, "errors", [str(e)])}, 422)
             ref = f"{doc['lineage']}@{doc['revision']}"
-            if ref in self.orders:
+            if ref in self.orders or ref in self.runs:
                 return JSONResponse({"error": f"the order version {ref} is placed already (runs/orders/{ref})"}, 409)
             self.orders[ref] = sha256(canonical(doc))
             return {"run": ref, "order": {"lineage": doc["lineage"], "revision": doc["revision"], "sha256": self.orders[ref]},

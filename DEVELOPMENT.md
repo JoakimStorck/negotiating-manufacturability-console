@@ -116,6 +116,12 @@ The order is the activity instance of a product type, and the tool keeps the two
   translates the order downward into the brief and the organisation prepares. A question the mandate does not cover parks the case at the frame until the owner answers in the
   order view; a change of the order (a relaxation, a design change) is the answer and preparation resumes. Success is a product
   approved for manufacturing, bound to a version hash. A later change reopens preparation on a new version.
+- **A run deleted and its version placed again.** The frame prepares one run per order version, so the same version is placed
+  again only once its run is gone: the orderer deletes a run of the product's orders from the order's page (`DELETE /runs/<id>`
+  at the frame, confirmed first, logged as the orderer's act), its record and the order version placed go, and the version may be
+  placed again. The frame deletes only orders' runs (403 for an experiment's) and not one it is preparing (409), in its words;
+  stopping a run being prepared is a later step. Decided 2026-11-08 from the author's demonstration; the tool's side built,
+  the frame's to build in am-llm.
 - **A plan at risk** (R12, decided 2026-11-08) is accepted only by relaxing the margin it exceeds to what the plan reaches, within
   the metric's mandate, recorded as that relaxation. The order view offers no "accept the risk": it shows the findings with their
   values against the margin, and the acceptance names the relaxation it makes. A critical finding is never accepted.

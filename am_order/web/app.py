@@ -829,6 +829,29 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
                 "ready": ready, "why": why, "contact_note": contact_note(error), "frame_url": reading.frame.url,
                 "message": message, "bad": bad}
 
+    @app.post("/products/{lineage}/runs/{run_id:path}/delete", response_class=HTMLResponse)
+    def delete_run(request: Request, lineage: str, run_id: str):
+        """A run of the product's orders deleted at the frame, so that its version may be placed again: the orderer's act on the
+        order's own runs, never on another product's or on an experiment's."""
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame")
+        working(lineage)
+        reading.read_catalogue() or reading.read_presence()
+        if run_id not in {r["id"] for r in reading.runs_of(lineage)}:
+            return templates.TemplateResponse(request, "_placing.html", {**placing_ctx(lineage), "bad": True,
+                                              "message": f"Not deleted: {run_id} is no run of an order of {lineage} at the frame."}, status_code=404)
+        try:
+            answer = reading.frame.delete_run(run_id)
+            reading.forget(run_id)
+            message, bad, status = f"Deleted at the frame: the run {run_id}; its version may be placed again.", False, 200
+        except FrameError as e:
+            message = f"Not deleted: {e}"
+            bad, status = True, e.status if e.kind == "answer" and e.status else 503
+            answer = {"status": e.status, "kind": e.kind}
+        log.write(f"/products/{lineage}/runs/{run_id}/delete", "delete run", detail={"capacity": "orderer", "run": run_id, "answer": answer})
+        return templates.TemplateResponse(request, "_placing.html", {**placing_ctx(lineage), "message": message, "bad": bad}, status_code=status)
+
     @app.post("/products/{lineage}/place", response_class=HTMLResponse)
     def place(request: Request, lineage: str):
         """The order's saved version placed at the frame, as the home holds it; the frame makes the run, never the tool."""

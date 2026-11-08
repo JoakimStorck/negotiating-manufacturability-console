@@ -445,3 +445,49 @@ def test_the_orders_page_shows_the_result(tool, resulting):
     # the order's latest revision at the frame is the run of revision 3, accepted
     t = tool.get("/products/bracket-mass/frame").text
     assert f"The result of {RUN}" in t and '<div class="result accepted">' in t and "the margin on M8 relaxed from 0.6 to 0.838" in t
+
+
+
+# ------------------------------------------------------------------------ a run deleted and its version placed again
+
+def test_an_orders_run_is_deleted_and_its_version_placed_again(tool, resulting, tmp_path):
+    page = tool.get("/products/bracket-mass/frame").text
+    assert 'hx-confirm="Delete the run bracket-mass@2 at the frame? Its record goes, and revision 2 may be placed again."' in page
+    # the version has a run at the frame: placing it again is refused until the run is deleted
+    again = tool.post("/products/bracket-mass/place")
+    assert again.status_code == 409 and "placed already" in again.text
+    deleted = tool.post("/products/bracket-mass/runs/bracket-mass@2/delete")
+    assert deleted.status_code == 200 and "Deleted at the frame: the run bracket-mass@2; its version may be placed again." in deleted.text
+    assert 'href="/frame/runs/bracket-mass@2"' not in deleted.text and "DELETE /runs/bracket-mass@2" in resulting.asked
+    placed = tool.post("/products/bracket-mass/place")
+    assert placed.status_code == 201 and "Placed at the frame: the run bracket-mass@2 (placed)" in placed.text
+    log = [json.loads(line) for f in (tmp_path / "logs").glob("*.jsonl") for line in f.read_text().splitlines()]
+    deletes = [e for e in log if e["action"] == "delete run"]
+    assert len(deletes) == 1 and deletes[0]["detail"]["capacity"] == "orderer" and deletes[0]["detail"]["run"] == "bracket-mass@2"
+
+
+def test_a_run_being_prepared_is_not_deleted(tool, resulting):
+    resulting.served[RUN] = 20                               # the order's run of revision 3 is being prepared
+    page = tool.get("/products/bracket-mass/frame").text
+    assert "being prepared" in page
+    refused = tool.post(f"/products/bracket-mass/runs/{RUN}/delete")
+    assert refused.status_code == 409 and "is being prepared; it can be deleted once it has ended or parked" in refused.text
+    assert RUN in resulting.runs
+
+
+def test_only_the_products_own_runs_are_deleted_from_its_page(tool, resulting):
+    refused = tool.post("/products/plate/runs/bracket-mass@2/delete")
+    assert refused.status_code == 404 and "Not deleted: bracket-mass@2 is no run of an order of plate at the frame." in refused.text
+    assert "bracket-mass@2" in resulting.runs
+
+
+def test_the_command_line_deletes_an_orders_run(resulting, tmp_path, capsys, monkeypatch):
+    token = tmp_path / "token"
+    token.write_text("me=s3cret\n", encoding="utf-8")
+    app = resulting.app()
+    monkeypatch.setattr("am_order.cli._client", lambda url: TestClient(app, base_url=url))
+    base = ["--frame", "http://frame.test", "--token-file", str(token), "runs", "delete"]
+    assert main(base + ["bracket-mass@2"]) == 0
+    assert "bracket-mass@2 deleted" in capsys.readouterr().out and "bracket-mass@2" not in resulting.runs
+    assert main(base + ["bracket-mass@2"]) == 1
+    assert "no run bracket-mass@2" in capsys.readouterr().err
