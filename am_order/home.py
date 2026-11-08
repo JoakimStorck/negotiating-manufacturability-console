@@ -14,14 +14,23 @@ unless the home is opened with `allow_own`; a person tries changes on a copy in 
 """
 from __future__ import annotations
 
+import contextlib
+import functools
 import json
 import os
 import re
 import shutil
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+
+try:
+    import fcntl
+except ImportError:                      # Windows
+    fcntl = None
+    import msvcrt
 
 from . import schema as S
 from .check import Refusal, check
@@ -91,6 +100,34 @@ def picture_type(data: bytes) -> tuple[str, str]:
     raise HomeError("the picture is neither a PNG nor a JPEG")
 
 
+def _lock(fd: int) -> None:
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        return
+    while True:                           # msvcrt gives up after ten seconds; a writer waits as long as it takes
+        try:
+            msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
+            return
+        except OSError:
+            continue
+
+
+def _unlock(fd: int) -> None:
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+    else:
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+
+
+def _writer(method):
+    """A method that writes the home: it runs holding the home's writer lock."""
+    @functools.wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self.writing():
+            return method(self, *args, **kwargs)
+    return wrapped
+
+
 class Home:
     def __init__(self, root: Path | str | None = None, allow_own: bool = False):
         root = root or os.environ.get("AM_ORDER_HOME")
@@ -98,6 +135,36 @@ class Home:
             raise HomeError("no products home: give --home or set AM_ORDER_HOME")
         self.root = Path(root)
         self.allow_own = allow_own
+        self._guard = threading.RLock()
+        self._depth = 0
+        self._fd: int | None = None
+
+    @contextlib.contextmanager
+    def writing(self):
+        """One writer at a time in the home, across processes and threads: the file `.lock` at the root, held with the
+        platform's file lock for the write. Re-entrant, so that an edit's read, change and save are one held write and a
+        derive's create and save are one. Readers take no lock; the atomic writes keep what they read whole."""
+        with self._guard:
+            if self._depth == 0:
+                self.root.mkdir(parents=True, exist_ok=True)
+                self._fd = os.open(self.root / ".lock", os.O_RDWR | os.O_CREAT, 0o644)
+                try:
+                    _lock(self._fd)
+                except BaseException:
+                    os.close(self._fd)
+                    self._fd = None
+                    raise
+            self._depth += 1
+            try:
+                yield
+            finally:
+                self._depth -= 1
+                if self._depth == 0 and self._fd is not None:
+                    try:
+                        _unlock(self._fd)
+                    finally:
+                        os.close(self._fd)
+                        self._fd = None
 
     # ------------------------------------------------------------------ products
 
@@ -178,11 +245,13 @@ class Home:
             return self.load(ref)
         return self.draft(ref) or self.load(ref)
 
+    @_writer
     def put_draft(self, lineage: str, order: Order) -> None:
         self._require_writable(lineage)
         order.validate()
         write_atomic(self._folder(lineage) / "draft.json", canonical(order.data))
 
+    @_writer
     def discard_draft(self, lineage: str) -> None:
         self._require_writable(lineage)
         p = self._folder(lineage) / "draft.json"
@@ -203,6 +272,7 @@ class Home:
 
     # ------------------------------------------------------------------ saving
 
+    @_writer
     def create(self, lineage: str, name: str | None = None, purpose: str = "", group: str | None = None,
                category: str = "user") -> Order:
         """A new product, kept as a draft until its checks pass."""
@@ -218,6 +288,7 @@ class Home:
         write_atomic(folder / "draft.json", canonical(order.data))
         return order
 
+    @_writer
     def save(self, order: Order, note: str = "") -> Saved | None:
         """Save a new version when the checks pass; refused, the draft is kept (`Refused`). Nothing changed, no version (None)."""
         lineage = order.lineage
@@ -277,6 +348,7 @@ class Home:
         text += "".join(f"- {c['text']}\n" for c in changes)
         write_atomic(path, text.encode())
 
+    @_writer
     def edit(self, lineage: str, change, note: str = "") -> Saved | None:
         """Apply `change(order)` to what an edit starts from, then save: refused, the draft is kept."""
         self._require_writable(lineage)
@@ -286,6 +358,7 @@ class Home:
 
     # ------------------------------------------------------------------ managing
 
+    @_writer
     def derive(self, source: str, lineage: str, name: str | None = None, group: str | None = None, category: str = "user",
                change=None) -> Order:
         """A new product in `user` (`own` with allow_own) from a saved one (`PRODUCT` or `PRODUCT@<version>`): the metrics' ids kept, the parent recorded,
@@ -321,16 +394,19 @@ class Home:
         """The changes from one product or version to another (`PRODUCT`, `PRODUCT@<version>`)."""
         return diff(self.load(a), self.load(b))
 
+    @_writer
     def move(self, lineage: str, group: str) -> Saved | None:
         gid = self._group_id(group)
         return self.edit(lineage, lambda o: o.data.update(group=gid), note=f"moved to {self.group_path(gid)}")
 
+    @_writer
     def tag(self, lineage: str, add=(), remove=()) -> Saved | None:
         def change(o):
             tags = [t for t in o.data.get("tags", []) if t not in remove]
             o.data["tags"] = tags + [t for t in add if t not in tags]
         return self.edit(lineage, change)
 
+    @_writer
     def archive(self, lineage: str) -> Path:
         folder = self._folder(lineage)
         if folder.parent.name == "archive":
@@ -341,6 +417,7 @@ class Home:
         folder.rename(target)
         return target
 
+    @_writer
     def from_features(self, design: str, lineage: str | None = None, group: str | None = None) -> Order:
         """A skeleton for a design that has no order: the product's objects from the design's declared features, each bound
         `declared`; kept as a draft, its needs and metrics for the owner to state."""
@@ -357,6 +434,7 @@ class Home:
 
     # ------------------------------------------------------------------ pictures
 
+    @_writer
     def set_picture(self, lineage: str, data: bytes, name: str = "") -> Saved | None:
         kind, ext = picture_type(data)
         self._require_writable(lineage)
@@ -367,9 +445,11 @@ class Home:
         picture = {"source": "owner", "sha256": sha, "type": kind, **({"name": name} if name else {})}
         return self.edit(lineage, lambda o: o.data["product"].update(picture=picture))
 
+    @_writer
     def picture_from_design(self, lineage: str) -> Saved | None:
         return self.edit(lineage, lambda o: o.data["product"].update(picture={"source": "design"}))
 
+    @_writer
     def clear_picture(self, lineage: str) -> Saved | None:
         return self.edit(lineage, lambda o: o.data["product"].update(picture=None))
 
@@ -410,6 +490,7 @@ class Home:
         d = self.root / "features"
         return sorted(p.name for p in d.iterdir() if (p / "features-1.json").exists()) if d.is_dir() else []
 
+    @_writer
     def add_features(self, source: Path | str) -> str:
         """A feature list's folder taken into the home, its files checked against their hashes; a version's list never changes."""
         source = Path(source)
@@ -433,6 +514,7 @@ class Home:
         p = self.root / "groups.json"
         return json.loads(p.read_text(encoding="utf-8"))["groups"] if p.exists() else {}
 
+    @_writer
     def _write_groups(self, groups: dict) -> None:
         write_atomic(self.root / "groups.json", (json.dumps({"groups": groups}, indent=1, sort_keys=True, ensure_ascii=False) + "\n").encode())
 

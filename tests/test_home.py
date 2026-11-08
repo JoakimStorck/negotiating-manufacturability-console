@@ -2,6 +2,7 @@
 the skeleton from a feature list, and a reader never seeing a half-written order."""
 import json
 import threading
+import time
 
 import pytest
 
@@ -143,3 +144,31 @@ def test_a_reader_never_sees_a_half_written_order(home):
     stop.set()
     reader.join()
     assert not bad and seen and max(seen) == 41
+
+
+def test_one_writer_at_a_time_in_the_home(home, home_dir):
+    """Two homes on the same root, as two processes would be: an edit's read, change and save are one held write, so that
+    edits from both sides all count; and a writer waits for the one holding the lock."""
+    home.derive("bracket-ge", "shared")
+    other = Home(home_dir)
+
+    def bump(h, n):
+        for _ in range(n):
+            h.edit("shared", lambda o: o.metric("M5").update(value={"at_most": round(o.metric("M5")["value"]["at_most"] - 0.001, 3)}))
+    a, b = threading.Thread(target=bump, args=(home, 8)), threading.Thread(target=bump, args=(other, 8))
+    a.start(); b.start(); a.join(); b.join()
+    assert home.load("shared").metric("M5")["value"] == {"at_most": 0.184} and home.load("shared").data["revision"] == 17
+
+    released, saved = [], []
+    def hold():
+        with home.writing():
+            time.sleep(0.4)
+            released.append(time.monotonic())
+    t = threading.Thread(target=hold)
+    t.start()
+    time.sleep(0.05)
+    other.tag("shared", add=["waited"])
+    saved.append(time.monotonic())
+    t.join()
+    assert released and saved[0] > released[0]                     # the other home's write came after the lock was let go
+    assert (home_dir / ".lock").exists() and "waited" in home.facets("shared")["tags"]
