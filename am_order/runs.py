@@ -11,6 +11,12 @@ dialogue, by the tools that carry it), `run` (when a role was awake, as which ac
 made) and `case_state` (the mandate in force and the accepted plan at the end). Every row has a time; the events are the rows in
 time order, and the state at a time is what the rows before it say. The clock that plays a run back, and the one that follows a
 live run, are the same reading with the time moving.
+
+A run of a standing frame is read the same way from its events as the frame serves them (`events-1`, `from_events`): one reader
+with two sources, the folder's tables and the frame's events, giving the same `Run`, so that the page is the same code for both.
+The frame's events carry what the tables are not read for here (a showing's findings and certificate, an acceptance's
+relaxations, a plan's verdict, a case parked for the owner); they are kept beside the picture (`Event.detail`, `Run.plans`,
+`Run.parked`), never in it.
 """
 from __future__ import annotations
 
@@ -107,6 +113,13 @@ class Entry:
     negotiation: str | None
     held: str | None
     decision_makers: dict = field(default_factory=dict)
+    source: str = "folder"        # folder, or frame: where the run is read from
+    last: int = 0                 # the frame's: the last sequence number of the run's events
+
+    @property
+    def href(self) -> str:
+        """The run's page in the tool."""
+        return ("/frame/runs/" if self.source == "frame" else "/runs/") + self.id
 
     @property
     def minutes(self) -> float | None:
@@ -213,6 +226,7 @@ class Event:
     valid: bool = True
     decision: bool = False
     ref: str | None = None        # the message id, the design id, the plan id
+    detail: dict | None = None    # the frame's: a showing's findings and certificate, an acceptance's relaxations
 
     @property
     def colour_key(self) -> str:
@@ -271,6 +285,15 @@ class Run:
     mandate: dict | None = None
     accepted_plan: str | None = None
     order: tuple[str, int] | None = None     # the order cited by the requirements: (lineage, revision)
+    plans: dict = field(default_factory=dict)   # the frame's: plan id -> {design, verdict, findings}
+    parked: dict | None = None                  # the frame's: the case parked for the owner's word, while it is
+    now: datetime | None = None                 # the frame's clock when its events were last read, for a live run
+
+    @property
+    def accepted_design(self) -> str | None:
+        """The design of the accepted plan, where the frame says which plan's design it is."""
+        p = self.plans.get(self.accepted_plan) if self.accepted_plan else None
+        return p["design"] if p else None
 
     @property
     def start(self) -> datetime | None:
@@ -291,6 +314,10 @@ class Run:
     @property
     def live(self) -> bool:
         return self.entry.status == "running"
+
+    @property
+    def is_parked(self) -> bool:
+        return self.entry.status == "parked"
 
     def decisions(self) -> list[Event]:
         return [e for e in self.events if e.decision]
@@ -540,7 +567,7 @@ def picture_of(run: Run, design: str | None) -> Path | None:
 
 def parse_at(run: Run, text: str | None) -> datetime:
     """The time a page asks for: seconds from the run's start, or an ISO time; the run's end when nothing is asked."""
-    end = run.end or datetime.now(timezone.utc)
+    end = run.end or run.now or datetime.now(timezone.utc)
     if text is None or text == "":
         return end
     start = run.start or end
@@ -550,3 +577,134 @@ def parse_at(run: Run, text: str | None) -> datetime:
         pass
     t = _time(text)
     return t if t else end
+
+
+# -------------------------------------------------------------------- a run from the frame's events
+
+def entry_of(doc: dict) -> Entry:
+    """A frame's run (`runs-1`, or the run of `events-1`) as the catalogue lists one."""
+    scenario, order = doc.get("scenario") or None, doc.get("order") or None
+    settings = doc.get("settings") or {}
+    status = {"running": "running", "parked": "parked", "done": "done"}.get(doc.get("status"), "unknown")
+    makers = {role: _maker_word(m) for role, m in (doc.get("makers") or {}).items()}
+    return Entry(id=doc["id"], experiment=scenario["experiment"] if scenario else "orders",
+                 condition=doc["id"].rsplit("/", 1)[-1] if scenario else f"{order['lineage']}@{order['revision']}" if order else doc["id"],
+                 lineages=list(doc.get("lineages") or ([order["lineage"]] if order else [])), started=_time(doc.get("started")),
+                 ended=_time(doc.get("ended")), status=status, outcome=doc.get("outcome"), reason=doc.get("reason"),
+                 negotiation=settings.get("negotiation"), held=settings.get("held"), decision_makers=makers, source="frame",
+                 last=int(doc.get("last") or 0))
+
+
+def _maker_word(maker: dict | None) -> str:
+    """A decision maker in the word the folders give (`_short`): the model, `scripted`, `none`, `operator`."""
+    kind = (maker or {}).get("kind")
+    if kind == "model":
+        return maker.get("name") or "unknown"
+    return kind or "unknown"
+
+
+def from_events(doc_run: dict, events: list[dict], now: datetime | None = None) -> Run:
+    """A run read from the frame's events (`events-1`), into the same picture the folder's tables give (`read`)."""
+    e = entry_of(doc_run)
+    out: list[Event] = []
+    bars: list[Bar] = []
+    by_id: dict[str, Bar] = {}
+    designs: list[tuple[datetime, str]] = []
+    makers: dict[str, str] = {}
+    plans: dict[str, dict] = {}
+    mandate, accepted, parked = None, None, None
+    calls, turns = [], []
+    for ev in events:
+        k, t = ev["kind"], _time(ev["time"])
+        if k == "message":
+            body = ev.get("body") or {}
+            ok = bool(ev["valid"])
+            text = _message_text(ev["type"], body)
+            if not ok:
+                rule = (ev.get("reasons") or [{}])[0]
+                text = f"refused, rule {rule.get('rule', '?')} {rule.get('name', '')}".rstrip() + (f": {text}" if text else "")
+            decision = ok and ((ev["type"] == "status" and body.get("state") == "accepted") or ev["type"] == "answer")
+            out.append(Event(t, "message", ev["from_role"], ev["to_role"], ev["type"], text, ok, decision, ev["id"]))
+        elif k == "woke":
+            label = _maker_word(ev["maker"])
+            makers[ev["role"]] = label
+            bar = Bar(ev["role"], ev["actor"], label, t, None, ev["waking"], prompt=(ev.get("prompt") or "").strip())
+            bars.append(bar)
+            by_id[bar.id] = bar
+            out.append(Event(t, "woke", ev["role"], None, "woke", f"{TITLES.get(ev['role'], ev['role'])} wakes"))
+        elif k == "slept":
+            bar = by_id.get(ev["waking"])
+            if bar is not None:
+                bar.end = t
+            out.append(Event(t, "slept", ev["role"], None, "slept", f"{TITLES.get(ev['role'], ev['role'])} sleeps"))
+        elif k in ("turn", "results"):
+            turns.append(ev)
+        elif k == "call":
+            calls.append(ev)
+        elif k == "dialogue":
+            tool, inputs = ev["tool"], ev.get("inputs") or {}
+            if tool not in DIALOGUE:
+                continue
+            detail = {key: ev[key] for key in ("findings", "relaxations", "certificate") if ev.get(key)} or None
+            if tool == "consent" and (ev.get("within_brief") or inputs.get("brief")):
+                out.append(Event(t, "dialogue", "design_engineer", "design_engineer", "brief consent",
+                                 _cut(f"within the brief: {inputs.get('design') or ''}"), ref=ev["id"]))
+                continue
+            down, word = DIALOGUE[tool]
+            a, b = ("requester", "design_engineer") if down else ("design_engineer", "requester")
+            out.append(Event(t, "dialogue", a, b, word, _dialogue_text(tool, inputs, {}), True, word in DECISIONS, ev["id"], detail))
+        elif k == "design":
+            designs.append((t, ev["id"]))
+            out.append(Event(t, "design", ev["made_by_role"], None, "design", f"{ev['id']} made", ref=ev["id"]))
+        elif k == "plan":
+            plans[ev["id"]] = {"design": ev["design"], "verdict": ev["verdict"], "findings": ev.get("findings") or []}
+        elif k == "case":
+            accepted, mandate = ev.get("accepted_plan"), ev.get("mandate") or None
+        elif k == "parked":
+            parked = {"time": t, "case": ev["case"], "what": ev["what"], "dialogue": ev.get("dialogue"), "metrics": ev.get("metrics") or []}
+        elif k == "ended":
+            parked = None
+    # the turns of each waking in their order, then the calls in the order they started (as the folder's tables are read)
+    for ev in sorted(turns, key=lambda x: (x["waking"], x["seq"])):
+        bar = by_id.get(ev["waking"])
+        if bar is None:
+            continue
+        t = _time(ev["time"])
+        if ev["kind"] == "turn":
+            floor = bar.turns[-1].results_end or bar.turns[-1].end if bar.turns else bar.start
+            start = max(floor, t - timedelta(seconds=ev["seconds"] or 0))
+            bar.turns.append(Turn(ev["turn"], start, t, ev["seconds"] or 0, (ev.get("thinking") or "").strip(), (ev.get("text") or "").strip()))
+        elif bar.turns:
+            bar.turns[-1].results_end = t
+    for ev in sorted(calls, key=lambda x: (_time(x["time"]), x["seq"])):
+        bar, act = by_id.get(ev.get("waking")), act_of(ev["tool"])
+        if bar is None or act is None:
+            continue
+        t = _time(ev["time"])
+        end = t + timedelta(seconds=ev["seconds"] or 0)
+        inputs = ev.get("inputs") or {}
+        detail = str(inputs.get("design") or inputs.get("plan") or "")
+        turn = next((x for x in bar.turns if x.seq == ev.get("turn")), None)
+        acts = turn.acts if turn is not None else bar.acts
+        if acts and acts[-1].word == act[1]:
+            last = acts[-1]
+            last.end, last.count, last.detail = max(last.end, end), last.count + 1, detail or last.detail
+        else:
+            acts.append(Act(t, end, act[0], act[1], 1, detail))
+    for bar in bars:
+        for turn in bar.turns:
+            bar.acts.append(Act(turn.start, turn.end, "think", "thinking", 1, ""))
+            bar.acts.extend(turn.acts)
+        bar.acts.sort(key=lambda a: a.start)
+    designs.sort(key=lambda d: d[0])
+    out.sort(key=lambda x: (x.time, {"woke": 0, "design": 1, "message": 2, "dialogue": 2, "slept": 3}.get(x.kind, 2)))
+    first = [x.time for x in out if x.kind != "design"]
+    begin = e.started or (min(first) if first else None)
+    if begin is not None:
+        out = [x for x in out if x.time >= begin]
+    used = {x.sender for x in out if x.sender} | {x.recipient for x in out if x.recipient} | {b.role for b in bars}
+    roles = [r for r in ROLES if r in used or r in ("requester", "design_engineer", "process_planner")]
+    e.decision_makers = makers
+    order = doc_run.get("order")
+    return Run(e, None, out, bars, designs, roles, makers, mandate, accepted, (order["lineage"], order["revision"]) if order else None,
+               plans, parked if e.status == "parked" else None, now)

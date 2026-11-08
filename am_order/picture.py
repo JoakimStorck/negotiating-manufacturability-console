@@ -271,9 +271,43 @@ def sentences(st: State, start: datetime | None) -> list[dict]:
             head = f"{who}: new design version"
         else:
             head = e.text
+        notes, certificate = details(e.detail)
         out.append({"clock": _clock(e.time, start), "head": head, "text": e.text if e.kind != "woke" and e.kind != "slept" else "",
-                    "colour": colour(e), "decision": e.decision, "valid": e.valid})
+                    "colour": colour(e), "decision": e.decision, "valid": e.valid, "notes": notes, "certificate": certificate})
     return out
+
+
+def _value(v) -> str:
+    if isinstance(v, dict):
+        return ", ".join(f"{k.replace('_', ' ')} {_value(x)}" for k, x in v.items())
+    if isinstance(v, float):
+        return f"{v:g}"
+    return str(v)
+
+
+def details(detail: dict | None) -> tuple[list[str], dict | None]:
+    """What the frame's events say of a showing and an acceptance, in words: the findings at risk or critical, each relaxation
+    an acceptance makes, and the certificate of exhausted means as one block with its citations."""
+    if not detail:
+        return [], None
+    notes = []
+    for f in detail.get("findings") or []:
+        name = f.get("metric") or f.get("requirement")
+        where = f" at {f['feature']}" if f.get("feature") else ""
+        status = f["status"].replace("_", " ")
+        if f.get("value") is not None and f.get("margin") is not None and f["status"] == "at_risk":
+            notes.append(f"{name}{where} {status}: {f['value']:g} against the margin {f['margin']:g}")
+        elif f.get("value") is not None and f.get("limit") is not None:
+            notes.append(f"{name}{where} {status}: {f['value']:g} against the limit {f['limit']:g}")
+        else:
+            notes.append(f"{name}{where} {status}")
+    for r in detail.get("relaxations") or []:
+        name = r.get("metric") or r.get("requirement")
+        what = "the margin on " if r.get("what") == "margin" else ""
+        within = {True: " within its mandate", False: " beyond its mandate"}.get(r.get("within_mandate"), "")
+        notes.append(f"{what}{name} relaxed from {_value(r.get('from'))} to {_value(r.get('to'))}{within}")
+    c = detail.get("certificate")
+    return notes, ({"text": c["text"], "cites": list(c.get("cites") or [])} if c else None)
 
 
 def _fold(text: str, n: int = 320) -> tuple[str, str]:
