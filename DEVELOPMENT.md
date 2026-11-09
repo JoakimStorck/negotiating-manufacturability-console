@@ -150,14 +150,31 @@ The order is the activity instance of a product type, and the tool keeps the two
 - **The showing's certificate.** A showing that relaxes a requirement carries the secretary's statement of exhausted means, written
   from the record (the versions tried, the means used, the lightest version holding the rest with its figures). The order view
   shows it as one line with its citations, and the owner asks for no other evidence.
-- **The dialogue** between the order's owner and the frame is a contract of its own (`dialogue-1.json`, sketched 2026-11-09 as
-  the dialogue's build's part 1): the dialogue the owner reads (the run's thread, and what waits: a showing with its alternatives,
+- **The dialogue** between the order's owner and the frame is a contract of its own (`dialogue-1.json`, 2026-11-09, served by the
+  frame since the dialogue's build's part 2): the dialogue the owner reads (the run's thread, and what waits: a showing with its alternatives,
   their plans' figures, the relaxations asked, the findings at risk, the requirements left unmet and the certificate, or a question), the owner's word on it
   (accept with R12's relaxations, refuse with conditions or holds, decline with the reason, answer), and the frame's answer. The
   owner's word is not bounded by the mandate, which binds the requester agent (decided 2026-11-09). The products home keeps the
   dialogue's log beside the order once the owner approves. The contracts between the repositories are the order, the feature list, presence,
   the events and the dialogue, every one a schema in `am_order/schemas/`, which am-llm reads through the library and proposes
   changes to (decided 2026-11-08).
+- **As built (build 6, the order view):** the order has a place of its own, the product's tab *Order*, in the orderer's capacity
+  ("As orderer of bracket-mass@4"). Its steps stand in one line (`am_order.steps`: stated, checked, bound, confirmed, placed, being
+  prepared, your word, accepted, approved), read from the home's facets and the frame's catalogue, presence and result and never
+  stored; each step done links to where it was done, and the step reached names the next as one button; the header's badge on every
+  product page is the step reached. Under it the order whole: the brief and the answering policy, each metric's mandate and each
+  object's fixed or free edited in its row, who takes the order, its runs at the frame. Where a run parks, the view opens on what
+  waits (`am_order.dialogue` puts it in words: the relaxations asked within or beyond the mandate, the findings at risk, what is left
+  unmet, the certificate) and takes the word: accept with R12's margins prefilled to what the plan reaches and confirmed, refuse
+  with a condition or a hold per requirement shown, decline with the reason, answer; each confirmed before it is sent, the frame's
+  409 and 422 in its words, logged with the capacity. Approving an accepted run writes a new revision of the order version placed,
+  its `order` section holding `accepted` (the run, the order version placed with its hash, the plan, the design version and its
+  hash, the time) and `in_force` (each relaxation of the result, by whom, within or beyond the mandate, on which showing, the run,
+  the time), takes the accepted version's feature list, picture and models into `features/`, and keeps the run's `dialogue/1`
+  beside the order (`<lineage>/dialogue/<run>.json`); a later save that changes anything else is a new order and starts without
+  them. The frame is not told of the approval. A run's page links to its order view, and a parked run's page says that the word is
+  given there: the change of capacity from the system operator's overview to the orderer's view is that link. The command line has
+  `dialogue RUN`, `say RUN accept|refuse|decline|answer` and `approve PRODUCT`.
 - **Backtracking** (Johansson) is computed from the type's citations, never stored: from a metric to the needs, from a finding in
   a run to the requirement it judges to the need that requirement serves.
 
@@ -230,11 +247,15 @@ Here, done:
    an order's confirmed version placed from its page; `runs`, `runs show` and `place` on the command line. Tried against a frame
    of am-llm standing outside its tree: the plate's order placed, prepared and accepted, read through every page.
 
+6. **The dialogue and the order view** (`../am-llm/probes/dialogue-build-report.md`, parts 1 and 3; am-llm's frame its part 2):
+   `dialogue-1.json` (the dialogue the owner reads, the owner's word, the frame's answer); the client's `dialogue` and `say`; the
+   stub from the frame's own documents (`tests/contract/`, copied at the pin, each request answered with its recorded answer); the
+   order view with its steps and the next as one button, the order whole edited in its rows, the owner's word on a parked run, the
+   links both ways between a run and its order, the approval into the products home; `dialogue`, `say` and `approve` on the
+   command line.
+
 Here, in this order:
 
-6. **The dialogue contract** (`dialogue-1.json`) over the frame and the order view against it: parking answered, consenting, the
-   acceptance of a plan at risk as a relaxation, the certificate, approving, bound to versions; the accepted version's feature
-   list, picture and models published into the person's products home.
 4. **The web app for a person.** Partial page updates instead of whole-body swaps; confirmations before anything is lost; error
    pages in words, including the workbook import's; the message colour from the outcome, not from a word in the text; one log per
    session with the proposals logged; the word tables (synonyms, kinds, compatibility) as data beside the vocabularies. Taken

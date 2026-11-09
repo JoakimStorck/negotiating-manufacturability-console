@@ -1,9 +1,9 @@
 # Use cases
 
 The tool as its people use it: who they are, what they come to do, how they reach it today, and how the pages should be arranged so
-that the next thing to do is always one click away. Written 2026-11-09, after the frame, order 2 and before the dialogue. It
-measures the web app as it stands (am-order `1b40717`) and proposes its navigation, as input to the dialogue's order view
-(`dialogue-build.md` part 3) and the web app for a person (build 4).
+that the next thing to do is always one click away. It measures the web app as it stands, the orderer's use cases O4–O10 with
+the order view (build 6, the dialogue's part 3) and the rest as before it, and proposes the navigation that remains for the web app
+for a person (build 4).
 
 ## 1. The method
 
@@ -35,7 +35,8 @@ switch between capacities one click.
 
 ## 3. The use cases
 
-The paths are today's. "Clicks" counts from the tool's front page.
+The paths are today's. "Clicks" counts from the tool's front page; from a product's page, the order view is one click (the tab
+*Order*, or the header's badge of the step reached).
 
 ### The orderer
 
@@ -43,14 +44,14 @@ The paths are today's. "Clicks" counts from the tool's front page.
 | --- | --- | --- | --- | --- |
 | O1 | **Start a product**: new, from a design's feature list, or from one that exists | Products: *New product* or *Make a skeleton*; an existing one: select it, then *Derive* in the side panel | 2 | The reference products are read-only. On a product's page nothing says how to get an editable copy: *Derive* is on the products list, in a panel shown only when the product is selected |
 | O2 | **State the requirements**: needs, objects, metrics with their conditions, the headings | Product (needs), Objects, Metrics (then each metric's page), Matrix | 1 per tab, 2 per metric | A metric is edited on a page of its own: setting a quantity or a value on fifteen metrics is thirty clicks. The checks' refusals are beside what they concern ✓ |
-| O3 | **Bind to a design and confirm** | Binding: choose the design, *Bind*, then *Confirm* per object | 2 + 1 per object | Nothing on the product page says that binding and confirming are what stand between the order and placing it, until the placing section says "not confirmed", without a link |
-| O4 | **State this order**: brief, quantity, objective, answering policy, a mandate per metric, which objects are free | Product (*This order*), each metric's page (mandate), Objects (fixed or free) | 1 + 2 per metric + 1 | The order's own fields are on three pages. Giving M6–M9 an interval is four metric pages, and the order is never seen whole |
-| O5 | **Save a version** | the *Checks* panel's *Save*, on every product page | 1 | Good: always on the screen, with the refusals |
-| O6 | **Place the order**, knowing who will take it | Product, scroll to *At the frame* (below the needs), *Place revision n* | 2 + scroll | The section is at the bottom of the longest page. A product's state at the frame (placed, being prepared, parked, accepted) is not in the header, where its draft/bound/confirmed state is |
-| O7 | **Follow the order's run** | *At the frame*: the run's link, then *follow now* | 3 + scroll | From the run's page there is no link back to the order: its facts name `bracket-ge@1` as text |
-| O8 | **Give the word on a parked run** (the dialogue's build) | not possible | — | The run parks, says so, and stops. The run's page cannot say where to answer |
-| O9 | **Read the result, approve it** (the dialogue's build) | the result card on the order's page and the run's page ✓; approval not possible | — | — |
-| O10 | **Change and place again**: a new revision, or the same version after deleting its run | edit, *Save*, *Place*; or *Delete* beside the run, then *Place* | 2–3 | Good once known. A placed and running order can still be edited and saved without a word that this makes a new version not yet placed |
+| O3 | **Bind to a design and confirm** | Binding: choose the design, *Bind*, then *Confirm* per object | 2 + 1 per object | The order's step says that binding and confirming stand between the order and placing it, as its next button (*Bind to a design*, *Confirm 3 bindings*) to the binding |
+| O4 | **State this order**: brief, quantity, objective, answering policy, a mandate per metric, which objects are free | Order: the brief and the answering policy, each metric's mandate and each object's fixed or free in its row, the checks beside the row | 2 + 1 per row | The order is seen whole on one page. Each row is applied by itself: giving M6–M9 an interval is four applies on one page, where a column edited at once is build 4's table work |
+| O5 | **Save a version** | the *Checks* panel's *Save*, on every product page; in the order view the step's button *Save revision n* | 1 | Good: always on the screen, with the refusals; the order view's button names the revision it makes |
+| O6 | **Place the order**, knowing who will take it | Order: the step's button *Place revision n* at the top; who takes it and the runs under *At the frame* | 3 | The step reached is the header's badge on every product page, *Confirmed* → *Placed* → *Being prepared* and on |
+| O7 | **Follow the order's run** | Order: *Follow the run* | 3 | The run's facts link its order version back to the order view ✓ |
+| O8 | **Give the word on a parked run** | Order (the badge says *Your word*): the showing in words, *Accept* (R12's margins prefilled), *Refuse* with conditions or holds, or *Decline* with the reason; confirmed | 4 (from a parked run's page: 3) | A parked run's page says "Your word is given on the order", one click. The view says what is left unmet, so that a refusal with conditions is the way where an acceptance would stall |
+| O9 | **Read the result, approve it** | Order (the badge says *Accepted*): the result card and *Approve for manufacturing*, confirmed | 4 | The approved revision, its plan, its design version with its picture and models, the requirements in force and the dialogue kept are on the order view |
+| O10 | **Change and place again**: a new revision, or the same version after deleting its run | Order: edit in the rows, *Save revision n*, *Changed since it was placed: place revision n*; or *Delete* beside the run under *At the frame*, then *Place revision n* | 2 + 1 per row | Good. A draft over a placed or approved version says so on the step line ("saved, it is revision 5, placed anew") |
 | O11 | **Export, compare, look back**: workbook, ReqIF, history, two versions | Tables (exports), History, Compare (header) | 1–2 | *Compare* in the header compares any two products; for one product's versions it is History. Two ways to one goal |
 
 ### The system operator
@@ -75,23 +76,25 @@ The paths are today's. "Clicks" counts from the tool's front page.
 | View | Capacity | What it offers | One click away | Missing one click away |
 | --- | --- | --- | --- | --- |
 | Products (`/`) | orderer | the tree, filters, new product, skeleton, groups; a selected product's derive, move, tag, archive | a product, Compare, Runs | — |
-| A product's tabs (Product, Objects, Metrics, Matrix, Specification, Binding, Tables, History) | orderer | each part of the type; Product holds *This order* and *At the frame* | the other tabs, Save and Discard, Compare, Runs | the order as a whole (O4); the next step towards placing (O3, O6); an editable copy of a read-only product (O1) |
+| A product's tabs (Product, Objects, Metrics, Matrix, Specification, Binding, Tables, History) | orderer | each part of the type | the order view (the tab, the header's badge of the step reached), the other tabs, Save and Discard, Compare, Runs | an editable copy of a read-only product (O1) |
+| The order (`/products/<lineage>/order`) | orderer, said ("As orderer of …") | the order's steps with the next as one button; the brief, the answering policy, the mandates and the objects' change in rows; who takes it; its runs with *Delete*; the owner's word; the approval | the next step's page, the run, the overview (who takes it), the product's tabs | a metric's column edited at once (O4) |
 | A metric | orderer | the metric whole, its mandate | the product's tabs | the previous and next metric |
 | Runs (`/runs`) | system operator, researcher | the frame's empty state, its runs, the recorded experiments | a run, a mark's selector | a run's order (S4) |
-| A run (`/runs/…`, `/frame/runs/…`) | system operator, audience, researcher | the organisation at the clock's time, the player, the turns or the result | the Runs page, a mark's selector | the run's order (O7); where to answer a parked run (O8); deleting it (S4) |
+| A run (`/runs/…`, `/frame/runs/…`) | system operator, audience, researcher | the organisation at the clock's time, the player, the turns or the result | the Runs page, a mark's selector, the run's order view (its facts; a parked run's "Your word is given on the order") | deleting it (S4) |
 
-The header offers *am-order* (products), *Compare* and *Runs*, and a product's tabs where one is open. It does not offer the
-organisation now as a place of its own, or say which capacity the page is in.
+The header offers *am-order* (products), *Compare* and *Runs*, and a product's tabs with the step reached where one is open. It
+does not offer the organisation now as a place of its own, or say which capacity a page other than the order view and the
+decision makers' selector is in.
 
 ## 5. What the analysis finds
 
-1. **The order has no place of its own.** The order's fields, its state at the frame and its next step are spread over the
-   product page (low on it), the metric pages and the objects page. The orderer's main goals (O4, O6, O7, O8, O9) all cross them.
-2. **The state is not shown where the actor is.** The header shows draft, bound or confirmed. It does not show placed, being
-   prepared, parked, accepted or approved, and it does not show what to do next.
-3. **The links run one way.** From the order to its run, but not back; from the overview to a run, but not to its order.
-4. **The capacity is implicit.** Only the decision-maker selector says "as system operator". The orderer's acts are not marked as
-   such, and nothing says when a page changes capacity.
+1. **The order has a place of its own**, the order view, where the orderer's main goals (O4, O6, O7, O8, O9) start and end.
+2. **The state is shown where the actor is**: the header's badge is the order's step reached on every product page, and the
+   order view names what to do next as one button.
+3. **The links run both ways between a run and its order**; from the overview's catalogue a run of an order links to its version
+   in the products home. The system operator who sees a run stuck still finds its *Delete* through the order (S4).
+4. **The capacity is said** in the order view ("As orderer of …") and the decision makers' selector ("As system operator"), and
+   the run's page says where the orderer's word is given. The other pages do not say it.
 5. **Per-item pages for table work.** A metric's mandate, value or quantity set one page at a time, where the work is a column.
 6. **Read-only without a way out.** A reference product says "read only" and nothing more where it is shown.
 
@@ -138,21 +141,18 @@ next metric.
 
 ## 7. Where it goes
 
-- **The dialogue (`dialogue-build.md` part 3)** builds its owner's word into the order view's line of steps (the step *Your word*)
-  rather than at the bottom of the product page. It needs the order view first, or builds it as its first item.
+- **The dialogue (`dialogue-build.md` part 3)** built the order view with the owner's word and the approval among its steps.
 - **The web app for a person (build 4)** takes the rest:
   - the three places in the header;
-  - the links both ways;
-  - the capacity said;
+  - a run's *Delete* beside it in the Frame, for the system operator (S4);
+  - the capacity said on every page;
   - the editable copy;
-  - the table work.
+  - the table work (a column of the metrics or the mandates edited at once).
 - **A check with the people it is for.** A short session with Roger Johansson, in which he states a product and places it with
   the tool while saying aloud what he looks for (a *think-aloud* test, about an hour), will show what this analysis cannot. It
   should be done once the order view stands, and its findings written here.
 
 ## 8. Open
 
-- Whether the order view is the product's first tab or a page of its own beside the product. It is proposed as a tab, since an
-  order is always a product's.
 - Whether Experiments stays in the tool or goes with am-llm's own console when the role view comes.
 - R2, comparing two runs, is not proposed: it is the paper's work, not the tool's.
