@@ -34,7 +34,7 @@ def test_an_own_product_is_refused_without_allow_own(home, own):
         home.tag("bracket-ge", add=["x"])
     with pytest.raises(ReadOnly):
         home.put_draft("bracket-ge", order)
-    assert own.save(order).revision == 3
+    assert own.save(order).revision == 4
 
 
 def test_derive_into_user_then_edit_versions_and_the_change_record(home):

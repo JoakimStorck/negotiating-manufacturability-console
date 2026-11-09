@@ -54,7 +54,7 @@ def test_reqif_of_the_bracket_parsed_back(bracket):
     assert sorted(measures) == sorted((m["id"], n) for m in d["metrics"] for n in m["needs"])
     assert len([r for r in parsed["relations"] if r[0] == "concerns"]) == len(d["metrics"])
     m6 = next(o for o in parsed["objects"]["Metric"] if o["id"] == "M6")["attributes"]
-    assert m6["quantity"] == "utilisation" and '"at_most": 0.6' in m6["value"] and m6["importance"] == "5"
+    assert m6["quantity"] == "utilisation" and '"at_most": 1' in m6["value"] and m6["importance"] == "5"
     assert json.loads(m6["mandate"]) == {"form": "held"}
     m13 = next(o for o in parsed["objects"]["Metric"] if o["id"] == "M13")["attributes"]
     assert json.loads(m13["mandate"]) == bracket.mandate("M13") == {"form": "release"}           # this order's mandate on the metric

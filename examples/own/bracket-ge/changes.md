@@ -6,9 +6,18 @@ from cases/bracket-ge/README.md 2-4, experiments/h1-bracket-ge.json and its desi
 
 - created
 
-## Revision 2, 7ed08087c46c, 2026-11-09T18:50:06.966301Z
+## Revision 2, 55d9a9b78e39, 2026-11-08T12:45:03.261763Z
 
-migrated from order 1 (bracket-ge); free: O6, O7, O9
+from cases/bracket-ge/README.md 2-4, experiments/h1-bracket-ge.json and its design script
+
+- value M6: at most 0.6 -> at most 1
+- value M7: at most 0.6 -> at most 1
+- value M8: at most 0.6 -> at most 1
+- value M9: at most 0.6 -> at most 1
+
+## Revision 3, 0d9ee3b2e278, 2026-11-09T19:09:04.224211Z
+
+from cases/bracket-ge/README.md 2-4, experiments/h1-bracket-ge.json and its design script
 
 - form: order 1 -> order 2: the mandates moved from the metrics to the order's section, the brief's text, objective and quantity to the order's brief
 - object O6 (lug): fixed -> free

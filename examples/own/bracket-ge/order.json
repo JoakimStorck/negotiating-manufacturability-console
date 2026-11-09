@@ -17,9 +17,9 @@
   }
  },
  "parent": null,
- "previous": "062d2957e32aa985884692504ce8df21c2e9ea6365ab099e675574849eec2ff5",
- "revision": 2,
- "saved": "2026-11-09T18:50:06.966301Z",
+ "previous": "55d9a9b78e39e9b916c3c9ea83aaaf5469b7f605899d4fafd32bc3e3395a4987",
+ "revision": 3,
+ "saved": "2026-11-09T19:09:04.224211Z",
  "schema": "order/2",
  "tags": [
   "engine bracket"
@@ -356,7 +356,7 @@
     },
     "unit": "1",
     "value": {
-     "at_most": 0.6
+     "at_most": 1
     },
     "verified_by": "load test to the onset of permanent deformation"
    },
@@ -402,7 +402,7 @@
     },
     "unit": "1",
     "value": {
-     "at_most": 0.6
+     "at_most": 1
     },
     "verified_by": "load test to the onset of permanent deformation"
    },
@@ -448,7 +448,7 @@
     },
     "unit": "1",
     "value": {
-     "at_most": 0.6
+     "at_most": 1
     },
     "verified_by": "load test to the onset of permanent deformation"
    },
@@ -494,7 +494,7 @@
     },
     "unit": "1",
     "value": {
-     "at_most": 0.6
+     "at_most": 1
     },
     "verified_by": "load test to the onset of permanent deformation"
    },

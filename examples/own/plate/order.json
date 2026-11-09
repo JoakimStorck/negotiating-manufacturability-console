@@ -13,9 +13,9 @@
   "mandates": {}
  },
  "parent": null,
- "previous": "2cecc49cad501647e937715dff7f6db070d5026e4dbeece83095645304e5dd16",
- "revision": 2,
- "saved": "2026-11-09T18:50:06.705658Z",
+ "previous": "3def149a95d970f99f1f0d22c6acf8cf8946a206478355ff2799b11120e043ac",
+ "revision": 3,
+ "saved": "2026-11-09T19:09:04.199751Z",
  "schema": "order/2",
  "tags": [],
  "title": "The plate",
@@ -283,7 +283,7 @@
     },
     "unit": "1",
     "value": {
-     "at_most": 0.6
+     "at_most": 1
     },
     "verified_by": "load test to the onset of permanent deformation"
    },

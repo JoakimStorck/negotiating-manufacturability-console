@@ -3,7 +3,7 @@
  "design": "nist-am-artifact@v1",
  "lineage": "nist-am-artifact",
  "version": 1,
- "sha256": "781c96be72552b73aff8e90725c071a7221241616c1873ff7dda5d373d45ee8e",
+ "sha256": "53c269142f15d0bec38803f1dd081c3f9a07249d8a849ea7e4bfe5fd6b27f9af",
  "parent": null,
  "title": "NIST additive manufacturing test artifact, version 3b",
  "units": "mm",

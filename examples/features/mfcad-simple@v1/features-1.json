@@ -3,7 +3,7 @@
  "design": "mfcad-simple@v1",
  "lineage": "mfcad-simple",
  "version": 1,
- "sha256": "cd3c2d5b1f672c4cc87df7f38dfbe446de9bddfaad4e452341b6f987ddfb98e9",
+ "sha256": "4c410fcba209194aa982ceab780f401b124316e98178e73ceb9f876c62767316",
  "parent": null,
  "title": "MFCAD 0-0-0-13-19: stock with a rectangular through slot and a hexagonal pocket",
  "units": "mm",

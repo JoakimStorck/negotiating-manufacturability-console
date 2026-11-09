@@ -3,7 +3,7 @@
  "design": "mfcad-complex@v1",
  "lineage": "mfcad-complex",
  "version": 1,
- "sha256": "45a602dfb8f58fd29b741d0237384c1f779b90da00fc2cb8ca172b74cfd2c749",
+ "sha256": "fdb1cafb1597f0802dfd55a5961bc5c358e8167e6c67eadca6732e9fb3b33309",
  "parent": null,
  "title": "MFCAD 0-0-2-3-14-23: stock with rectangular and triangular passages, a through slot and a chamfer",
  "units": "mm",

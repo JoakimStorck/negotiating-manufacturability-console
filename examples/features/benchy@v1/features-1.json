@@ -3,7 +3,7 @@
  "design": "benchy@v1",
  "lineage": "benchy",
  "version": 1,
- "sha256": "93c18f8c0cbd53cdee1b956eee67d20671fe1e58902331d77b7ac4d492f8ef3f",
+ "sha256": "32f1f569fd0ff228b2b4654297230b23bba390094874326c4fa2c193b1c47c00",
  "parent": null,
  "title": "3DBenchy, the whole boat with its parts as regions (the mesh-only case)",
  "units": "mm",

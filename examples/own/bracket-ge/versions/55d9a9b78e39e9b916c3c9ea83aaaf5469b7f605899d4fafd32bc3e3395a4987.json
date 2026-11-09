@@ -1,0 +1,959 @@
+{
+ "bindings": [
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "mount-face"
+    }
+   ],
+   "object": "O2",
+   "rejected": []
+  },
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "mount-edge"
+    }
+   ],
+   "object": "O3",
+   "rejected": []
+  },
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-1"
+    },
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-2"
+    },
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-3"
+    },
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "bolt-hole-4"
+    }
+   ],
+   "object": "O4",
+   "rejected": []
+  },
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "pin-hole"
+    }
+   ],
+   "object": "O5",
+   "rejected": []
+  },
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "lug"
+    }
+   ],
+   "object": "O6",
+   "rejected": []
+  },
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "lug-underside"
+    }
+   ],
+   "object": "O7",
+   "rejected": []
+  },
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "web"
+    }
+   ],
+   "object": "O8",
+   "rejected": []
+  },
+  {
+   "design": "bracket-ge@v4",
+   "features": [
+    {
+     "confirmed": true,
+     "how": "declared",
+     "name": "fillet-lug-mount"
+    }
+   ],
+   "object": "O9",
+   "rejected": []
+  }
+ ],
+ "brief": {
+  "may_change": [
+   "lug_thickness",
+   "fillet_radius",
+   "underside_angle"
+  ],
+  "may_relax": [],
+  "objective": "time",
+  "quantity": 10,
+  "text": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame. It is loaded in four ways during handling, each for a short time. It is printed in PLA on the lab's Prusa CORE One+ in a small series. The mounting face must sit flat against the frame and the bolt holes must meet the frame's pattern. Low mass is wanted but strength comes first."
+ },
+ "design": "bracket-ge@v4",
+ "group": "G2",
+ "headings": {
+  "assembly": "The interfaces to the frame stand under Geometry; the part is fitted with standard fasteners.",
+  "costs": "The time and the material per part stand under Production; nothing else is asked.",
+  "energy": "Nothing applies: the part takes no energy and serves at room temperature.",
+  "ergonomics": "Nothing applies: the part is fitted once and not handled in use.",
+  "kinematics": "Nothing applies: the part has no moving parts and moves only with the frame it is fixed to.",
+  "maintenance": "Nothing applies: the part needs no servicing.",
+  "operation": "Nothing applies beyond the loads under Forces.",
+  "quality_control": "Every demand names how it is verified; the inspection plan is cases/bracket-ge/README.md, its section on inspection.",
+  "recycling": "Nothing applies beyond the material under Material.",
+  "safety": "Nothing applies beyond the loads it carries, which stand under Forces.",
+  "schedules": "Nothing applies: the order is not bound to a date.",
+  "signals": "Nothing applies: the part carries no signals and shows nothing.",
+  "transport": "Nothing applies: the part is small and light enough for any parcel."
+ },
+ "lineage": "bracket-ge",
+ "metrics": [
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M1",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [],
+   "object": "O1",
+   "quantity": "envelope",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "reference",
+     "ref": "cases/bracket-ge/README.md 2 #1"
+    }
+   ],
+   "text": "The part fits within the envelope",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "at_most": [
+     100,
+     60,
+     40
+    ]
+   },
+   "verified_by": "calliper"
+  },
+  {
+   "carried_by": [
+    "O5"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M2",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N4"
+   ],
+   "object": "O5",
+   "quantity": "diameter",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "requester",
+     "ref": "cases/bracket-ge/README.md 2 #2"
+    }
+   ],
+   "text": "A through hole for the pin, its axis along W",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "band": {
+     "lower": 8,
+     "nominal": 8.3,
+     "upper": 8.6
+    }
+   },
+   "verified_by": "pin gauge"
+  },
+  {
+   "carried_by": [
+    "O4"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M3",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N5"
+   ],
+   "object": "O4",
+   "quantity": "diameter",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "requester",
+     "ref": "cases/bracket-ge/README.md 2 #3"
+    }
+   ],
+   "text": "Four clearance holes for M4 on the mounting face",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "band": {
+     "lower": 4.300000000000001,
+     "nominal": 4.4,
+     "upper": 4.5
+    }
+   },
+   "verified_by": "pin gauge"
+  },
+  {
+   "carried_by": [
+    "O4"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M4",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N3"
+   ],
+   "object": "O4",
+   "quantity": "position",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/bracket-ge/README.md 2 #4"
+    }
+   ],
+   "text": "The bolt pattern's position to the frame, a 40 x 24 mm rectangle",
+   "under": {
+    "datums": [
+     "O2",
+     "O3"
+    ],
+    "text": "the 24 x 40 mm pattern"
+   },
+   "unit": "mm",
+   "value": {
+    "at_most": 0.1
+   },
+   "verified_by": "calliper or CMM against datums A and B"
+  },
+  {
+   "carried_by": [
+    "O2"
+   ],
+   "class": "demand",
+   "heading": "geometry",
+   "id": "M5",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N2"
+   ],
+   "object": "O2",
+   "quantity": "flatness",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/bracket-ge/README.md 2 #5"
+    }
+   ],
+   "text": "The mounting face flat against the frame",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "at_most": 0.2
+   },
+   "verified_by": "surface plate or dial gauge"
+  },
+  {
+   "carried_by": [
+    "O5",
+    "O6",
+    "O9"
+   ],
+   "class": "demand",
+   "heading": "forces",
+   "id": "M6",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N1"
+   ],
+   "object": "O5",
+   "quantity": "utilisation",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "project",
+     "ref": "cases/bracket-ge/README.md 2 #6, #10, #14; cases/bracket-ge/loads.md"
+    }
+   ],
+   "text": "No permanent deformation under load case 1 (vertical, downward), with the margin of #14",
+   "under": {
+    "at": "O5",
+    "direction": [
+     0,
+     0,
+     -1
+    ],
+    "held_by": [
+     "O2"
+    ],
+    "magnitude": 108,
+    "name": "vertical, downward",
+    "type": "force",
+    "unit": "N"
+   },
+   "unit": "1",
+   "value": {
+    "at_most": 1
+   },
+   "verified_by": "load test to the onset of permanent deformation"
+  },
+  {
+   "carried_by": [
+    "O5",
+    "O6",
+    "O9"
+   ],
+   "class": "demand",
+   "heading": "forces",
+   "id": "M7",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N1"
+   ],
+   "object": "O5",
+   "quantity": "utilisation",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "project",
+     "ref": "cases/bracket-ge/README.md 2 #7, #10, #14; cases/bracket-ge/loads.md"
+    }
+   ],
+   "text": "No permanent deformation under load case 2 (horizontal, along L), with the margin of #14",
+   "under": {
+    "at": "O5",
+    "direction": [
+     1,
+     0,
+     0
+    ],
+    "held_by": [
+     "O2"
+    ],
+    "magnitude": 115,
+    "name": "horizontal, along L",
+    "type": "force",
+    "unit": "N"
+   },
+   "unit": "1",
+   "value": {
+    "at_most": 1
+   },
+   "verified_by": "load test to the onset of permanent deformation"
+  },
+  {
+   "carried_by": [
+    "O5",
+    "O6",
+    "O9"
+   ],
+   "class": "demand",
+   "heading": "forces",
+   "id": "M8",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N1"
+   ],
+   "object": "O5",
+   "quantity": "utilisation",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "project",
+     "ref": "cases/bracket-ge/README.md 2 #8, #10, #14; cases/bracket-ge/loads.md"
+    }
+   ],
+   "text": "No permanent deformation under load case 3 (42 degrees from vertical in the L-H plane), with the margin of #14",
+   "under": {
+    "at": "O5",
+    "direction": [
+     0.6691306063588582,
+     0,
+     -0.7431448254773942
+    ],
+    "held_by": [
+     "O2"
+    ],
+    "magnitude": 128,
+    "name": "42 degrees from vertical in the L-H plane",
+    "type": "force",
+    "unit": "N"
+   },
+   "unit": "1",
+   "value": {
+    "at_most": 1
+   },
+   "verified_by": "load test to the onset of permanent deformation"
+  },
+  {
+   "carried_by": [
+    "O5",
+    "O6",
+    "O9"
+   ],
+   "class": "demand",
+   "heading": "forces",
+   "id": "M9",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N1"
+   ],
+   "object": "O5",
+   "quantity": "utilisation",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "project",
+     "ref": "cases/bracket-ge/README.md 2 #9, #10, #14; cases/bracket-ge/loads.md"
+    }
+   ],
+   "text": "No permanent deformation under load case 4 (torque about the pin's axis), with the margin of #14",
+   "under": {
+    "at": "O5",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "held_by": [
+     "O2"
+    ],
+    "magnitude": 0.68,
+    "name": "torque about the pin's axis",
+    "type": "torque",
+    "unit": "N·m"
+   },
+   "unit": "1",
+   "value": {
+    "at_most": 1
+   },
+   "verified_by": "load test to the onset of permanent deformation"
+  },
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "material",
+   "id": "M10",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [],
+   "object": "O1",
+   "quantity": "material",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "the brief"
+    },
+    {
+     "kind": "project",
+     "ref": "the brief's material; the load cases (req-12 to req-15) were sized in PLA (cases/bracket-ge/loads.md)"
+    }
+   ],
+   "text": "The part's material",
+   "under": null,
+   "unit": "-",
+   "value": {
+    "equals": "Prusament PLA"
+   },
+   "verified_by": "the filament's label"
+  },
+  {
+   "carried_by": [
+    "O8"
+   ],
+   "class": "demand",
+   "heading": "production",
+   "id": "M11",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [],
+   "object": "O8",
+   "quantity": "thickness",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "project",
+     "ref": "cases/bracket-ge/README.md 2 #12"
+    }
+   ],
+   "text": "Minimum wall thickness, three line widths",
+   "under": null,
+   "unit": "mm",
+   "value": {
+    "at_least": 1.2
+   },
+   "verified_by": "calliper"
+  },
+  {
+   "carried_by": [
+    "O7"
+   ],
+   "class": "demand",
+   "heading": "production",
+   "id": "M12",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N6"
+   ],
+   "object": "O7",
+   "quantity": "finish",
+   "source": [
+    {
+     "kind": "requester",
+     "ref": "cases/bracket-ge/README.md 2 #13"
+    }
+   ],
+   "text": "The lug's underside visible and made without support",
+   "under": null,
+   "unit": "-",
+   "value": {
+    "holds": "no marks of support on the face"
+   },
+   "verified_by": "visual inspection"
+  },
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "wish",
+   "heading": "forces",
+   "id": "M13",
+   "mandate": {
+    "form": "release"
+   },
+   "needs": [
+    "N7"
+   ],
+   "object": "O1",
+   "quantity": "mass",
+   "source": [
+    {
+     "kind": "reference",
+     "ref": "Carter et al. 2014, the GE bracket challenge, scaled"
+    },
+    {
+     "kind": "reference",
+     "ref": "cases/bracket-ge/README.md 2 #15, 3"
+    }
+   ],
+   "text": "Low mass",
+   "under": null,
+   "unit": "g",
+   "value": {
+    "at_most": 40
+   },
+   "verified_by": "the part weighed to 0.01 g"
+  },
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "production",
+   "id": "M14",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N8"
+   ],
+   "object": "O1",
+   "quantity": "production_time",
+   "source": [
+    {
+     "kind": "project",
+     "ref": "the brief's bound: 20 % over the plan that resolves the case at its step"
+    }
+   ],
+   "text": "The time to print one part",
+   "under": null,
+   "unit": "s",
+   "value": {
+    "at_most": 4380
+   },
+   "verified_by": "the plan's time and the print's log"
+  },
+  {
+   "carried_by": [
+    "O1"
+   ],
+   "class": "demand",
+   "heading": "production",
+   "id": "M15",
+   "mandate": {
+    "form": "held"
+   },
+   "needs": [
+    "N8"
+   ],
+   "object": "O1",
+   "quantity": "material_used",
+   "source": [
+    {
+     "kind": "project",
+     "ref": "the brief's bound: 20 % over the plan that resolves the case at its step"
+    }
+   ],
+   "text": "The material to print one part",
+   "under": null,
+   "unit": "g",
+   "value": {
+    "at_most": 23
+   },
+   "verified_by": "the plan's material and the part weighed"
+  }
+ ],
+ "needs": [
+  {
+   "group": "Carries its load",
+   "id": "N1",
+   "importance": 5,
+   "text": "Carries the handling loads"
+  },
+  {
+   "group": "Fits the frame",
+   "id": "N2",
+   "importance": 5,
+   "text": "Sits flat on the frame"
+  },
+  {
+   "group": "Fits the frame",
+   "id": "N3",
+   "importance": 5,
+   "text": "Meets the frame's pattern"
+  },
+  {
+   "group": "Takes the pin",
+   "id": "N4",
+   "importance": 5,
+   "text": "Takes the pin"
+  },
+  {
+   "group": "Fits the frame",
+   "id": "N5",
+   "importance": 5,
+   "text": "Takes the bolts"
+  },
+  {
+   "group": "Looks finished",
+   "id": "N6",
+   "importance": 3,
+   "text": "Looks finished underneath"
+  },
+  {
+   "group": "Light and quick to make",
+   "id": "N7",
+   "importance": 2,
+   "text": "Light"
+  },
+  {
+   "group": "Light and quick to make",
+   "id": "N8",
+   "importance": 3,
+   "text": "Quick to make"
+  }
+ ],
+ "objects": [
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O1",
+   "kind": "part",
+   "name": "bracket",
+   "place": {
+    "box": {
+     "max": [
+      100,
+      60,
+      40
+     ],
+     "min": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "text": "the part as a whole"
+  },
+  {
+   "count": 1,
+   "datum": "A",
+   "id": "O2",
+   "kind": "face",
+   "name": "mount face",
+   "place": {
+    "box": {
+     "max": [
+      60,
+      60,
+      1.5
+     ],
+     "min": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "text": "the face that sits flat against the frame"
+  },
+  {
+   "count": 1,
+   "datum": "B",
+   "id": "O3",
+   "kind": "edge",
+   "name": "mount edge",
+   "place": {
+    "box": {
+     "max": [
+      60,
+      1.5,
+      1.5
+     ],
+     "min": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "text": "one long edge of the mounting face"
+  },
+  {
+   "count": 4,
+   "datum": null,
+   "id": "O4",
+   "kind": "hole",
+   "name": "bolt hole",
+   "place": [
+    {
+     "cylinder": {
+      "direction": [
+       0,
+       0,
+       1
+      ],
+      "length": 6,
+      "point": [
+       18,
+       10,
+       0
+      ],
+      "radius": 2.2
+     }
+    },
+    {
+     "cylinder": {
+      "direction": [
+       0,
+       0,
+       1
+      ],
+      "length": 6,
+      "point": [
+       42,
+       10,
+       0
+      ],
+      "radius": 2.2
+     }
+    },
+    {
+     "cylinder": {
+      "direction": [
+       0,
+       0,
+       1
+      ],
+      "length": 6,
+      "point": [
+       18,
+       50,
+       0
+      ],
+      "radius": 2.2
+     }
+    },
+    {
+     "cylinder": {
+      "direction": [
+       0,
+       0,
+       1
+      ],
+      "length": 6,
+      "point": [
+       42,
+       50,
+       0
+      ],
+      "radius": 2.2
+     }
+    }
+   ],
+   "text": "clearance holes for M4 through the mounting plate"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O5",
+   "kind": "hole",
+   "name": "pin hole",
+   "place": {
+    "cylinder": {
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "length": 12,
+     "point": [
+      86,
+      24,
+      28
+     ],
+     "radius": 4.15
+    }
+   },
+   "text": "a through hole for the pin, its axis across the part, through the lug"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O6",
+   "kind": "wall",
+   "name": "lug",
+   "text": "the member that carries the pin"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O7",
+   "kind": "face",
+   "name": "lug underside",
+   "text": "the lug's underside, visible"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O8",
+   "kind": "wall",
+   "name": "web",
+   "text": "a thin wall at the minimum thickness"
+  },
+  {
+   "count": 1,
+   "datum": null,
+   "id": "O9",
+   "kind": "edge",
+   "name": "fillet lug mount",
+   "text": "the corner where the lug meets the mounting plate"
+  }
+ ],
+ "parent": null,
+ "previous": "062d2957e32aa985884692504ce8df21c2e9ea6365ab099e675574849eec2ff5",
+ "product": {
+  "name": "The engine bracket",
+  "picture": null,
+  "purpose": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame: the GE aircraft engine bracket challenge scaled to a polymer part"
+ },
+ "revision": 2,
+ "saved": "2026-11-08T12:45:03.261763Z",
+ "schema": "order/1",
+ "tags": [
+  "engine bracket"
+ ],
+ "title": "The engine bracket"
+}

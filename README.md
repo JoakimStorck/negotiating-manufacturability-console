@@ -112,7 +112,7 @@ The quantities a metric may state, with their units and value forms, are a table
 
 ## The examples
 
-`examples/` is a products home: the four reference products of am-llm in `own/` under the group `reference cases/H1` (`plate`, `l-bracket`, `bracket-ge`, and `bracket-mass`, whose held case declines on the evidence), each saved first as order 1 and then as order 2 (`plate`, `l-bracket` and `bracket-ge` revision 2; `bracket-mass` revision 3 the mass case and 4 the held case, from its order-1 revisions 1 and 2), and the feature lists of their designs and of four library parts in `features/` (the MFCAD parts with their faces' feature labels among them). am-llm writes them:
+`examples/` is a products home: the four reference products of am-llm in `own/` under the group `reference cases/H1` (`plate`, `l-bracket`, `bracket-ge`, and `bracket-mass`, whose held case declines on the evidence), each saved as order 1 (revisions 1 and 2, the load-case margins 0.6 and 1) and then as order 2 (revision 3; `bracket-mass` revision 3 the mass case and 4 the held case, from its order-1 revisions 1 and 2), and the feature lists of their designs and of four library parts in `features/` (the MFCAD parts with their faces' feature labels among them). am-llm writes them:
 
 ```bash
 cd ../am-llm

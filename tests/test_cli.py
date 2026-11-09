@@ -69,10 +69,10 @@ def test_migrate_writes_the_draft_prints_the_notes_and_saves_once_stated(home_di
     draft = Home(home_dir).draft("bracket-ge")
     assert draft.form == 2 and draft.free() == []
     assert run(home_dir, "migrate", "bracket-ge@1", "--free", "O99", own=True) == 1 and "has no object O99" in capsys.readouterr().err
-    assert run(home_dir, "migrate", "bracket-ge@1", "--free", "O6", "--free", "O7", "--free", "O9", "--save", own=True) == 0
-    assert "nothing changed, no version made" in capsys.readouterr().out          # revision 2 is that migration already
-    assert run(home_dir, "migrate", "plate@1", "--answering", "decline", "--save", own=True) == 0
-    assert "plate: revision 3" in capsys.readouterr().out
+    assert run(home_dir, "migrate", "bracket-ge@2", "--free", "O6", "--free", "O7", "--free", "O9", "--save", own=True) == 0
+    assert "nothing changed, no version made" in capsys.readouterr().out          # revision 3 is that migration already
+    assert run(home_dir, "migrate", "plate@2", "--answering", "decline", "--save", own=True) == 0
+    assert "plate: revision 4" in capsys.readouterr().out
     assert Home(home_dir).load("plate").answering() == "decline"
     assert run(home_dir, "check", "plate") == 0 and run(home_dir, "show", "plate", "--table", "order") == 0
     assert "decline: a case the mandates do not cover is declined by the requester" in capsys.readouterr().out

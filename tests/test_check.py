@@ -91,7 +91,7 @@ def test_traceable(home, bracket):
 def test_consistent_an_interval_on_the_wrong_side_of_the_ideal(bracket):
     bracket.set_mandate("M6", {"form": "interval", "to": 0.5})
     r = one(bracket, "consistent")
-    assert (r.item, r.text) == ("M6", "M6 (utilisation of the pin hole): the ideal is at most 0.6, so the far end lies above it; 0.5 does not.")
+    assert (r.item, r.text) == ("M6", "M6 (utilisation of the pin hole): the ideal is at most 1, so the far end lies above it; 0.5 does not.")
 
 
 def test_consistent_a_holds_metric_with_an_interval(bracket):

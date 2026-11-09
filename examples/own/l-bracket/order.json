@@ -13,9 +13,9 @@
   "mandates": {}
  },
  "parent": null,
- "previous": "7f2dcc4341c6ef161d5f1a66d8cdd06d2bfebb0d4653ca52803f14bd3ad933a5",
- "revision": 2,
- "saved": "2026-11-09T18:50:06.832462Z",
+ "previous": "43364f163a796ccb860f16dc382ed7e15e4b24d59790f623e21b1c59319463a2",
+ "revision": 3,
+ "saved": "2026-11-09T19:09:04.210289Z",
  "schema": "order/2",
  "tags": [],
  "title": "The L-bracket",
@@ -326,7 +326,7 @@
     },
     "unit": "1",
     "value": {
-     "at_most": 0.6
+     "at_most": 1
     },
     "verified_by": "load test to the onset of permanent deformation"
    },

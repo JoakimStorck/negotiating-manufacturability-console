@@ -70,7 +70,7 @@ def test_every_order_1_version_migrates_to_an_order_2_that_validates_with_its_no
             assert (order.change(order.part()) == "free") == ("shape" in d["brief"]["may_change"])
             assert order.mandates() == {m["id"]: m["mandate"] for m in d["metrics"] if m.get("mandate", {"form": "held"})["form"] != "held"}
             assert order.answering() == "park" and order.in_force() == [] and order.accepted() is None
-    assert seen == 5
+    assert seen == 8
 
 
 def test_the_migration_notes_material_and_may_relax():

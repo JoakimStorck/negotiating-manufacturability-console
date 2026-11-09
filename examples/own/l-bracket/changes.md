@@ -6,8 +6,14 @@ from cases/l-bracket/README.md 2-4, experiments/h1-l-bracket.json and its design
 
 - created
 
-## Revision 2, de8fed7dd00f, 2026-11-09T18:50:06.832462Z
+## Revision 2, 43364f163a79, 2026-11-08T12:45:03.246294Z
 
-migrated from order 1 (l-bracket)
+from cases/l-bracket/README.md 2-4, experiments/h1-l-bracket.json and its design script
+
+- value M6: at most 0.6 -> at most 1
+
+## Revision 3, fe1d6cae4e14, 2026-11-09T19:09:04.210289Z
+
+from cases/l-bracket/README.md 2-4, experiments/h1-l-bracket.json and its design script
 
 - form: order 1 -> order 2: the mandates moved from the metrics to the order's section, the brief's text, objective and quantity to the order's brief

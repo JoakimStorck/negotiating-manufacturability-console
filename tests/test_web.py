@@ -281,7 +281,7 @@ def test_a_product_saved_as_order_1_is_shown_as_order_2_with_the_notes(app, home
     """A home from before order 2: the order as it stands is order 1. Its page shows it as order 2 with the migration's notes,
     and Save writes order 2 as a new revision."""
     folder = home_dir / "own" / "plate"
-    first = next(p for p in (folder / "versions").glob("*.json") if json.loads(p.read_bytes())["schema"] == "order/1")
+    first = next(p for p in (folder / "versions").glob("*.json") if json.loads(p.read_bytes())["revision"] == 1)
     (folder / "order.json").write_bytes(first.read_bytes())
     for p in (folder / "versions").glob("*.json"):
         if p != first:

@@ -32,9 +32,9 @@ the held case: the mass demand held (experiments/h1-bracket-mass-held.json)
 
 - mandate M13: interval, as needed -> held
 
-## Revision 3, 179f745e224a, 2026-11-09T18:50:07.105355Z
+## Revision 3, 37180c0d1180, 2026-11-09T19:09:04.258053Z
 
-migrated from order 1 (bracket-mass@1); free: O6, O7, O9
+the mass case (experiments/h1-bracket-mass.json)
 
 - form: order 1 -> order 2: the mandates moved from the metrics to the order's section, the brief's text, objective and quantity to the order's brief
 - object O6 (lug): fixed -> free
@@ -42,9 +42,9 @@ migrated from order 1 (bracket-mass@1); free: O6, O7, O9
 - object O9 (fillet lug mount): fixed -> free
 - mandate M13: held -> interval, as needed
 
-## Revision 4, be6cc79c44e2, 2026-11-09T18:50:07.243563Z
+## Revision 4, 51293041b166, 2026-11-09T19:09:04.270394Z
 
-migrated from order 1 (bracket-mass@2); free: O6, O7, O9; answering: decline
+the held case: the mass demand held, the order declined on the evidence (experiments/h1-bracket-mass-held.json)
 
 - answering: park -> decline
 - mandate M13: interval, as needed -> held
