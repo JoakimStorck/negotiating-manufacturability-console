@@ -20,29 +20,8 @@ Free objects are set on the <a href="/products/{{ lineage }}/objects">objects</a
     </div>
   </form>
 </div>
-{% set brief = order.brief() %}{% set answering = order.answering() %}
-<h2>This order</h2>
-<p class="muted">The order is this order of the product: its intent, what happens to a case its mandates do not cover, and what the
-frame has decided for it. What may be relaxed is each metric's mandate (on its <a href="/products/{{ lineage }}/metrics">metric</a>);
-what may change in the design is said on the <a href="/products/{{ lineage }}/objects">objects</a>, each fixed or free.</p>
-<form method="post" action="/products/{{ lineage }}/order" hx-post="/products/{{ lineage }}/order" hx-target="body">
-  <div class="grid2">
-    <label>Brief</label><textarea name="brief_text" rows="3">{{ brief.text }}</textarea>
-    <label>Objective</label><input name="objective" value="{{ brief.objective or '' }}" placeholder="time, strength, mass or cost">
-    <label>Quantity</label><input name="quantity" value="{{ brief.quantity if brief.quantity is not none else '' }}">
-    <label>A case the mandates do not cover</label>
-    <div>{% for key, words in ANSWERING.items() %}<label><input type="radio" name="answering" value="{{ key }}" {% if answering == key %}checked{% endif %}>
-      {{ key }}: {{ words }}</label><br>{% endfor %}</div>
-    <span></span><button>Apply to this order</button>
-  </div>
-  {% set item = "order" %}{% include "_refusals.html" with context %}
-</form>
-<table>
-<tr><th>Requirements in force</th><td>{% if order.in_force() %}<ul>{% for r in order.in_force() %}<li>the {{ r.what }} on {{ r.metric }} relaxed from {{ level_text(r["from"]) }} to {{ level_text(r.to) }} by the {{ r.by.role|replace("_", " ") }} ({{ r.by.actor }}) in {{ r.run }}{% if r.showing %}, on the showing {{ r.showing }}{% endif %}</li>{% endfor %}</ul>
-  {% else %}<span class="muted">none yet; written when the frame accepts a plan for this order</span>{% endif %}</td></tr>
-<tr><th>Accepted plan</th><td>{% set a = order.accepted() %}{% if a %}{{ a.plan }} for {{ a.design }} in {{ a.run }}
-  {% else %}<span class="muted">none yet; written when the frame accepts a plan for this order</span>{% endif %}</td></tr>
-</table>
+<p>This order of the product, its mandates, what may change and its place at the frame are in the <a href="/products/{{ lineage }}/order">order</a>
+{%- if steps %}: <b>{{ steps.label }}</b>{% if steps.next %}, next {{ steps.next.text[0]|lower }}{{ steps.next.text[1:] }}{% endif %}{% endif %}.</p>
 <h3>Overview picture</h3>
 <form method="post" action="/products/{{ lineage }}/picture" enctype="multipart/form-data" class="inline">
   <input type="file" name="file" accept="image/png,image/jpeg"> <button class="quiet">Set the owner's picture</button></form>
@@ -68,9 +47,5 @@ what may change in the design is said on the <a href="/products/{{ lineage }}/ob
   <select name="importance">{% for i in [1, 2, 3, 4, 5] %}<option>{{ i }}</option>{% endfor %}</select>
   <input name="group" placeholder="primary need"> <button>Add a need</button>
 </form>
-{% if request.app.state.frame %}
-<h2>At the frame</h2>
-<div id="placing" hx-get="/products/{{ lineage }}/frame" hx-trigger="load" hx-swap="outerHTML"><p class="muted">Reading the frame …</p></div>
-{% endif %}
 {% set item = "product" %}{% include "_refusals.html" with context %}
 {% endblock %}

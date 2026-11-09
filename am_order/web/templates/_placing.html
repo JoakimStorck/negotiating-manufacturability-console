@@ -23,7 +23,7 @@
 {% for r in runs %}
 <tr><td>{{ r.revision }}{% if r.sha256 == version %} <span class="badge">this version</span>{% endif %}</td>
 <td>{% if r.run %}<a href="/frame/runs/{{ r.id }}">{{ r.id }}</a>{% else %}{{ r.id }}{% endif %}</td>
-<td>{{ {"placed": "placed, waiting for the frame", "preparing": "being prepared", "running": "being prepared", "parked": "parked: the owner's word is awaited, given in the dialogue's build", "done": "done", "ended": "ended"}.get(r.status, r.status) }}</td>
+<td>{{ {"placed": "placed, waiting for the frame", "preparing": "being prepared", "running": "being prepared", "parked": "parked: your word is awaited", "done": "done", "ended": "ended"}.get(r.status, r.status) }}</td>
 <td>{{ (r.started or "")[:19].replace("T", " ") }}{% if r.started %}Z{% endif %}</td>
 <td>{{ r.outcome or "" }}{% if r.reason %} <span class="muted">({{ r.reason }})</span>{% endif %}</td>
 <td>{% if r.status in ("running", "preparing") %}<span class="muted">being prepared</span>{% else %}<form method="post" action="/products/{{ lineage }}/runs/{{ r.id }}/delete" hx-post="/products/{{ lineage }}/runs/{{ r.id }}/delete" hx-target="#placing" hx-swap="outerHTML" hx-confirm="Delete the run {{ r.id }} at the frame? Its record goes, and revision {{ r.revision }} may be placed again." class="inline"><button class="quiet">Delete</button></form>{% endif %}</td></tr>
@@ -33,6 +33,6 @@
 {% else %}<p class="muted">No version of this order is at the frame.</p>{% endif %}
 {% if card %}{% from "_result.html" import card as result %}
 <h3>The result of {{ card_run.id }}</h3>
-{{ result(card, "/frame/runs/" ~ card_run.id ~ "/picture" if card_run.run else none) }}
+{{ result(card, "/frame/runs/" ~ card_run.id ~ "/picture" if card_run.run else none, "/products/" ~ lineage ~ "/order") }}
 {% endif %}
 </div>

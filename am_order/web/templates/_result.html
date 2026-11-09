@@ -1,7 +1,7 @@
 {# A run's result as one card: the outcome in words; for an accepted run the plan's figures with its design version's picture and the
    requirements as finally stated, every relaxation said; for a parked run what waits for whom; for a declined or referred run the
    reason. `ending` is from `result_card` in the app. #}
-{% macro card(ending, picture_href=none) %}
+{% macro card(ending, picture_href=none, order_href=none) %}
 {% set r = ending.result %}
 <div class="result {{ ending.outcome }}">
   <h2>{{ ending.words }}</h2>
@@ -27,7 +27,7 @@
   <p class="muted">{{ r.requirements|length - relaxed|length }} other requirement{{ "" if r.requirements|length - relaxed|length == 1 else "s" }} as the order gave {{ "it" if r.requirements|length - relaxed|length == 1 else "them" }}.</p>
   {% endif %}
   {% if r.waits %}{% set w = r.waits %}
-  <p>A {{ w.what }} waits for the {{ "order's owner" if w["for"] == "owner" else "requester" }} since {{ w.since[:19].replace("T", " ") }}Z{% if w.metrics %}, on {{ w.metrics|join(", ") }}{% endif %}. The owner's word is given in the dialogue's build of the tool, still to come.</p>
+  <p>A {{ w.what }} waits for the {{ "order's owner" if w["for"] == "owner" else "requester" }} since {{ w.since[:19].replace("T", " ") }}Z{% if w.metrics %}, on {{ w.metrics|join(", ") }}{% endif %}.{% if w["for"] == "owner" %} {% if order_href %}<a href="{{ order_href }}#word">Your word is given on the order</a>, as its orderer.{% else %}The owner's word is given on the order, in the order view of the products home that holds it.{% endif %}{% endif %}</p>
   {% endif %}
   {% if r.showing %}<p class="muted">The last showing: {{ r.showing.design or "" }}{% if r.showing.plan %} with {{ r.showing.plan }}{% endif %}{% if r.showing.text %}, "{{ r.showing.text }}"{% endif %} ({{ r.showing.dialogue }}).</p>{% endif %}
   {% endif %}

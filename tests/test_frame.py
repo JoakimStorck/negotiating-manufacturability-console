@@ -272,8 +272,8 @@ def test_a_refused_token_on_the_page(home, stub):
 
 
 def test_an_order_placed_from_its_page(tool, stub, tmp_path):
-    product = tool.get("/products/bracket-mass")
-    assert 'hx-get="/products/bracket-mass/frame"' in product.text
+    view = tool.get("/products/bracket-mass/order")
+    assert 'hx-get="/products/bracket-mass/frame"' in view.text and 'hx-get="/products/bracket-mass/frame"' not in tool.get("/products/bracket-mass").text
     fragment = tool.get("/products/bracket-mass/frame")
     assert "Place revision 4 at the frame" in fragment.text and "bracket-mass@4" in fragment.text and "parked" in fragment.text
     placed = tool.post("/products/bracket-mass/place")

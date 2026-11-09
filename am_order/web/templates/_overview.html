@@ -25,7 +25,7 @@
 </svg>
 </div>
 <div class="side">
-{% if ending %}{% from "_result.html" import card %}{{ card(ending, run.entry.href ~ "/picture") }}
+{% if ending %}{% from "_result.html" import card %}{{ card(ending, run.entry.href ~ "/picture", order_href) }}
 {% else %}
 <div class="wakings">
 {% for w in pic.wakings %}
@@ -63,11 +63,11 @@
   <dl class="facts">
     {% if run.entry.source == "frame" %}<dt>Read from</dt><dd>the frame {{ frame_name or "" }}{% if contact_note %}<br><span class="bad">{{ contact_note }}</span>{% endif %}</dd>{% endif %}
     {% if run.entry.experiment != "orders" %}<dt>Experiment</dt><dd>{{ run.entry.experiment }} / {{ run.entry.condition }}</dd>{% endif %}
-    {% if run.order %}<dt>Order</dt><dd>{{ run.order[0] }}@{{ run.order[1] }}</dd>{% endif %}
+    {% if run.order %}<dt>Order</dt><dd>{% if order_href %}<a href="{{ order_href }}">{{ run.order[0] }}@{{ run.order[1] }}</a> <span class="muted">· the order view, as its orderer</span>{% else %}{{ run.order[0] }}@{{ run.order[1] }}{% endif %}</dd>{% endif %}
     <dt>Decision makers</dt><dd>{% for role, who in run.decision_makers.items() %}{{ role.replace("_", " ") }}: {{ who }}<br>{% else %}none woke{% endfor %}</dd>
     {% if run.accepted_plan %}<dt>Accepted plan</dt><dd>{{ run.accepted_plan }}</dd>{% endif %}
     <dt>Outcome</dt><dd>{{ run.entry.outcome or run.entry.status }}{% if run.entry.reason %} ({{ run.entry.reason }}){% endif %}</dd>
-    {% if run.parked %}<dt>Waits for the owner</dt><dd>The case is parked at the frame since {{ run.parked.time.strftime("%H:%M:%SZ") }}: a {{ run.parked.what }} waits for the order's owner{% if run.parked.metrics %} on {{ run.parked.metrics|join(", ") }}{% endif %}. The owner's word is given in the dialogue's build of the tool, which is still to come.</dd>{% endif %}
+    {% if run.parked %}<dt>Waits for the owner</dt><dd>The case is parked at the frame since {{ run.parked.time.strftime("%H:%M:%SZ") }}: a {{ run.parked.what }} waits for the order's owner{% if run.parked.metrics %} on {{ run.parked.metrics|join(", ") }}{% endif %}.{% if run.is_parked and state.at >= run.end %} {% if order_href %}<a href="{{ order_href }}#word">Your word is given on the order</a>, as its orderer.{% else %}The owner's word is given on the order, in the order view of the products home that holds it.{% endif %}{% endif %}</dd>{% endif %}
     {% if accepted %}<dt>Accepted version</dt><dd>{{ accepted.design }}{% if accepted.features %}: {{ accepted.features.features|length }} features
       · <a href="{{ run.entry.href }}/features/{{ accepted.design }}/picture.png">picture</a>{% for m in accepted.features.models %} · <a href="{{ run.entry.href }}/features/{{ accepted.design }}/model.{{ m.format }}">{{ m.format|upper }}</a>{% endfor %}
       {% elif accepted.error %} <span class="muted">({{ accepted.error }})</span>{% endif %}</dd>{% endif %}

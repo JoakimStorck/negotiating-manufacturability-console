@@ -243,10 +243,9 @@ def test_the_order_section_edited_and_logged_as_the_orderers(app, home_dir, tmp_
     change) and logged as the orderer's acts, with the section they write."""
     c = TestClient(app)
     c.post("/products/bracket-mass/derive", data={"lineage": "mass", "name": "Mass"})
-    page = c.get("/products/mass").text
-    assert "<h2>This order</h2>" in page and "May change" not in page and "May relax" not in page
+    page = c.get("/products/mass/order").text
+    assert "<h2>This order</h2>" in page and "May change" not in page and "May relax" not in page and "<h2>This order</h2>" not in c.get("/products/mass").text
     assert "parks at the frame for your word" in page and "is declined by the requester on the evidence of exhausted means" in page
-    assert page.count("none yet; written when the frame accepts a plan for this order") == 2
     r = c.post("/products/mass/order", data={"brief_text": "Ten brackets, light.", "objective": "mass", "quantity": "12", "answering": "park"})
     assert r.status_code == 200
     objects = c.get("/products/mass/objects").text

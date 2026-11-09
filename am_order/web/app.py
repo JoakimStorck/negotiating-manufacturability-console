@@ -8,8 +8,9 @@ they concern; Save makes a version when no check fails, and a refused save keeps
 JSON line in `DIR/<session>.jsonl` (time, session, page, action, the refusals shown), the session an id drawn at the start.
 
 With `--frame URL` the runs pages read a standing frame of am-llm besides the folders: its presence (the overview's empty state),
-its catalogue and a run's events, through one client (`am_order.frame`); an order version is placed there from the order's
-page. A frame that does not answer is a state of the page, which keeps what it last read.
+its catalogue and a run's events, through one client (`am_order.frame`). The order view (`/products/<lineage>/order`) is the
+orderer's: the order's steps from stated to approved with the next as one button, the order whole, its runs at the frame, the
+owner's word on what waits, and the approval. A frame that does not answer is a state of the page, which keeps what it last read.
 """
 from __future__ import annotations
 
@@ -35,6 +36,9 @@ from ..render import TABLES, TITLES, metric_name, table
 from .. import runs as R
 from ..picture import empty_cells, overview, plan_figures, result_card
 from ..frame import Frame, FrameError, Reading, maker_text, part_state, saved_version
+from .. import dialogue as D
+from ..schema import SchemaError
+from ..steps import LABELS, steps as order_steps
 
 HERE = Path(__file__).parent
 
@@ -145,6 +149,18 @@ def mandate_from_form(form) -> dict:
     return {"form": "interval", "to": n} if n is not None else {"form": "interval"}
 
 
+def far_text(mandate: dict) -> str:
+    """A mandate's far end as its form field shows it: a value, `lower, upper`, three sizes, or as_needed."""
+    to = (mandate or {}).get("to")
+    if to is None:
+        return ""
+    if isinstance(to, dict):
+        return f"{to['lower']:g}, {to['upper']:g}"
+    if isinstance(to, list):
+        return ", ".join(f"{v:g}" for v in to)
+    return to if isinstance(to, str) else f"{to:g}"
+
+
 def sources_from_text(text: str) -> list[dict]:
     """Sources in lines `kind: reference` (kind one of requester, standard, project, reference)."""
     out = []
@@ -181,7 +197,8 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
     app.state.home, app.state.log = home, log
     app.state.runs_root = Path(runs_root).resolve() if runs_root else None
     app.state.frame = Reading(frame) if frame else None
-    templates.env.globals.update(maker_text=maker_text, refresh=refresh, plan_figures=plan_figures, result_card=result_card)
+    templates.env.globals.update(maker_text=maker_text, refresh=refresh, plan_figures=plan_figures, result_card=result_card, far_text=far_text,
+                                 D=D, LABELS=LABELS)
 
     def ending_of(run, st):
         """The run's end at the clock: once the clock has reached the end of a run that has ended or parked, what the result card
@@ -210,9 +227,19 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         writable = home.writable(lineage) if lineage and home.folder(lineage) else True
         detail = {**(logged or {}), **({"message": message} if message else {})}
         log.write(request.url.path, action, refusals, detail or None)
+        if lineage and home.folder(lineage) and "steps" not in ctx:
+            ctx["steps"] = steps_of(lineage, refusals)
         return templates.TemplateResponse(request, template, {"home": home, "lineage": lineage, "refusals": refusals, "by_item": by_item,
                                                               "message": message, "facets": facets, "writable": writable, "V": V,
                                                               "session": log.session, **ctx}, status_code=status)
+
+    def steps_of(lineage: str, refusals: list, fresh: bool = False):
+        """The order's steps, the frame's part read again when what is held is older than a few seconds (or now, `fresh`)."""
+        reading = app.state.frame
+        if reading is not None:
+            reading.read_catalogue(None if fresh else 5.0)
+            reading.read_presence(None if fresh else 5.0)
+        return order_steps(home, lineage, refusals, reading)
 
     def working(lineage: str) -> Order:
         if home.folder(lineage) is None:
@@ -351,6 +378,50 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             o.type["product"]["purpose"] = form.get("purpose") or ""
         return edit(request, lineage, change, "product.html", "edit product", migrated=migrated(lineage))
 
+    # ---------------------------------------------------------------- the order view, the orderer's
+
+    def order_view(request: Request, lineage: str, action: str = "view", message: str | None = None, status: int = 200,
+                   logged: dict | None = None, order: Order | None = None, bad: bool = False, fresh: bool = False, **extra):
+        """The order whole, its steps and the next as one button, the word on what waits, the approval: the orderer's view."""
+        order = order or working(lineage)
+        refusals = refusals_of(lineage, order)
+        st = steps_of(lineage, refusals, fresh)
+        reading = app.state.frame
+        ctx = {"order": order, "steps": st, "bad": bad, "dialogue": None, "dialogue_error": None, "card": None, "kept": home.dialogues(lineage)}
+        if st.run is not None and reading is not None and st.reached in ("word", "accepted"):
+            try:
+                ctx["dialogue"] = reading.frame.dialogue(st.run["id"])
+            except FrameError as e:
+                ctx["dialogue_error"] = contact_note(e) if e.kind != "answer" else str(e)
+        if st.run is not None and (st.reached == "accepted" or st.ended):
+            r = st.run
+            ctx["card"] = result_card(r.get("outcome") or r["status"], r.get("reason"), r.get("result"))
+        if st.reached == "approved":
+            a = order.accepted() or {}
+            ctx["approved_features"] = home.features(a.get("design")) if a.get("design") else None
+        latest = home.history(lineage)[-1]["revision"] if (home._folder(lineage) / "versions").exists() and home.history(lineage) else None
+        ctx["ref"] = f"{lineage}@{latest}" if latest else lineage
+        return page(request, "order.html", lineage, action, message, status, logged=logged, **ctx, **extra)
+
+    @app.get("/products/{lineage}/order", response_class=HTMLResponse)
+    def order_page(request: Request, lineage: str):
+        working(lineage)
+        return order_view(request, lineage)
+
+    def order_edit_in(request: Request, lineage: str, change, action: str, section: str, **detail):
+        """An edit of the order from its view: to the draft, the view coming back with the checks beside what they concern."""
+        order = working(lineage)
+        try:
+            change(order)
+            home.put_draft(lineage, order)
+            message, status = None, 200
+        except ReadOnly as e:
+            order, message, status = working(lineage), str(e), 403
+        except (ValueError, KeyError) as e:
+            order, message, status = working(lineage), str(e), 400
+        return order_view(request, lineage, action, message, status, logged={"capacity": "orderer", "section": section, **detail},
+                          order=order, bad=message is not None)
+
     @app.post("/products/{lineage}/order", response_class=HTMLResponse)
     async def order_edit(request: Request, lineage: str):
         """This order's section: the brief (text, objective, quantity) and the answering policy."""
@@ -366,7 +437,122 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
                 if form["answering"] not in ANSWERING:
                     raise ValueError(f"the answering policy is park or decline, not {form['answering']!r}")
                 o.instance["answering"] = form["answering"]
-        return edit(request, lineage, change, "product.html", "edit order", section="order", migrated=migrated(lineage))
+        return order_edit_in(request, lineage, change, "edit order", "order")
+
+    @app.post("/products/{lineage}/order/mandates/{mid}", response_class=HTMLResponse)
+    async def order_mandate(request: Request, lineage: str, mid: str):
+        """A metric's mandate edited in its row of the order view, written to the order's section."""
+        form = await request.form()
+
+        def change(o: Order):
+            if o.metric(mid) is None:
+                raise KeyError(f"no metric {mid}")
+            o.set_mandate(mid, mandate_from_form(form))
+        return order_edit_in(request, lineage, change, "edit mandate", "order", metric=mid)
+
+    @app.post("/products/{lineage}/order/objects/{oid}", response_class=HTMLResponse)
+    async def order_object(request: Request, lineage: str, oid: str):
+        """An object fixed or free, edited in its row of the order view; the change is the type's (the object's)."""
+        form = await request.form()
+        return order_edit_in(request, lineage, lambda o: o.set_change(oid, form.get("change") or ""), f"edit object ({form.get('change')})",
+                             "type", object=oid)
+
+    @app.post("/products/{lineage}/order/word", response_class=HTMLResponse)
+    async def order_word(request: Request, lineage: str):
+        """The owner's word on what waits, given at the frame in the orderer's capacity; the frame's answer shown in its words."""
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame")
+        working(lineage)
+        form = await request.form()
+        run_id = form.get("run") or ""
+        reading.read_catalogue() or reading.read_presence()
+        if run_id not in {r["id"] for r in reading.runs_of(lineage)}:
+            return order_view(request, lineage, "word", f"Not sent: {run_id} is no run of an order of {lineage} at the frame.", 404, bad=True,
+                              logged={"capacity": "orderer", "run": run_id})
+        detail = {"capacity": "orderer", "run": run_id, "word": form.get("word")}
+        try:
+            doc = reading.frame.dialogue(run_id)
+            if doc["waits"] is None:
+                raise D.WordError("nothing waits for your word in this run now")
+            # the word is on what the owner read (`on`); whether it still waits is the frame's to say
+            word = D.word(form, {**doc["waits"], "dialogue": form.get("on") or doc["waits"]["dialogue"]}, working(lineage))
+        except D.WordError as e:
+            log.write(request.url.path, "word", detail={**detail, "refused": str(e)})
+            return order_view(request, lineage, "view", f"Not sent: {e}.", 400, bad=True)
+        except FrameError as e:
+            log.write(request.url.path, "word", detail={**detail, "answer": {"status": e.status, "kind": e.kind}})
+            return order_view(request, lineage, "view", f"Not sent: {contact_note(e) if e.kind != 'answer' else e}", 503, bad=True)
+        detail["word"] = word
+        try:
+            said = reading.frame.say(run_id, word)
+            message, status, bad = (f"Your word is recorded at the frame ({D.word_text(word)}; call {said['call']}): the run {run_id} "
+                                    f"goes on, {said['status']}."), 200, False
+            detail["answer"] = said
+            reading.read_catalogue()
+            reading.read_presence()
+        except FrameError as e:
+            message = f"The frame did not take your word: {e}" + (": " + "; ".join(e.reasons[:5]) if e.reasons else "")
+            status, bad = (e.status if e.kind == "answer" and e.status else 503), True
+            detail["answer"] = {"status": e.status, "kind": e.kind}
+        log.write(request.url.path, "word", detail=detail)
+        return order_view(request, lineage, "view", message, status, bad=bad, said=None if bad else run_id)
+
+    @app.post("/products/{lineage}/order/save", response_class=HTMLResponse)
+    def order_save(request: Request, lineage: str):
+        """The order saved from its view, its next step; the view comes back with the revision made or the refusals."""
+        try:
+            saved = home.save(working(lineage))
+            message, status, bad = (f"saved as revision {saved.revision} ({saved.version[:12]})" if saved else "nothing changed, no version made"), 200, False
+        except Refused as e:
+            message, status, bad = f"the save is refused: {len(e.refusals)} checks fail; the draft is kept", 409, True
+        except ReadOnly as e:
+            message, status, bad = str(e), 403, True
+        return order_view(request, lineage, "save", message, status, bad=bad, logged={"capacity": "orderer"})
+
+    @app.post("/products/{lineage}/order/place", response_class=HTMLResponse)
+    def order_place(request: Request, lineage: str):
+        """The order's saved version placed at the frame from its view, its next step."""
+        if app.state.frame is None:
+            raise HTTPException(404, "the tool is not connected to a frame")
+        working(lineage)
+        message, bad, status = placing(lineage)
+        return order_view(request, lineage, "view", message, status, bad=bad, fresh=True)
+
+    @app.get("/products/{lineage}/dialogue/{run_id:path}")
+    def order_dialogue(lineage: str, run_id: str):
+        """The dialogue of a run whose plan the orderer approved, as the home keeps it beside the order (dialogue/1)."""
+        working(lineage)
+        doc = home.dialogue(lineage, run_id)
+        if doc is None:
+            raise HTTPException(404, f"the home keeps no dialogue of {run_id} beside {lineage}")
+        return doc
+
+    @app.post("/products/{lineage}/order/approve", response_class=HTMLResponse)
+    async def order_approve(request: Request, lineage: str):
+        """The accepted plan approved for manufacturing: a new revision of the order recording the plan and the requirements in
+        force, the accepted version's feature list taken into the home, the run's dialogue kept beside the order."""
+        reading = app.state.frame
+        if reading is None:
+            raise HTTPException(404, "the tool is not connected to a frame")
+        working(lineage)
+        detail = {"capacity": "orderer"}
+        try:
+            saved, run = D.approve(home, reading, lineage)
+        except FrameError as e:
+            log.write(request.url.path, "approve", detail={**detail, "answer": {"status": e.status, "kind": e.kind}})
+            return order_view(request, lineage, "view", f"Not approved: {contact_note(e) if e.kind != 'answer' else e}", 503, bad=True)
+        except Refused as e:
+            log.write(request.url.path, "approve", e.refusals, detail)
+            return order_view(request, lineage, "view", f"Not approved: the save is refused, {len(e.refusals)} checks fail.", 409, bad=True)
+        except HomeError as e:
+            log.write(request.url.path, "approve", detail={**detail, "refused": str(e)})
+            return order_view(request, lineage, "view", f"Not approved: {e}.", 403 if isinstance(e, ReadOnly) else 409, bad=True)
+        detail["run"] = run["id"]
+        detail.update(revision=saved.revision, version=saved.version, plan=run["result"]["plan"]["id"], design=run["result"]["plan"]["design"])
+        log.write(request.url.path, "approve", detail=detail)
+        return order_view(request, lineage, "view", f"Approved for manufacturing as revision {saved.revision}: "
+                                                    f"{run['result']['plan']['id']} for {run['result']['plan']['design']}.")
 
     @app.post("/products/{lineage}/needs", response_class=HTMLResponse)
     async def need_add(request: Request, lineage: str):
@@ -861,7 +1047,11 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         presence = reading.presence or {}
         return page(request, template, None, "run", run=run, state=st, pic=pic, picture=True, accepted=accepted, ending=ending_of(run, st),
                     skew=reading.frame.contact.skew.total_seconds(), frame_name=(presence.get("frame") or {}).get("name") or reading.frame.url,
-                    contact_note=contact_note(error))
+                    contact_note=contact_note(error), order_href=order_href(run))
+
+    def order_href(run) -> str | None:
+        """Where a run's order is in the products home: its order view, where the home holds the product."""
+        return f"/products/{run.order[0]}/order" if run.order and home.folder(run.order[0]) is not None else None
 
     def frame_file(run_id: str, design: str, name: str | None):
         reading = app.state.frame
@@ -948,10 +1138,17 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         if reading is None:
             raise HTTPException(404, "the tool is not connected to a frame")
         working(lineage)
+        message, bad, status = placing(lineage)
+        return templates.TemplateResponse(request, "_placing.html", {**placing_ctx(lineage), "message": message, "bad": bad}, status_code=status)
+
+    def placing(lineage: str) -> tuple[str, bool, int]:
+        """The order's saved version placed at the frame as the home holds it, logged as the orderer's act: the message, whether it
+        is bad, the status."""
+        reading = app.state.frame
         ctx = placing_ctx(lineage)
         if not ctx["ready"]:
             log.write(f"/products/{lineage}/place", "place", detail={"capacity": "orderer", "message": ctx["why"]})
-            return templates.TemplateResponse(request, "_placing.html", {**ctx, "message": f"Not placed: {ctx['why']}.", "bad": True}, status_code=409)
+            return f"Not placed: {ctx['why']}.", True, 409
         version, body = saved_version(home, lineage)
         try:
             answer = reading.frame.place(body)
@@ -962,7 +1159,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             answer = {"status": e.status, "kind": e.kind}
         log.write(f"/products/{lineage}/place", "place", detail={"capacity": "orderer", "version": version,
                                                                  "revision": ctx["saved"].data.get("revision"), "answer": answer})
-        return templates.TemplateResponse(request, "_placing.html", {**placing_ctx(lineage), "message": message, "bad": bad}, status_code=status)
+        return message, bad, status
 
     @app.get("/runs/{run_id:path}/picture/{design}")
     def run_picture(run_id: str, design: str):
@@ -981,7 +1178,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         st = R.state(run, R.parse_at(run, at))
         pic = overview(run, st, run_ctx(run))
         return page(request, template, None, "run", run=run, state=st, pic=pic, picture=R.picture_of(run, st.design) is not None,
-                    ending=ending_of(run, st))
+                    ending=ending_of(run, st), order_href=order_href(run))
 
     @app.get("/runs/{run_id:path}/view", response_class=HTMLResponse)
     def run_fragment(request: Request, run_id: str, at: str | None = None):

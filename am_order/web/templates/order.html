@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Order: {{ lineage }}{% endblock %}
+{% block content %}
+{# The order view, the orderer's: the order's steps with the next as one button, what waits for the owner's word, the approval,
+   and the order whole (the brief, the mandates, the objects fixed or free, who takes it, its runs at the frame). #}
+<p class="capacity">As orderer of {{ ref }}{% if steps.reached == "stated" and steps.revision %}, its draft{% endif %}</p>
+<h1>The order: {{ order.data.title }}</h1>
+<ol class="steps" id="steps">
+{% for s in steps.line() %}<li class="{{ 'done' if s.done }}{{ ' reached' if s.reached }}" data-step="{{ s.key }}">{% if s.done and s.href %}<a href="{{ s.href }}">{{ s.label }}</a>{% else %}{{ s.label }}{% endif %}</li>
+{% endfor %}
+</ol>
+<div class="next" id="next">
+{% if steps.ended %}<span class="refusal">{{ steps.ended }}</span>{% endif %}
+{% if steps.next %}{% set n = steps.next %}
+  {% if n.post %}<form method="post" action="{{ n.post }}" hx-post="{{ n.post }}" hx-target="body"{% if n.confirm %} hx-confirm="{{ n.confirm }}"{% endif %} class="inline">
+    {% if steps.run %}<input type="hidden" name="run" value="{{ steps.run.id }}">{% endif %}<button>{{ n.text }}</button></form>
+  {% else %}<a class="button" href="{{ n.href }}">{{ n.text }}</a>{% endif %}
+{% endif %}
+{% if steps.note %}<span class="muted">{{ steps.note }}</span>{% endif %}
+</div>
+{% if said %}<p>The run goes on at the frame: <a href="/frame/runs/{{ said }}">follow {{ said }}</a>.</p>{% endif %}
+
+{% if steps.reached == "word" %}
+<section class="word" id="word">
+{% if dialogue_error %}<div class="message bad">The frame's dialogue could not be read: {{ dialogue_error }}</div>
+{% elif dialogue and dialogue.waits %}{% set w = dialogue.waits %}{% set e = w.entry %}{% set run_id = steps.run.id %}
+<h2>Your word: a {{ w.what }} waits since {{ w.since[:19].replace("T", " ") }}Z{% if w.metrics %}, on {{ w.metrics|join(", ") }}{% endif %}</h2>
+<p class="muted">The run {{ run_id }} is parked at the frame for you: the mandate you gave the requester does not cover what follows. Your word
+is not bounded by the mandate; it is recorded as yours.</p>
+{% if w.what == "showing" %}
+<div class="grid2">
+  <div>{% if e.design %}<img class="picture" src="/frame/runs/{{ run_id }}/picture/{{ e.design }}" alt="{{ e.design }}" style="max-height: 11rem">{% endif %}</div>
+  <div><p><b>The {{ e.role.replace("_", " ") }} shows {{ e.design }}</b></p><p>“{{ e.text }}”</p></div>
+</div>
+<div class="ways">
+{% for a in e.alternatives %}
+<div class="way" id="way-{{ loop.index }}">
+  <h4>{{ a.name or "The way shown" }}: {{ a.design }}</h4>
+  <p>{{ D.figures(a.figures) }}{% if a.plan %} <span class="muted">· {{ a.plan }}</span>{% endif %}</p>
+  {% if a.requirements %}<p>It asks you to relax</p><ul>{% for r in a.requirements %}{% set x = D.asked(r) %}
+    <li>{{ x.text }} <span class="{{ 'within' if x.within else 'beyond' }}">({{ x.mandate }})</span></li>{% endfor %}</ul>{% endif %}
+  {% if a.at_risk %}<p>At risk: an acceptance relaxes each margin to what the plan reaches</p><ul>{% for f in a.at_risk %}<li>{{ D.at_risk(f) }}</li>{% endfor %}</ul>{% endif %}
+  {% if a.unmet %}<p>Left unmet</p><ul>{% for u in a.unmet %}<li class="bad">{{ D.unmet(u) }}</li>{% endfor %}</ul>
+    <p class="muted">An acceptance does not relax what is left unmet, and the design engineer cannot put it in force without a showing
+    of it: refuse instead, stating what you would accept on it.</p>{% endif %}
+  {% if a.for_decision %}<p>Held requirements it relaxes, for your decision: {{ a.for_decision|join(", ") }}</p>{% endif %}
+  <form method="post" action="/products/{{ lineage }}/order/word" hx-post="/products/{{ lineage }}/order/word" hx-target="body" hx-confirm="{{ D.confirm_text('accept', e, a) }}">
+    <input type="hidden" name="word" value="accept"><input type="hidden" name="run" value="{{ run_id }}"><input type="hidden" name="on" value="{{ w.dialogue }}">
+    {% if a.name %}<input type="hidden" name="alternative" value="{{ a.name }}">{% endif %}
+    {% if a.requirements or a.at_risk %}<p>Accepting it relaxes:</p><ul>
+      {% for r in a.requirements %}<li>{{ D.asked(r).text }}</li>{% endfor %}
+      {% for f in a.at_risk %}<li>the margin on {{ f.metric or f.replaces }} from {{ f.margin }} to <input name="relax:{{ f.replaces }}" value="{{ f.reaches }}" size="7"> <span class="muted">(what the plan reaches; confirm it)</span></li>{% endfor %}
+    </ul>{% else %}<p class="muted">Accepting it relaxes nothing.</p>{% endif %}
+    <input name="text" placeholder="your words with the acceptance (optional)" size="50"> <button>Accept {{ a.name or "it" }}</button>
+  </form>
+</div>
+{% endfor %}
+</div>
+{% if e.certificate %}<div class="certificate"><b>The certificate of exhausted means:</b> {{ e.certificate.text }}{% if e.certificate.cites %} <span class="muted">(cites {{ e.certificate.cites|join(", ") }})</span>{% endif %}</div>{% endif %}
+
+<h3>Refuse it, stating what you would accept instead</h3>
+{% set its = D.items(e, order) %}
+<form method="post" action="/products/{{ lineage }}/order/word" hx-post="/products/{{ lineage }}/order/word" hx-target="body" hx-confirm="{{ D.confirm_text('refuse') }}">
+  <input type="hidden" name="word" value="refuse"><input type="hidden" name="run" value="{{ run_id }}"><input type="hidden" name="on" value="{{ w.dialogue }}">
+  <table>
+  <tr><th>What was shown</th><th>Your word on it</th></tr>
+  {% for it in its %}
+  <tr><td>{{ it.text }}</td>
+    <td><label><input type="radio" name="choice:{{ it.replaces }}" value="" checked> nothing</label>
+      <label><input type="radio" name="choice:{{ it.replaces }}" value="hold"> hold as given</label>
+      {% if it.key %}<label><input type="radio" name="choice:{{ it.replaces }}" value="instead"> accept instead {{ "a margin of" if it.key == "margin" else it.key.replace("_", " ") }}</label>
+      <input name="value:{{ it.replaces }}" value="{{ it.value if it.value is not none else '' }}" size="8">{% if it.unit and it.unit not in ("1", "-") %} {{ it.unit }}{% endif %}{% endif %}</td></tr>
+  {% endfor %}
+  </table>
+  <textarea name="text" rows="2" placeholder="why, in your words" required></textarea>
+  <button>Refuse with these conditions</button>
+</form>
+
+<h3>Decline the order</h3>
+<form method="post" action="/products/{{ lineage }}/order/word" hx-post="/products/{{ lineage }}/order/word" hx-target="body" hx-confirm="{{ D.confirm_text('decline') }}">
+  <input type="hidden" name="word" value="decline"><input type="hidden" name="run" value="{{ run_id }}"><input type="hidden" name="on" value="{{ w.dialogue }}">
+  <textarea name="text" rows="2" placeholder="the reason: what you hold that what was shown cannot meet" required></textarea>
+  <button>Decline</button>
+</form>
+{% else %}
+<p><b>The {{ e.role.replace("_", " ") }} asks</b>{% if e.features %} about {{ e.features|join(", ") }}{% endif %}: “{{ e.text }}”</p>
+<form method="post" action="/products/{{ lineage }}/order/word" hx-post="/products/{{ lineage }}/order/word" hx-target="body" hx-confirm="{{ D.confirm_text('answer') }}">
+  <input type="hidden" name="word" value="answer"><input type="hidden" name="run" value="{{ run_id }}"><input type="hidden" name="on" value="{{ w.dialogue }}">
+  <textarea name="text" rows="3" placeholder="your answer" required></textarea> <button>Answer</button>
+</form>
+{% endif %}
+{% elif dialogue %}<p class="muted">Nothing waits for your word in {{ steps.run.id }} now; the frame has moved on.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if steps.reached == "accepted" and card %}
+<section id="approve">
+{% from "_result.html" import card as result %}
+{{ result(card, "/frame/runs/" ~ steps.run.id ~ "/picture") }}
+<p class="muted">Approving records this plan, its design version and the requirements in force in a new revision of the order, takes
+the version's feature list, picture and models into the products home, and keeps the run's dialogue beside the order. The requirements
+are not changed and the order is not placed again; the part is made in the printer phase.</p>
+</section>
+{% endif %}
+{% if steps.ended and card %}{% from "_result.html" import card as result %}{{ result(card, "/frame/runs/" ~ steps.run.id ~ "/picture") }}{% endif %}
+
+{% if steps.reached == "approved" %}{% set a = order.accepted() %}
+<section id="approved">
+<h2>Approved for manufacturing</h2>
+<div class="grid2">
+  <div>{% if approved_features %}<img class="picture" src="/features/{{ a.design }}/{{ approved_features.picture.file }}" alt="{{ a.design }}" style="max-height: 10rem">{% endif %}</div>
+  <table>
+  <tr><th>Plan</th><td>{{ a.plan }}</td></tr>
+  <tr><th>Design version</th><td>{{ a.design }} <span class="muted">{{ a.design_sha256[:12] }}</span>{% if approved_features %}{% for m in approved_features.models %} · <a href="/features/{{ a.design }}/{{ m.file }}">{{ m.format|upper }}</a>{% endfor %}{% endif %}</td></tr>
+  <tr><th>Accepted in</th><td><a href="/frame/runs/{{ a.run }}">{{ a.run }}</a>{% if a.order %}, the order's revision {{ a.order.revision }} <span class="muted">{{ a.order.sha256[:12] }}</span>{% endif %}{% if a.time %}, {{ a.time[:19].replace("T", " ") }}Z{% endif %}</td></tr>
+  <tr><th>Requirements in force</th><td>{% if order.in_force() %}<ul>{% for r in order.in_force() %}<li>the {{ r.what }} on {{ r.metric }} relaxed from {{ level_text(r["from"]) }} to {{ level_text(r.to) }} by {{ "the order's owner" if r.by.actor == "owner" else "the " ~ r.by.role.replace("_", " ") }}{% if r.within_mandate is defined %}, {{ "within" if r.within_mandate else "beyond" }} its mandate{% endif %}{% if r.showing %}, on the showing {{ r.showing }}{% endif %}</li>{% endfor %}</ul>{% else %}every requirement as the order gave it{% endif %}</td></tr>
+  <tr><th>The dialogue</th><td>{% for k in kept %}<a href="/products/{{ lineage }}/dialogue/{{ k }}">{{ k }}</a>{% if not loop.last %} · {% endif %}{% else %}<span class="muted">none kept</span>{% endfor %}</td></tr>
+  </table>
+</div>
+<p class="muted">A change of the order (its type or its mandates) is a new revision, placed again; this one stays approved, bound to its versions.</p>
+</section>
+{% endif %}
+
+{% if dialogue and dialogue.thread %}
+<details><summary>The dialogue so far ({{ dialogue.thread|length }})</summary>
+<ul>{% for t in dialogue.thread %}<li><span class="muted">{{ t.time[11:19] }}Z</span> {{ t.kind }} by the {{ t.role.replace("_", " ") }}{% if t.actor == "owner" %}'s owner, you{% elif t.actor == "operator" %} (a person){% endif %}{% if t.design %} on {{ t.design }}{% endif %}: {{ t.text }}</li>{% endfor %}</ul>
+</details>
+{% endif %}
+
+<section id="the-order">
+<h2>This order</h2>
+{% set brief = order.brief() %}{% set answering = order.answering() %}
+<form method="post" action="/products/{{ lineage }}/order" hx-post="/products/{{ lineage }}/order" hx-target="body">
+  <div class="grid2">
+    <label>Brief</label><textarea name="brief_text" rows="3">{{ brief.text }}</textarea>
+    <label>Objective</label><input name="objective" value="{{ brief.objective or '' }}" placeholder="time, strength, mass or cost">
+    <label>Quantity</label><input name="quantity" value="{{ brief.quantity if brief.quantity is not none else '' }}">
+    <label>A case the mandates do not cover</label>
+    <div>{% for key, words in ANSWERING.items() %}<label><input type="radio" name="answering" value="{{ key }}" {% if answering == key %}checked{% endif %}>
+      {{ key }}: {{ words }}</label><br>{% endfor %}</div>
+    <span></span><button>Apply to this order</button>
+  </div>
+  {% set item = "order" %}{% include "_refusals.html" with context %}
+</form>
+
+<h3>The metrics and this order's mandates</h3>
+<p class="muted">Held, the value stands; an interval, the requester may accept up to its far end without asking you; released, the
+requester may give the metric up. Your own word is not bounded by them.</p>
+<table>
+<tr><th>#</th><th>Metric</th><th>Value</th><th>Mandate</th><th></th></tr>
+{% for m in order.metrics() %}{% set md = order.mandate(m) %}
+<tr id="metric-{{ m.id }}">
+  <td><a href="/products/{{ lineage }}/metrics/{{ m.id }}">{{ m.id }}</a></td>
+  <td>{{ m.text or m.quantity }}</td>
+  <td>{{ value_text(m.value, m.unit) }}</td>
+  <td><form method="post" action="/products/{{ lineage }}/order/mandates/{{ m.id }}" hx-post="/products/{{ lineage }}/order/mandates/{{ m.id }}" hx-target="body" class="inline">
+    <select name="mandate">{% for f in V.MANDATES %}<option {% if md.form == f %}selected{% endif %}>{{ f }}</option>{% endfor %}</select>
+    <input name="far" value="{{ far_text(md) }}" size="10" placeholder="far end"> <button class="quiet">Apply</button></form>
+    <div class="muted" style="font-size:.85rem">{{ mandate_text(md, m.unit) }}</div></td>
+  <td>{% set item = m.id %}{% include "_refusals.html" with context %}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h3>What the design may change</h3>
+<table>
+<tr><th>#</th><th>Object</th><th>Kind</th><th>Fixed or free</th><th></th></tr>
+{% for o in order.objects() %}
+<tr id="object-{{ o.id }}"><td>{{ o.id }}</td><td>{{ o.name }}</td><td>{{ o.kind }}</td>
+  <td><form method="post" action="/products/{{ lineage }}/order/objects/{{ o.id }}" hx-post="/products/{{ lineage }}/order/objects/{{ o.id }}" hx-target="body" class="inline">
+    <select name="change">{% for c in ["fixed", "free"] %}<option {% if order.change(o) == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    <button class="quiet">Apply</button></form> <span class="muted" style="font-size:.85rem">{{ CHANGE[order.change(o)] }}</span></td>
+  <td>{% set item = o.id %}{% include "_refusals.html" with context %}</td></tr>
+{% endfor %}
+</table>
+</section>
+
+<section id="runs">
+<h2>At the frame</h2>
+{% if request.app.state.frame %}
+<div id="placing" hx-get="/products/{{ lineage }}/frame" hx-trigger="load" hx-swap="outerHTML"><p class="muted">Reading the frame …</p></div>
+{% else %}<p class="muted">The tool is not connected to a frame: start it with --frame URL --token-file FILE.</p>{% endif %}
+</section>
+{% endblock %}

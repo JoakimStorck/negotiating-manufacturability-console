@@ -29,6 +29,16 @@
     runs set ROLE=MAKER                               a role's decision maker placed at the frame, as system operator: a model's
                                                       key or name, scripted, reference or none; from the role's next waking
     place PRODUCT[@REVISION]                          a confirmed order version placed at the frame, as the home holds it
+    dialogue RUN                                      the run's dialogue: what waits for the owner's word, in words
+    say RUN accept [--alternative NAME] [--relax REQ=MARGIN ...] [--text T]
+    say RUN refuse [--condition REQ:KEY=VALUE ...] [--hold REQ ...] --text T
+    say RUN decline --text T | say RUN answer --text T
+                                                      the owner's word on what waits, as orderer: an acceptance relaxes each
+                                                      margin at risk to what the plan reaches (--relax req-14=0.838); a
+                                                      condition is a value (req-20:at_most=20) or a margin (req-14:margin=0.7)
+    approve PRODUCT                                   the plan the order's run accepted approved for manufacturing: a new
+                                                      revision with the plan and the requirements in force, the accepted
+                                                      version's feature list and the run's dialogue taken into the home
 
 The home is `--home` or `AM_ORDER_HOME`. An own product opens read only unless `--allow-own` is given. `--frame URL` is a
 standing frame of am-llm, its token read from `--token-file` (its one `NAME=TOKEN` line) or `AM_FRAME_TOKEN`; the frame's help
@@ -43,7 +53,8 @@ from pathlib import Path
 
 from . import Home, HomeError, Order, Refused, bind, check, confirm, export, import_xlsx, reject, render
 from . import runs as R
-from .frame import Frame, FrameError, maker_text, read_token, saved_version
+from . import dialogue as D
+from .frame import Frame, FrameError, Reading, maker_text, read_token, saved_version
 from .render import TABLES
 
 
@@ -176,10 +187,22 @@ def main(argv=None) -> int:
     rn.add_argument("--at", help="seconds from the run's start, or an ISO time; the end when not given")
     pl = sub.add_parser("place")
     pl.add_argument("product")
+    dl = sub.add_parser("dialogue")
+    dl.add_argument("run")
+    sy = sub.add_parser("say")
+    sy.add_argument("run")
+    sy.add_argument("word", choices=["accept", "refuse", "decline", "answer"])
+    sy.add_argument("--alternative")
+    sy.add_argument("--relax", action="append", default=[], help="REQ=MARGIN: a margin at risk relaxed to what the plan reaches")
+    sy.add_argument("--condition", action="append", default=[], help="REQ:KEY=VALUE, KEY a value's comparator (at_most, at_least) or margin")
+    sy.add_argument("--hold", action="append", default=[], help="REQ: a requirement held as given")
+    sy.add_argument("--text", default="")
+    ap_ = sub.add_parser("approve")
+    ap_.add_argument("product")
     args = ap.parse_args(argv)
 
     try:
-        home = None if args.cmd == "runs" else Home(args.home, allow_own=args.allow_own)    # the frame's runs need no home
+        home = None if args.cmd in ("runs", "dialogue", "say") else Home(args.home, allow_own=args.allow_own)    # the frame's runs need no home
         return _run(args, home, ap)
     except Refused as e:
         return _refused(e)
@@ -188,6 +211,9 @@ def main(argv=None) -> int:
         return 1
     except FrameError as e:
         print(f"am-order: {e}" + ("".join(f"\n  {r}" for r in e.reasons)), file=sys.stderr)
+        return 1
+    except D.WordError as e:
+        print(f"am-order: not sent: {e}", file=sys.stderr)
         return 1
 
 
@@ -327,11 +353,12 @@ def _run(args, home: Home, ap) -> int:
                   + (" and act at the frame with this tool's token" if frame else "") + "; serve it on a network you trust", file=sys.stderr)
         uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
         return 0
-    if cmd in ("runs", "place"):
+    if cmd in ("runs", "place", "dialogue", "say", "approve"):
         frame = _frame(args)
         if frame is None:
             ap.error(f"{cmd}: give the frame with --frame URL (and --token-file FILE)")
-        return _runs(args, frame, ap) if cmd == "runs" else _place(args, frame, home)
+        return {"runs": lambda: _runs(args, frame, ap), "dialogue": lambda: _dialogue(args, frame), "say": lambda: _say(args, frame),
+                "approve": lambda: _approve(args, frame, home)}.get(cmd, lambda: _place(args, frame, home))()
     return 1
 
 
@@ -411,7 +438,8 @@ def _runs(args, frame: Frame, ap) -> int:
     if st.design:
         print(f"  design {st.design}")
     if run.parked:
-        print(f"  parked for the owner's word: a {run.parked['what']} on {', '.join(run.parked['metrics']) or 'the order'}")
+        print(f"  parked for the owner's word: a {run.parked['what']} on {', '.join(run.parked['metrics']) or 'the order'}; "
+              f"read it with am-order dialogue {run.entry.id}")
     if st.outcome:
         print(f"  outcome: {st.outcome}")
     return 0
@@ -433,3 +461,65 @@ def _place(args, frame: Frame, home: Home) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+def _dialogue(args, frame: Frame) -> int:
+    """What waits for the owner's word in a run, in words."""
+    doc = frame.dialogue(args.run)
+    w = doc["waits"]
+    print(f"{args.run}: {doc['run']['status']}, {len(doc['thread'])} words in its dialogue")
+    if w is None:
+        print("  nothing waits for the owner's word")
+        return 0
+    e = w["entry"]
+    print(f"  a {w['what']} waits since {w['since'][:19].replace('T', ' ')}Z ({w['dialogue']})" + (f", on {', '.join(w['metrics'])}" if w["metrics"] else ""))
+    print(f"  the {e['role'].replace('_', ' ')}: {e['text']}")
+    for a in e.get("alternatives") or []:
+        print(f"  {a['name'] or 'the way shown'}: {a['design']}, {D.figures(a.get('figures'))}" + (f" ({a['plan']})" if a.get("plan") else ""))
+        for r in a.get("requirements") or []:
+            x = D.asked(r)
+            print(f"    relaxes {x['text']} ({x['mandate']})")
+        for f in a.get("at_risk") or []:
+            print(f"    {D.at_risk(f)}: an acceptance relaxes it (--relax {f['replaces']}={f['reaches']})")
+        for u in a.get("unmet") or []:
+            print(f"    {D.unmet(u)}")
+    if e.get("certificate"):
+        c = e["certificate"]
+        print(f"  The certificate of exhausted means: {c['text']}" + (f" (cites {', '.join(c['cites'])})" if c.get("cites") else ""))
+    return 0
+
+
+def _say(args, frame: Frame) -> int:
+    """The owner's word on what waits, built as the order view builds it and sent; the frame's answer in its words."""
+    doc = frame.dialogue(args.run)
+    if doc["waits"] is None:
+        raise D.WordError(f"nothing waits for the owner's word in {args.run}")
+    form = {"word": args.word, "text": args.text, "alternative": args.alternative or ""}
+    entry = doc["waits"]["entry"]
+    if args.word == "accept":
+        way = next((a for a in entry.get("alternatives") or [] if a["name"] == args.alternative), None) \
+            or ((entry.get("alternatives") or [None])[0] if len(entry.get("alternatives") or []) == 1 else None)
+        given = dict(r.split("=", 1) for r in args.relax)
+        missing = [f for f in (way or {}).get("at_risk") or [] if f["replaces"] not in given]
+        if missing:
+            raise D.WordError("the plan is at risk: relax each margin to what the plan reaches, " +
+                              " ".join(f"--relax {f['replaces']}={f['reaches']}" for f in missing))
+        form.update({f"relax:{k}": v for k, v in given.items()})
+    for c in args.condition:
+        req, _, rest = c.partition(":")
+        key, _, value = rest.partition("=")
+        form[f"choice:{req}"], form[f"value:{req}"] = "instead", value
+    for req in args.hold:
+        form[f"choice:{req}"] = "hold"
+    word = D.word(form, doc["waits"], keys={c.partition(":")[0]: c.partition(":")[2].partition("=")[0] for c in args.condition})
+    said = frame.say(args.run, word)
+    print(f"{D.word_text(word)}: recorded at {frame.url} ({said['call']}); the run {said['run']} goes on, {said['status']}")
+    return 0
+
+
+def _approve(args, frame: Frame, home: Home) -> int:
+    saved, run = D.approve(home, Reading(frame), args.product)
+    plan = run["result"]["plan"]
+    print(f"{args.product}: approved for manufacturing as revision {saved.revision} ({saved.version[:12]}): {plan['id']} for {plan['design']}, "
+          f"accepted in {run['id']}")
+    return 0

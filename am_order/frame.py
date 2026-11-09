@@ -276,6 +276,7 @@ class Reading:
         self.features: dict[tuple[str, str], dict] = {}
         self.orders: dict[str, dict] = {}
         self._presence_read: datetime | None = None
+        self._catalogue_read: datetime | None = None
 
     def read_presence(self, max_age: float | None = None) -> FrameError | None:
         """Presence read again, or, with `max_age`, only when what is held is older than that many seconds."""
@@ -303,9 +304,14 @@ class Reading:
         part = next((p for p in (self.presence or {}).get("parts", []) if p["id"] == role and p["kind"] == "role"), None)
         return part["role"] if part else None
 
-    def read_catalogue(self) -> FrameError | None:
+    def read_catalogue(self, max_age: float | None = None) -> FrameError | None:
+        """The catalogue read again, or, with `max_age`, only when what is held is older than that many seconds."""
+        if max_age is not None and self.catalogue is not None and self._catalogue_read is not None \
+                and (datetime.now(timezone.utc) - self._catalogue_read).total_seconds() < max_age:
+            return None
         try:
             self.catalogue = self.frame.runs()
+            self._catalogue_read = datetime.now(timezone.utc)
         except FrameError as e:
             return e
         return None
