@@ -1,0 +1,6 @@
+am-llm 50e2f6bc5315d4cabd6bd14b23ff4ef3a3fcc415
+
+The standing frame's documents and answers, each with the request that drew it, as am-llm wrote them at the commit above
+(`python -m agents frame examples --out products/frame-examples`; the frame's version in index.json and in the documents), committed
+in am-llm 27f665b and copied here unchanged from am-llm's products/frame-examples/ at 67704a0. They are copied again, and this file
+with them, whenever a contract or the frame's answers change.

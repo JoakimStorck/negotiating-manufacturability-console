@@ -1,0 +1,432 @@
+{
+ "request": {
+  "method": "PUT",
+  "path": "/roles/process_planner",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "kind": "scripted",
+   "name": "reference"
+  }
+ },
+ "status": 200,
+ "body": {
+  "schema": "presence/1",
+  "at": "2026-11-09T22:26:11.455369Z",
+  "down_after": 30.0,
+  "frame": {
+   "name": "examples",
+   "version": "50e2f6bc5315d4cabd6bd14b23ff4ef3a3fcc415",
+   "since": "2026-11-09T22:26:11.373952Z",
+   "scenario": null
+  },
+  "parts": [
+   {
+    "id": "requester",
+    "kind": "role",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "role": {
+     "title": "Requester",
+     "level": 0,
+     "maker": {
+      "kind": "scripted",
+      "name": "reference"
+     },
+     "next": null,
+     "alternatives": [
+      {
+       "kind": "model",
+       "name": "claude-sonnet-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-opus-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-haiku-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:20b"
+      },
+      {
+       "kind": "model",
+       "name": "qwen3:14b"
+      },
+      {
+       "kind": "model",
+       "name": "gemma4:12b"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:120b"
+      },
+      {
+       "kind": "scripted",
+       "name": "scripted"
+      },
+      {
+       "kind": "none",
+       "name": null
+      }
+     ],
+     "awake": null,
+     "waits": []
+    }
+   },
+   {
+    "id": "design_engineer",
+    "kind": "role",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "role": {
+     "title": "Design engineer",
+     "level": 1,
+     "maker": {
+      "kind": "scripted",
+      "name": "reference"
+     },
+     "next": null,
+     "alternatives": [
+      {
+       "kind": "model",
+       "name": "claude-sonnet-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-opus-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-haiku-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:20b"
+      },
+      {
+       "kind": "model",
+       "name": "qwen3:14b"
+      },
+      {
+       "kind": "model",
+       "name": "gemma4:12b"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:120b"
+      },
+      {
+       "kind": "scripted",
+       "name": "scripted"
+      },
+      {
+       "kind": "none",
+       "name": null
+      }
+     ],
+     "awake": null,
+     "waits": []
+    }
+   },
+   {
+    "id": "process_planner",
+    "kind": "role",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "role": {
+     "title": "Process planner",
+     "level": 2,
+     "maker": {
+      "kind": "scripted",
+      "name": "reference"
+     },
+     "next": null,
+     "alternatives": [
+      {
+       "kind": "model",
+       "name": "claude-sonnet-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-opus-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-haiku-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:20b"
+      },
+      {
+       "kind": "model",
+       "name": "qwen3:14b"
+      },
+      {
+       "kind": "model",
+       "name": "gemma4:12b"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:120b"
+      },
+      {
+       "kind": "scripted",
+       "name": "scripted"
+      },
+      {
+       "kind": "none",
+       "name": null
+      }
+     ],
+     "awake": null,
+     "waits": []
+    }
+   },
+   {
+    "id": "production_planner",
+    "kind": "role",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "role": {
+     "title": "Production planner",
+     "level": 2,
+     "maker": {
+      "kind": "none",
+      "name": null
+     },
+     "next": null,
+     "alternatives": [
+      {
+       "kind": "model",
+       "name": "claude-sonnet-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-opus-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-haiku-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:20b"
+      },
+      {
+       "kind": "model",
+       "name": "qwen3:14b"
+      },
+      {
+       "kind": "model",
+       "name": "gemma4:12b"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:120b"
+      },
+      {
+       "kind": "scripted",
+       "name": "scripted"
+      },
+      {
+       "kind": "scripted",
+       "name": "reference"
+      }
+     ],
+     "awake": null,
+     "waits": []
+    }
+   },
+   {
+    "id": "quality_engineer",
+    "kind": "role",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "role": {
+     "title": "Quality engineer",
+     "level": 2,
+     "maker": {
+      "kind": "none",
+      "name": null
+     },
+     "next": null,
+     "alternatives": [],
+     "awake": null,
+     "waits": []
+    }
+   },
+   {
+    "id": "machine_operator",
+    "kind": "role",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "role": {
+     "title": "Machine operator",
+     "level": 3,
+     "maker": {
+      "kind": "none",
+      "name": null
+     },
+     "next": null,
+     "alternatives": [
+      {
+       "kind": "model",
+       "name": "claude-sonnet-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-opus-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "claude-haiku-5-5"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:20b"
+      },
+      {
+       "kind": "model",
+       "name": "qwen3:14b"
+      },
+      {
+       "kind": "model",
+       "name": "gemma4:12b"
+      },
+      {
+       "kind": "model",
+       "name": "gpt-oss:120b"
+      },
+      {
+       "kind": "scripted",
+       "name": "scripted"
+      },
+      {
+       "kind": "scripted",
+       "name": "reference"
+      }
+     ],
+     "awake": null,
+     "waits": []
+    }
+   },
+   {
+    "id": "maintenance_technician",
+    "kind": "role",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "role": {
+     "title": "Maintenance technician",
+     "level": 3,
+     "maker": {
+      "kind": "none",
+      "name": null
+     },
+     "next": null,
+     "alternatives": [],
+     "awake": null,
+     "waits": []
+    }
+   },
+   {
+    "id": "core-one-1",
+    "kind": "machine",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "unavailable",
+    "note": "no host is configured for its adapter",
+    "machine": {
+     "class": "fff-3axis-0.4",
+     "adapter": "instrumented",
+     "job": null
+    }
+   },
+   {
+    "id": "x1c-1",
+    "kind": "machine",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "unavailable",
+    "note": "no host is configured for its adapter",
+    "machine": {
+     "class": "fff-3axis-0.4",
+     "adapter": "closed",
+     "job": null
+    }
+   },
+   {
+    "id": "virtual-nominal",
+    "kind": "machine",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "machine": {
+     "class": "fff-3axis-0.4",
+     "adapter": "virtual",
+     "job": null
+    }
+   },
+   {
+    "id": "virtual-lower",
+    "kind": "machine",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "machine": {
+     "class": "fff-3axis-0.4",
+     "adapter": "virtual",
+     "job": null
+    }
+   },
+   {
+    "id": "virtual-falling",
+    "kind": "machine",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "machine": {
+     "class": "fff-3axis-0.4",
+     "adapter": "virtual",
+     "job": null
+    }
+   },
+   {
+    "id": "virtual-higher",
+    "kind": "machine",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "machine": {
+     "class": "fff-3axis-0.4",
+     "adapter": "virtual",
+     "job": null
+    }
+   },
+   {
+    "id": "virtual-offset",
+    "kind": "machine",
+    "since": "2026-11-09T22:26:11.373952Z",
+    "seen": "2026-11-09T22:26:11.455369Z",
+    "state": "present",
+    "machine": {
+     "class": "fff-3axis-0.4",
+     "adapter": "virtual",
+     "job": null
+    }
+   }
+  ],
+  "runs": []
+ }
+}

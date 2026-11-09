@@ -1,0 +1,21 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/runs/bracket-mass@2/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "schema": "word/1",
+   "word": "decline",
+   "showing": "call-01M716YVRCMC4VZ7QNAVGAS8CB"
+  }
+ },
+ "status": 422,
+ "body": {
+  "error": "the schema refuses the document",
+  "reasons": [
+   "(the document): 'text' is a required property"
+  ]
+ }
+}

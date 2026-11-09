@@ -1,0 +1,13 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/nothing@1/events",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 404,
+ "body": {
+  "error": "no run nothing@1 at this frame"
+ }
+}

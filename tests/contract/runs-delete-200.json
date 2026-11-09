@@ -1,0 +1,13 @@
+{
+ "request": {
+  "method": "DELETE",
+  "path": "/runs/bracket-mass@2",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "body": {
+  "deleted": "bracket-mass@2"
+ }
+}

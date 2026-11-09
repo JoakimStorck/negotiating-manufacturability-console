@@ -1,0 +1,21 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/orders",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "lineage": "bracket-mass"
+  }
+ },
+ "status": 422,
+ "body": {
+  "error": "the schema refuses the document",
+  "reasons": [
+   "(the document): 'schema' is a required property",
+   "(the document): 'type' is a required property",
+   "(the document): 'order' is a required property"
+  ]
+ }
+}

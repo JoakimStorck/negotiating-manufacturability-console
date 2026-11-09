@@ -1,0 +1,29 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/runs/bracket-mass@2/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "schema": "word/1",
+   "word": "accept",
+   "showing": "call-01M7171MEHK7YNETG677KSBFAZ",
+   "relaxes": [
+    {
+     "replaces": "req-14",
+     "margin": 0.838
+    }
+   ],
+   "text": "Accepted at 20 g, each margin at risk relaxed to what the plan reaches."
+  }
+ },
+ "status": 200,
+ "body": {
+  "schema": "said/1",
+  "run": "bracket-mass@2",
+  "word": "accept",
+  "call": "call-01M7171NV848TRS1KFTCV0Z832",
+  "status": "running"
+ }
+}

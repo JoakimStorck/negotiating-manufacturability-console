@@ -2,7 +2,7 @@
 wrong, the overview's empty state from presence with `down` on the frame's clock, the catalogue, a run read from the frame's
 events equal to the same run read from its folder, played back and followed, an order placed, and the command line."""
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import httpx
 import pytest
@@ -14,13 +14,23 @@ from am_order.frame import Frame, FrameError, Reading, part_state, read_token
 from am_order.picture import cells, empty_cells, overview
 from am_order.schema import schema
 from am_order.web.app import create_app
-from stub_frame import StubFrame, presence, record_events, run_document, wake
+from stub_frame import StubFrame, body, record_events, renamed, run_document, shifted, wake
 from test_runs import T0, at, make_run
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 # the frame's clock stands years from the tool's, so that anything read on the tool's clock shows
 FRAME_AT = "2031-05-04T10:00:00Z"
 RUN = "h1-bracket-mass/open-01"
+REV4 = {"lineage": "bracket-mass", "revision": 4, "sha256": "51293041b1667402a070f5719a76770f7a0b8e7252d208563c579b7c6bdd2ac8"}
+
+
+def presence(at: str = FRAME_AT, parked: bool = True) -> dict:
+    """The frame's presence as the examples hold it, on the frame's clock at `at`: the held mass order parked, named as the home's
+    revision 4 (`parked`), or the empty frame; one machine's sign of life 300 s old, older than the frame's limit."""
+    doc = shifted(renamed(body("presence-parked"), "bracket-mass@4", REV4) if parked else body("presence-empty"), at)
+    machine = next(p for p in doc["parts"] if p["id"] == "virtual-nominal")
+    machine["seen"] = (datetime.fromisoformat(at.replace("Z", "+00:00")) - timedelta(seconds=300)).isoformat().replace("+00:00", "Z")
+    return doc
 
 
 @pytest.fixture
@@ -30,7 +40,7 @@ def folder(tmp_path):
 
 @pytest.fixture
 def stub(folder):
-    s = StubFrame(presence(FRAME_AT, parked_run="bracket-mass@4"))
+    s = StubFrame(presence())
     s.add_run(run_document(folder, RUN, ("h1-bracket-mass", "open-01"), {"lineage": "bracket-mass", "revision": 3, "sha256": "b" * 64}),
               record_events(folder), {"requester": {"kind": "model", "name": "claude-haiku-5-5"}})
     return s
@@ -67,7 +77,7 @@ def test_the_token_is_read_from_a_file_or_the_environment(tmp_path, monkeypatch)
 
 def test_the_client_reads_the_contracts_and_validates_them(stub):
     frame = frame_of(stub)
-    assert frame.presence()["frame"]["name"] == "workshop-1"
+    assert frame.presence()["frame"]["name"] == "examples"
     assert [r["id"] for r in frame.runs()["runs"]] == [RUN]
     doc = frame.events(RUN, 0)
     assert doc["last"] == len(doc["events"]) and doc["run"]["status"] == "done"
@@ -97,7 +107,7 @@ def test_a_frame_that_does_not_answer_is_a_state_not_an_error():
 
 
 def test_down_is_inferred_on_the_frames_clock():
-    doc = presence(FRAME_AT)
+    doc = presence(parked=False)
     states = {p["id"]: part_state(p, doc) for p in doc["parts"]}
     # the roles' sign of life is the frame's `at`: present, however far the tool's clock stands from the frame's
     assert states["requester"] == "present" and states["process_planner"] == "present"
@@ -203,8 +213,8 @@ def test_the_empty_state_shows_the_frame_its_roles_and_what_waits(tool):
     page = tool.get("/runs")
     assert page.status_code == 200
     t = page.text
-    assert "The frame workshop-1" in t and "waiting for orders" in t
-    assert "scripted (reference)" in t and "claude-sonnet-5-5" in t
+    assert "The frame examples" in t and "waiting for orders" in t
+    assert "scripted (reference)" in t and "production planner" in t.lower()
     assert 'class="state down"' in t and "virtual-nominal" in t and "no host is configured for its adapter" in t
     assert "parked for the owner&#39;s word" in t and "a showing from the design engineer waits for the requester" in t
     assert 'hx-get="/frame/presence" hx-trigger="every 3.0s, makers-changed from:body"' in t
@@ -222,7 +232,7 @@ def test_a_run_page_from_the_frame(tool):
     page = tool.get(f"/frame/runs/{RUN}?at=300")
     assert page.status_code == 200
     t = page.text
-    assert 'const base = "/frame/runs/h1-bracket-mass/open-01"' in t and "Read from" in t and "workshop-1" in t
+    assert 'const base = "/frame/runs/h1-bracket-mass/open-01"' in t and "Read from" in t and "the frame examples" in t
     assert f'src="/frame/runs/{RUN}/picture/bracket-mass@v2"' in t
     assert 'data-skew="' in t and 'data-skew="0"' not in t
     view = tool.get(f"/frame/runs/{RUN}/view?at=300.5")
@@ -244,10 +254,10 @@ def test_the_page_keeps_what_it_last_read_when_the_frame_stops_answering(home, s
     frame = frame_of(stub)
     app = create_app(home, None, None, frame=frame)
     t = TestClient(app)
-    assert "The frame workshop-1" in t.get("/runs").text
+    assert "The frame examples" in t.get("/runs").text
     frame.client = down_frame().client
     page = t.get("/runs").text
-    assert "has not answered since" in page and "The frame workshop-1" in page
+    assert "has not answered since" in page and "The frame examples" in page
 
 
 def test_a_refused_document_is_the_frames_fault(home, stub):
@@ -335,16 +345,16 @@ PARKED = schema("runs-1.json")["examples"][0]["runs"][0]["result"]
 
 
 def test_the_empty_state_draws_every_cell_with_its_beings_and_its_mark():
-    drawn, size = empty_cells(presence(FRAME_AT, parked_run="bracket-mass@4"))
+    drawn, size = empty_cells(presence())
     by = {c["role"]: c for c in drawn}
     assert list(by) == list(R.ROLES) and size["width"] > 0 and size["height"] > 0
     assert by["requester"]["lines"][0]["text"] == "order bracket-mass@4 parked: the owner's word is awaited"
     assert by["design_engineer"]["lines"][0]["text"] == "design version: none yet"
     assert by["process_planner"]["lines"][0]["text"] == "plan: none yet"
     # the beings are drawn whether or not anybody decides over them; the mark says who does, dimmed where nobody does
-    planner = by["process_planner"]["mark"]
-    assert planner["who"] == "none" and planner["dimmed"] and "the frame stops here when a decision is needed" in by["process_planner"]["all"]
-    assert by["design_engineer"]["mark"]["who"] == "claude-sonnet-5-5" and not by["design_engineer"]["mark"]["dimmed"]
+    planner = by["production_planner"]["mark"]
+    assert planner["who"] == "none" and planner["dimmed"] and "the frame stops here when a decision is needed" in by["production_planner"]["all"]
+    assert by["design_engineer"]["mark"]["who"] == "scripted (reference)" and not by["design_engineer"]["mark"]["dimmed"]
     assert by["requester"]["mark"]["mode"] == "waiting"
     machines = [l["text"] for l in by["machine_operator"]["lines"]]
     assert "virtual-nominal: virtual, down" in machines and "core-one-1: instrumented, unavailable" in machines
@@ -505,8 +515,8 @@ def test_a_marks_selector_lists_the_alternatives_and_the_current_maker(tool):
     page = tool.get("/runs").text
     assert 'hx-get="/frame/roles/design_engineer" hx-target="#maker-panel"' in page and '<div id="maker-panel" class="maker-panel"></div>' in page
     panel = tool.get("/frame/roles/design_engineer").text
-    assert "As system operator, at the frame workshop-1" in panel and "The design engineer's decision maker" in panel
-    assert "Now: <b>claude-sonnet-5-5</b>" in panel and ">claude-haiku-5-5</button>" in panel
+    assert "As system operator, at the frame examples" in panel and "The design engineer's decision maker" in panel
+    assert "Now: <b>the scripted policy (reference)</b>" in panel and ">claude-haiku-5-5</button>" in panel
     assert tool.get("/frame/roles/foreman").status_code == 404
 
 
@@ -536,7 +546,7 @@ def test_a_choice_with_no_run_being_prepared_stands_at_once(tool, stub):
 def test_a_maker_the_frame_does_not_offer_is_refused_in_its_words(tool):
     refused = tool.post("/frame/roles/design_engineer", data={"maker": json.dumps({"kind": "model", "name": "gpt-oss-120b"})})
     assert refused.status_code == 422 and "Not placed" in refused.text
-    assert "maker: model gpt-oss-120b is not among the alternatives of the design_engineer: model claude-haiku-5-5" in refused.text
+    assert "maker: model gpt-oss-120b is not among the alternatives of the design_engineer: model claude-sonnet-5-5, model claude-opus-5-5" in refused.text
     assert "HX-Trigger" not in refused.headers
 
 
@@ -557,8 +567,8 @@ def test_the_orders_page_says_who_will_take_the_order(tool, stub):
     t = tool.get("/products/bracket-mass/frame").text
     assert "Who will take the order" in t and '<a href="/runs">Change them in the overview first</a>' in t
     assert "Requester: the scripted policy (reference)" in t
-    assert "Design engineer: claude-sonnet-5-5 <span class=\"muted\">→ claude-haiku-5-5 from the role's next waking</span>" in t
-    assert "Process planner: <span class=\"muted\">nobody decides here: the frame stops there when a decision is needed</span>" in t
+    assert "Design engineer: the scripted policy (reference) <span class=\"muted\">→ claude-haiku-5-5 from the role's next waking</span>" in t
+    assert "Production planner: <span class=\"muted\">nobody decides here: the frame stops there when a decision is needed</span>" in t
 
 
 def test_the_command_line_sets_a_maker(stub, tmp_path, capsys, monkeypatch):
@@ -572,3 +582,25 @@ def test_the_command_line_sets_a_maker(stub, tmp_path, capsys, monkeypatch):
     assert main(base + ["design_engineer=gpt-oss-120b"]) == 1
     assert "is not among the alternatives" in capsys.readouterr().err
     assert main(base + ["process_planner=none"]) == 0
+
+
+# ------------------------------------------------------------------------ the dialogue through the client
+
+def test_the_client_reads_the_dialogue_and_gives_a_word():
+    from am_order import SchemaError
+    from stub_frame import HELD, example, held_mass
+    frame = frame_of(held_mass("parked"))
+    doc = frame.dialogue(HELD)
+    assert doc["waits"]["what"] == "showing" and doc["waits"]["entry"]["alternatives"][0]["unmet"][0]["metric"] == "M13"
+    with pytest.raises(SchemaError) as e:                      # the word is the tool's: checked before it is sent
+        frame.say(HELD, {"schema": "word/1", "word": "decline", "showing": doc["waits"]["dialogue"]})
+    assert "'text' is a required property" in str(e.value)
+    with pytest.raises(FrameError) as e:                       # the tool's refusal, in the requester's tool's words
+        frame.say(HELD, example("dialogue-word-422")["request"]["body"])
+    assert e.value.status == 422 and "relaxes its margin to 0.838" in str(e.value)
+    said = frame.say(HELD, example("dialogue-word-refuse-200")["request"]["body"])
+    assert said == example("dialogue-word-refuse-200")["body"]
+    with pytest.raises(FrameError) as e:                       # the earlier showing no longer waits
+        frame.say(HELD, example("dialogue-word-409-stale")["request"]["body"])
+    assert e.value.status == 409 and "which does not wait" in str(e.value)
+    assert frame.dialogue(HELD)["waits"]["entry"]["alternatives"][0]["requirements"][0]["within_mandate"] is False

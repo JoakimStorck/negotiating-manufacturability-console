@@ -1,0 +1,13 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/bracket-mass@2/features/nothing@v1",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 404,
+ "body": {
+  "error": "nothing@v1 is no version the run bracket-mass@2 accepted"
+ }
+}

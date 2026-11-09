@@ -1,0 +1,27 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/runs/bracket-mass@2/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "schema": "word/1",
+   "word": "refuse",
+   "showing": "call-01M716YVRCMC4VZ7QNAVGAS8CB",
+   "conditions": [
+    {
+     "replaces": "req-20",
+     "body": {
+      "at_most": 20.0
+     }
+    }
+   ],
+   "text": "I would accept the part at up to 20 g printed, every other requirement as given."
+  }
+ },
+ "status": 409,
+ "body": {
+  "error": "the run bracket-mass@2 is not parked: it is being prepared; a word is taken only while the run waits for the owner's word"
+ }
+}

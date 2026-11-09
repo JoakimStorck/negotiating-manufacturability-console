@@ -1,0 +1,19 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/runs/bracket-mass@2/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "schema": "word/1",
+   "word": "accept",
+   "showing": "call-01M716YVRCMC4VZ7QNAVGAS8CB",
+   "text": "Accepted."
+  }
+ },
+ "status": 422,
+ "body": {
+  "error": "the plan shown leaves requirements at risk against the order's margins, and a plan at risk is accepted only with its margins relaxed by the acceptance to what it reaches: req-14 at pin-hole reaches 0.838 of its limit against its margin 0.6 in force: the acceptance relaxes its margin to 0.838 (relaxes: replaces case-01M716PJSP0FM3CXXSBWMCW8VP/req-14, margin 0.838); otherwise refuse the showing in a remark, stating the conditions you would accept, or decline the order"
+ }
+}

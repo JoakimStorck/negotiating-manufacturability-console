@@ -1,0 +1,13 @@
+{
+ "request": {
+  "method": "DELETE",
+  "path": "/runs/bracket-mass@2",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 409,
+ "body": {
+  "error": "the run bracket-mass@2 is being prepared; it can be deleted once it has ended or parked"
+ }
+}

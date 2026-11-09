@@ -1,0 +1,475 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/bracket-mass@2/features/bracket-mass@v3",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "body": {
+  "schema": "features/1",
+  "design": "bracket-mass@v3",
+  "lineage": "bracket-mass",
+  "version": 3,
+  "sha256": "e554aa378939b254eecf70320ca8d97f521ff7a29380ebdf3452cd7bc0aeda27",
+  "parent": "bracket-mass@v2",
+  "units": "mm",
+  "material": "Prusament PLA",
+  "bbox": {
+   "min": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "max": [
+    100.0,
+    60.0,
+    40.0
+   ]
+  },
+  "picture": {
+   "file": "picture.png",
+   "sha256": "b89828646f93381fec370f344b39383f3c26ee312a91857e6ccc26c832cc8849"
+  },
+  "models": [
+   {
+    "format": "stl",
+    "file": "model.stl",
+    "sha256": "bb6767f46aee30d88dea2643989d2fa891e30669a9d8d577c9377f1cb46edfdf"
+   },
+   {
+    "format": "3mf",
+    "file": "model.3mf",
+    "sha256": "6d6e243bf05bff5aaac001d96ed6b8dddba1b9375ba859c3d76e957ab7e3b749"
+   }
+  ],
+  "features": [
+   {
+    "name": "mount-face",
+    "kind": "surface",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     30.0,
+     30.0,
+     0.75
+    ],
+    "bbox": {
+     "min": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "max": [
+      60.0,
+      60.0,
+      1.5
+     ]
+    },
+    "labels": [],
+    "colour": "#2ca02c",
+    "requirements": [
+     "form",
+     "datum"
+    ],
+    "normal": {
+     "point": [
+      30.0,
+      30.0,
+      0.0
+     ],
+     "direction": [
+      0.0,
+      0.0,
+      -1.0
+     ]
+    }
+   },
+   {
+    "name": "mount-edge",
+    "kind": "edge",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     30.0,
+     0.75,
+     0.75
+    ],
+    "bbox": {
+     "min": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "max": [
+      60.0,
+      1.5,
+      1.5
+     ]
+    },
+    "labels": [],
+    "colour": "#1f77b4",
+    "requirements": [
+     "datum"
+    ],
+    "axis": {
+     "point": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "direction": [
+      1.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   {
+    "name": "bolt-hole-1",
+    "kind": "hole",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     18.0,
+     10.0,
+     3.0
+    ],
+    "bbox": {
+     "min": [
+      14.3,
+      6.3103,
+      0.0
+     ],
+     "max": [
+      21.7,
+      13.6897,
+      6.0
+     ]
+    },
+    "labels": [],
+    "colour": "#17becf",
+    "requirements": [
+     "size",
+     "position"
+    ],
+    "axis": {
+     "point": [
+      18.0,
+      10.0,
+      0.0
+     ],
+     "direction": [
+      0.0,
+      0.0,
+      1.0
+     ]
+    },
+    "diameter": 4.4
+   },
+   {
+    "name": "bolt-hole-2",
+    "kind": "hole",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     42.0,
+     10.0,
+     3.0
+    ],
+    "bbox": {
+     "min": [
+      38.3,
+      6.3103,
+      0.0
+     ],
+     "max": [
+      45.7,
+      13.6897,
+      6.0
+     ]
+    },
+    "labels": [],
+    "colour": "#e6b800",
+    "requirements": [
+     "size",
+     "position"
+    ],
+    "axis": {
+     "point": [
+      42.0,
+      10.0,
+      0.0
+     ],
+     "direction": [
+      0.0,
+      0.0,
+      1.0
+     ]
+    },
+    "diameter": 4.4
+   },
+   {
+    "name": "bolt-hole-3",
+    "kind": "hole",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     18.0,
+     50.0,
+     3.0
+    ],
+    "bbox": {
+     "min": [
+      14.3,
+      46.3103,
+      0.0
+     ],
+     "max": [
+      21.7,
+      53.6897,
+      6.0
+     ]
+    },
+    "labels": [],
+    "colour": "#9467bd",
+    "requirements": [
+     "size",
+     "position"
+    ],
+    "axis": {
+     "point": [
+      18.0,
+      50.0,
+      0.0
+     ],
+     "direction": [
+      0.0,
+      0.0,
+      1.0
+     ]
+    },
+    "diameter": 4.4
+   },
+   {
+    "name": "bolt-hole-4",
+    "kind": "hole",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     42.0,
+     50.0,
+     3.0
+    ],
+    "bbox": {
+     "min": [
+      38.3,
+      46.3103,
+      0.0
+     ],
+     "max": [
+      45.7,
+      53.6897,
+      6.0
+     ]
+    },
+    "labels": [],
+    "colour": "#d62728",
+    "requirements": [
+     "size",
+     "position"
+    ],
+    "axis": {
+     "point": [
+      42.0,
+      50.0,
+      0.0
+     ],
+     "direction": [
+      0.0,
+      0.0,
+      1.0
+     ]
+    },
+    "diameter": 4.4
+   },
+   {
+    "name": "pin-hole",
+    "kind": "hole",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     86.0,
+     30.0,
+     28.0
+    ],
+    "bbox": {
+     "min": [
+      80.35,
+      23.0,
+      22.3658
+     ],
+     "max": [
+      91.65,
+      37.0,
+      33.6342
+     ]
+    },
+    "labels": [],
+    "colour": "#ff7f0e",
+    "requirements": [
+     "size",
+     "load_case"
+    ],
+    "axis": {
+     "point": [
+      86.0,
+      30.0,
+      28.0
+     ],
+     "direction": [
+      0.0,
+      1.0,
+      0.0
+     ]
+    },
+    "diameter": 8.3
+   },
+   {
+    "name": "lug",
+    "kind": "wall",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     68.7067,
+     30.0,
+     25.2905
+    ],
+    "bbox": {
+     "min": [
+      48.0,
+      23.0,
+      1.0061
+     ],
+     "max": [
+      100.0,
+      37.0,
+      40.0
+     ]
+    },
+    "labels": [],
+    "colour": "#8c564b",
+    "requirements": [],
+    "thickness": 14.0
+   },
+   {
+    "name": "lug-underside",
+    "kind": "surface",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     79.5525,
+     30.0,
+     16.4775
+    ],
+    "bbox": {
+     "min": [
+      59.105,
+      23.0,
+      1.0061
+     ],
+     "max": [
+      100.0,
+      37.0,
+      31.949
+     ]
+    },
+    "labels": [],
+    "colour": "#e377c2",
+    "requirements": [
+     "surface"
+    ],
+    "normal": {
+     "point": [
+      80.0,
+      30.0,
+      15.875628598483827
+     ],
+     "direction": [
+      0.5966451474642323,
+      0.0,
+      -0.8025051825423837
+     ]
+    }
+   },
+   {
+    "name": "web",
+    "kind": "rib",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     4.8,
+     30.0,
+     9.0712
+    ],
+    "bbox": {
+     "min": [
+      2.5,
+      0.0,
+      5.25
+     ],
+     "max": [
+      7.1,
+      60.0,
+      14.0
+     ]
+    },
+    "labels": [],
+    "colour": "#bcbd22",
+    "requirements": [
+     "size"
+    ],
+    "normal": {
+     "point": [
+      4.0,
+      30.0,
+      10.0
+     ],
+     "direction": [
+      -1.0,
+      0.0,
+      0.0
+     ]
+    },
+    "thickness": 1.6
+   },
+   {
+    "name": "fillet-lug-mount",
+    "kind": "fillet",
+    "origin": "declared",
+    "status": "confirmed",
+    "centroid": [
+     46.0392,
+     30.0,
+     7.6123
+    ],
+    "bbox": {
+     "min": [
+      38.5,
+      21.5,
+      4.5
+     ],
+     "max": [
+      49.5,
+      38.5,
+      15.5
+     ]
+    },
+    "labels": [],
+    "colour": "#2ca02c",
+    "requirements": []
+   }
+  ]
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/runs/bracket-mass@2/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "schema": "word/1",
+   "word": "accept",
+   "showing": "call-01M7171MEHK7YNETG677KSBFAZ",
+   "relaxes": [
+    {
+     "replaces": "req-14",
+     "margin": 0.838
+    }
+   ],
+   "text": "Accepted at 20 g, each margin at risk relaxed to what the plan reaches."
+  }
+ },
+ "status": 409,
+ "body": {
+  "error": "the run bracket-mass@2 is not parked: it is ended; a word is taken only while the run waits for the owner's word"
+ }
+}

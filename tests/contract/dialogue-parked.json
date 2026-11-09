@@ -1,0 +1,168 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/bracket-mass@2/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "body": {
+  "schema": "dialogue/1",
+  "at": "2026-11-09T22:30:47.205533Z",
+  "run": {
+   "id": "bracket-mass@2",
+   "order": {
+    "lineage": "bracket-mass",
+    "revision": 2,
+    "sha256": "ae032df9d90fc00a50901e40cc20f6054469e6b3aa6cc3056d830ec99161ab4d"
+   },
+   "status": "parked"
+  },
+  "waits": {
+   "what": "showing",
+   "since": "2026-11-09T22:30:45.260289Z",
+   "dialogue": "call-01M716YVRCMC4VZ7QNAVGAS8CB",
+   "metrics": [
+    "M13"
+   ],
+   "entry": {
+    "call": "call-01M716YVRCMC4VZ7QNAVGAS8CB",
+    "time": "2026-11-09T22:30:45.260289Z",
+    "kind": "showing",
+    "role": "design_engineer",
+    "actor": "agent",
+    "text": "No version within the brief meets the requirements as they stand: this version holds the rest with its plan; what it leaves unmet or at risk is yours to decide.",
+    "design": "bracket-mass@v3",
+    "alternatives": [
+     {
+      "name": null,
+      "design": "bracket-mass@v3",
+      "plan": "plan-bracket-mass-v3-mZ@v26",
+      "figures": {
+       "print_time_s": 3280.8,
+       "material_g": 19.852,
+       "mass_g": 19.852
+      },
+      "requirements": [],
+      "at_risk": [
+       {
+        "replaces": "req-14",
+        "metric": "M8",
+        "feature": "pin-hole",
+        "margin": 0.6,
+        "reaches": 0.838,
+        "unit": "1",
+        "call": "call-01M716YD776DR1KFN0M8MEFYNQ"
+       }
+      ],
+      "unmet": [
+       {
+        "replaces": "req-20",
+        "metric": "M13",
+        "kind": "mass",
+        "reaches": 19.852,
+        "unit": "g",
+        "call": "call-01M716YD776DR1KFN0M8MEFYNQ"
+       }
+      ],
+      "for_decision": []
+     }
+    ],
+    "certificate": {
+     "text": "Since the brief 1 version of bracket-mass made (by parameters 1); 0 goal calls, 0 reached; the lightest version holding every other requirement is bracket-mass@v3, 19.852 g printed, its load cases req-12 0.5811, req-13 0.4748, req-14 0.8379, req-15 0.15 (plan plan-bracket-mass-v3-mZ@v26); the showing asks req-14 at risk against its margin 0.6, the plan reaching 0.838; req-20 unmet, the plan reaching 19.852.",
+     "versions": 1,
+     "means": [
+      "parameters"
+     ],
+     "lightest": "bracket-mass@v3",
+     "cites": [
+      "call-01M716YD776DR1KFN0M8MEFYNQ"
+     ]
+    }
+   }
+  },
+  "thread": [
+   {
+    "call": "call-01M716PJSNDR74EHSXZ2CYXE3X",
+    "time": "2026-11-09T22:26:13.941508Z",
+    "kind": "brief",
+    "role": "requester",
+    "actor": "operator",
+    "text": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame. It is loaded in four ways during handling, each for a short time. It is printed in PLA in a small series on the printers available. The mounting face must sit flat against the frame and the bolt holes must meet the frame's pattern. The bracket goes on a frame that moves, where every gram counts: as printed it may weigh no more than the mass requirement of the design says, with every other requirement as first given. Its shape is free within the envelope, the interfaces kept; print time is the objective once the requirements are met.",
+    "design": "bracket-mass@v2",
+    "objective": "time",
+    "quantity": 10
+   },
+   {
+    "call": "call-01M716V01AYXNA45Y5WAW29DJV",
+    "time": "2026-11-09T22:28:38.570644Z",
+    "kind": "consent",
+    "role": "brief",
+    "actor": "brief",
+    "text": "bracket-mass@v3 changes fillet_radius, lug_thickness, underside_angle since bracket-mass@v2, all of which the brief call-01M716PJSNDR74EHSXZ2CYXE3X lets change (lug_thickness, fillet_radius, underside_angle, shape): the brief is the requester's consent",
+    "design": "bracket-mass@v3",
+    "changes": [
+     "fillet_radius",
+     "lug_thickness",
+     "underside_angle"
+    ]
+   },
+   {
+    "call": "call-01M716YVRCMC4VZ7QNAVGAS8CB",
+    "time": "2026-11-09T22:30:45.260289Z",
+    "kind": "showing",
+    "role": "design_engineer",
+    "actor": "agent",
+    "text": "No version within the brief meets the requirements as they stand: this version holds the rest with its plan; what it leaves unmet or at risk is yours to decide.",
+    "design": "bracket-mass@v3",
+    "alternatives": [
+     {
+      "name": null,
+      "design": "bracket-mass@v3",
+      "plan": "plan-bracket-mass-v3-mZ@v26",
+      "figures": {
+       "print_time_s": 3280.8,
+       "material_g": 19.852,
+       "mass_g": 19.852
+      },
+      "requirements": [],
+      "at_risk": [
+       {
+        "replaces": "req-14",
+        "metric": "M8",
+        "feature": "pin-hole",
+        "margin": 0.6,
+        "reaches": 0.838,
+        "unit": "1",
+        "call": "call-01M716YD776DR1KFN0M8MEFYNQ"
+       }
+      ],
+      "unmet": [
+       {
+        "replaces": "req-20",
+        "metric": "M13",
+        "kind": "mass",
+        "reaches": 19.852,
+        "unit": "g",
+        "call": "call-01M716YD776DR1KFN0M8MEFYNQ"
+       }
+      ],
+      "for_decision": []
+     }
+    ],
+    "certificate": {
+     "text": "Since the brief 1 version of bracket-mass made (by parameters 1); 0 goal calls, 0 reached; the lightest version holding every other requirement is bracket-mass@v3, 19.852 g printed, its load cases req-12 0.5811, req-13 0.4748, req-14 0.8379, req-15 0.15 (plan plan-bracket-mass-v3-mZ@v26); the showing asks req-14 at risk against its margin 0.6, the plan reaching 0.838; req-20 unmet, the plan reaching 19.852.",
+     "versions": 1,
+     "means": [
+      "parameters"
+     ],
+     "lightest": "bracket-mass@v3",
+     "cites": [
+      "call-01M716YD776DR1KFN0M8MEFYNQ"
+     ]
+    }
+   }
+  ]
+ }
+}

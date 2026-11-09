@@ -1,0 +1,19 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/runs/examples-plate-20261109T223223Z/open-01/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "schema": "word/1",
+   "word": "answer",
+   "question": "call-01M70000000000000000000000",
+   "text": "Yes."
+  }
+ },
+ "status": 403,
+ "body": {
+  "error": "the run examples-plate-20261109T223223Z/open-01 is an experiment's, not an order's: it has no owner to give a word"
+ }
+}

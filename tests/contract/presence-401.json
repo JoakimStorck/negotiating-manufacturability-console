@@ -1,0 +1,10 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/presence"
+ },
+ "status": 401,
+ "body": {
+  "error": "a bearer token is missing: Authorization: Bearer <token>, a token listed in /tmp/am-frame-examples-9pojrvq1/frame-tokens"
+ }
+}

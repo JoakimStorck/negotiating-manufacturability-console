@@ -1,0 +1,427 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "body": {
+  "schema": "runs/1",
+  "at": "2026-11-09T22:32:22.165308Z",
+  "runs": [
+   {
+    "id": "bracket-mass@2",
+    "order": {
+     "lineage": "bracket-mass",
+     "revision": 2,
+     "sha256": "ae032df9d90fc00a50901e40cc20f6054469e6b3aa6cc3056d830ec99161ab4d"
+    },
+    "scenario": null,
+    "lineages": [
+     "bracket-mass"
+    ],
+    "settings": {
+     "answering": "owner",
+     "limits": {
+      "cost": 15.0,
+      "design_versions": 6,
+      "seconds": 10800
+     },
+     "negotiation": "open",
+     "reservation": "You would accept, beyond the brief, only what the order's mandates allow, and only once the design engineer shows it necessary: M6 to M9 (req-12 to req-15, now at most 0.6 each) relaxed to at most 0.85. M13 (req-20) you hold as given: a part that needs it relaxed is no use to you, and a showing that relaxes it ends the order, declined. The brief's bounds, M14 (at most 4560 s) and M15 (at most 25 g), hold: a plan beyond them you refuse, saying why. Any other relaxation, or a load case's force or direction changed, you refuse, saying why."
+    },
+    "version": "50e2f6bc5315d4cabd6bd14b23ff4ef3a3fcc415",
+    "status": "done",
+    "started": "2026-11-09T22:26:13.611419Z",
+    "ended": "2026-11-09T22:32:21.868509Z",
+    "outcome": "accepted",
+    "reason": null,
+    "result": {
+     "outcome": "accepted",
+     "plan": {
+      "design": "bracket-mass@v3",
+      "findings": [
+       {
+        "call": "call-01M7171Q73A66JQ93FPRJ894T7",
+        "feature": "bracket-mass@v3",
+        "limit": 1.0,
+        "margin": 0.5,
+        "metric": null,
+        "requirement": "printable",
+        "status": "at_risk",
+        "unit": "-",
+        "value": 0.9704
+       }
+      ],
+      "id": "plan-bracket-mass-v3-mZ@v59",
+      "mass_g": 19.852,
+      "material": "Prusament PLA",
+      "material_g": 19.852,
+      "orientation": "-Z",
+      "print_time_s": 3280.8,
+      "settings": {
+       "fill_density": {
+        "unit": "%",
+        "value": 10
+       },
+       "layer_height": {
+        "unit": "mm",
+        "value": 0.15
+       },
+       "perimeters": {
+        "unit": "1",
+        "value": 3
+       }
+      },
+      "verdict": "at_risk"
+     },
+     "reason": null,
+     "requirements": [
+      {
+       "feature": null,
+       "kind": "size",
+       "margin": null,
+       "metric": "M1",
+       "relaxed": null,
+       "requirement": "req-1",
+       "unit": "mm",
+       "value": {
+        "dimension": "envelope",
+        "nominal": [
+         100.0,
+         60.0,
+         40.0
+        ],
+        "upper": [
+         100.0,
+         60.0,
+         40.0
+        ]
+       }
+      },
+      {
+       "feature": "pin-hole",
+       "kind": "size",
+       "margin": null,
+       "metric": "M2",
+       "relaxed": null,
+       "requirement": "req-2",
+       "unit": "mm",
+       "value": {
+        "dimension": "diameter",
+        "lower": 8.0,
+        "nominal": 8.3,
+        "upper": 8.6
+       }
+      },
+      {
+       "feature": "bolt-hole-1",
+       "kind": "size",
+       "margin": null,
+       "metric": "M3",
+       "relaxed": null,
+       "requirement": "req-3",
+       "unit": "mm",
+       "value": {
+        "dimension": "diameter",
+        "lower": 4.300000000000001,
+        "nominal": 4.4,
+        "upper": 4.5
+       }
+      },
+      {
+       "feature": "bolt-hole-2",
+       "kind": "size",
+       "margin": null,
+       "metric": "M3",
+       "relaxed": null,
+       "requirement": "req-4",
+       "unit": "mm",
+       "value": {
+        "dimension": "diameter",
+        "lower": 4.300000000000001,
+        "nominal": 4.4,
+        "upper": 4.5
+       }
+      },
+      {
+       "feature": "bolt-hole-3",
+       "kind": "size",
+       "margin": null,
+       "metric": "M3",
+       "relaxed": null,
+       "requirement": "req-5",
+       "unit": "mm",
+       "value": {
+        "dimension": "diameter",
+        "lower": 4.300000000000001,
+        "nominal": 4.4,
+        "upper": 4.5
+       }
+      },
+      {
+       "feature": "bolt-hole-4",
+       "kind": "size",
+       "margin": null,
+       "metric": "M3",
+       "relaxed": null,
+       "requirement": "req-6",
+       "unit": "mm",
+       "value": {
+        "dimension": "diameter",
+        "lower": 4.300000000000001,
+        "nominal": 4.4,
+        "upper": 4.5
+       }
+      },
+      {
+       "feature": "bolt-hole-1",
+       "kind": "position",
+       "margin": null,
+       "metric": "M4",
+       "relaxed": null,
+       "requirement": "req-7",
+       "unit": "mm",
+       "value": {
+        "datums": [
+         "A",
+         "B"
+        ],
+        "tolerance": 0.1
+       }
+      },
+      {
+       "feature": "bolt-hole-2",
+       "kind": "position",
+       "margin": null,
+       "metric": "M4",
+       "relaxed": null,
+       "requirement": "req-8",
+       "unit": "mm",
+       "value": {
+        "datums": [
+         "A",
+         "B"
+        ],
+        "tolerance": 0.1
+       }
+      },
+      {
+       "feature": "bolt-hole-3",
+       "kind": "position",
+       "margin": null,
+       "metric": "M4",
+       "relaxed": null,
+       "requirement": "req-9",
+       "unit": "mm",
+       "value": {
+        "datums": [
+         "A",
+         "B"
+        ],
+        "tolerance": 0.1
+       }
+      },
+      {
+       "feature": "bolt-hole-4",
+       "kind": "position",
+       "margin": null,
+       "metric": "M4",
+       "relaxed": null,
+       "requirement": "req-10",
+       "unit": "mm",
+       "value": {
+        "datums": [
+         "A",
+         "B"
+        ],
+        "tolerance": 0.1
+       }
+      },
+      {
+       "feature": "mount-face",
+       "kind": "form",
+       "margin": null,
+       "metric": "M5",
+       "relaxed": null,
+       "requirement": "req-11",
+       "unit": "mm",
+       "value": {
+        "flatness": 0.2
+       }
+      },
+      {
+       "feature": "pin-hole",
+       "kind": "load_case",
+       "margin": 0.6,
+       "metric": "M6",
+       "relaxed": null,
+       "requirement": "req-12",
+       "unit": "1",
+       "value": {
+        "at_most": 1.0
+       }
+      },
+      {
+       "feature": "pin-hole",
+       "kind": "load_case",
+       "margin": 0.6,
+       "metric": "M7",
+       "relaxed": null,
+       "requirement": "req-13",
+       "unit": "1",
+       "value": {
+        "at_most": 1.0
+       }
+      },
+      {
+       "feature": "pin-hole",
+       "kind": "load_case",
+       "margin": 0.6,
+       "metric": "M9",
+       "relaxed": null,
+       "requirement": "req-15",
+       "unit": "1",
+       "value": {
+        "at_most": 1.0
+       }
+      },
+      {
+       "feature": "web",
+       "kind": "size",
+       "margin": null,
+       "metric": "M11",
+       "relaxed": null,
+       "requirement": "req-16",
+       "unit": "mm",
+       "value": {
+        "dimension": "thickness",
+        "lower": 1.2,
+        "nominal": 1.6
+       }
+      },
+      {
+       "feature": "lug-underside",
+       "kind": "surface",
+       "margin": null,
+       "metric": "M12",
+       "relaxed": null,
+       "requirement": "req-17",
+       "unit": "um",
+       "value": {
+        "finished": true
+       }
+      },
+      {
+       "feature": "mount-face",
+       "kind": "datum",
+       "margin": null,
+       "metric": "O2",
+       "relaxed": null,
+       "requirement": "req-18",
+       "unit": null,
+       "value": {
+        "datum": "A"
+       }
+      },
+      {
+       "feature": "mount-edge",
+       "kind": "datum",
+       "margin": null,
+       "metric": "O3",
+       "relaxed": null,
+       "requirement": "req-19",
+       "unit": null,
+       "value": {
+        "datum": "B"
+       }
+      },
+      {
+       "feature": null,
+       "kind": "mass",
+       "margin": null,
+       "metric": "M13",
+       "relaxed": {
+        "by": {
+         "actor": "owner",
+         "role": "requester"
+        },
+        "from": {
+         "at_most": 16.0
+        },
+        "showing": "call-01M7171MEHK7YNETG677KSBFAZ",
+        "to": {
+         "at_most": 20.0
+        },
+        "what": "value",
+        "within_mandate": false
+       },
+       "requirement": "req-21",
+       "unit": "g",
+       "value": {
+        "at_most": 20.0
+       }
+      },
+      {
+       "feature": "pin-hole",
+       "kind": "load_case",
+       "margin": 0.838,
+       "metric": "M8",
+       "relaxed": {
+        "by": {
+         "actor": "owner",
+         "role": "requester"
+        },
+        "from": 0.6,
+        "showing": "call-01M7171MEHK7YNETG677KSBFAZ",
+        "to": 0.838,
+        "what": "margin",
+        "within_mandate": true
+       },
+       "requirement": "req-22",
+       "unit": "1",
+       "value": {
+        "at_most": 1.0
+       }
+      }
+     ],
+     "showing": null,
+     "waits": null
+    },
+    "makers": {
+     "requester": {
+      "kind": "scripted",
+      "name": "reference"
+     },
+     "design_engineer": {
+      "kind": "scripted",
+      "name": "reference"
+     },
+     "process_planner": {
+      "kind": "scripted",
+      "name": "reference"
+     },
+     "production_planner": {
+      "kind": "none",
+      "name": null
+     },
+     "quality_engineer": {
+      "kind": "none",
+      "name": null
+     },
+     "machine_operator": {
+      "kind": "none",
+      "name": null
+     },
+     "maintenance_technician": {
+      "kind": "none",
+      "name": null
+     }
+    },
+    "last": 509
+   }
+  ]
+ }
+}

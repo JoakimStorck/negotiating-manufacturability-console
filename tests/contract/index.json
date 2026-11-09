@@ -1,0 +1,166 @@
+{
+ "about": "The standing frame's documents and answers, each with the request that drew it (agents/examples.py); written from a frame with scripted roles, the reference route's, on the held mass order bracket-mass@2.",
+ "version": "50e2f6bc5315d4cabd6bd14b23ff4ef3a3fcc415",
+ "examples": {
+  "dialogue-accepted": {
+   "request": "GET /runs/bracket-mass@2/dialogue",
+   "status": 200,
+   "schema": "dialogue-1 (dialogue/1)"
+  },
+  "dialogue-parked": {
+   "request": "GET /runs/bracket-mass@2/dialogue",
+   "status": 200,
+   "schema": "dialogue-1 (dialogue/1)"
+  },
+  "dialogue-parked-again": {
+   "request": "GET /runs/bracket-mass@2/dialogue",
+   "status": 200,
+   "schema": "dialogue-1 (dialogue/1)"
+  },
+  "dialogue-word-403": {
+   "request": "POST /runs/examples-plate-20261109T223223Z/open-01/dialogue",
+   "status": 403,
+   "schema": null
+  },
+  "dialogue-word-409-ended": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 409,
+   "schema": null
+  },
+  "dialogue-word-409-running": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 409,
+   "schema": null
+  },
+  "dialogue-word-409-stale": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 409,
+   "schema": null
+  },
+  "dialogue-word-422": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 422,
+   "schema": null
+  },
+  "dialogue-word-422-schema": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 422,
+   "schema": null
+  },
+  "dialogue-word-accept-200": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 200,
+   "schema": "dialogue-1 (said/1)"
+  },
+  "dialogue-word-refuse-200": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 200,
+   "schema": "dialogue-1 (said/1)"
+  },
+  "events-404": {
+   "request": "GET /runs/nothing@1/events",
+   "status": 404,
+   "schema": null
+  },
+  "events-accepted": {
+   "request": "GET /runs/bracket-mass@2/events?after=0",
+   "status": 200,
+   "schema": "events-1"
+  },
+  "events-parked": {
+   "request": "GET /runs/bracket-mass@2/events?after=0",
+   "status": 200,
+   "schema": "events-1"
+  },
+  "features-404": {
+   "request": "GET /runs/bracket-mass@2/features/nothing@v1",
+   "status": 404,
+   "schema": null
+  },
+  "features-accepted": {
+   "request": "GET /runs/bracket-mass@2/features/bracket-mass@v3",
+   "status": 200,
+   "schema": "features-1"
+  },
+  "orders-get-200": {
+   "request": "GET /orders/bracket-mass@2",
+   "status": 200,
+   "schema": "order-1"
+  },
+  "orders-post-201": {
+   "request": "POST /orders",
+   "status": 201,
+   "schema": null
+  },
+  "orders-post-409": {
+   "request": "POST /orders",
+   "status": 409,
+   "schema": null
+  },
+  "orders-post-422": {
+   "request": "POST /orders",
+   "status": 422,
+   "schema": null
+  },
+  "presence-401": {
+   "request": "GET /presence",
+   "status": 401,
+   "schema": null
+  },
+  "presence-empty": {
+   "request": "GET /presence",
+   "status": 200,
+   "schema": "presence-1"
+  },
+  "presence-ended": {
+   "request": "GET /presence",
+   "status": 200,
+   "schema": "presence-1"
+  },
+  "presence-parked": {
+   "request": "GET /presence",
+   "status": 200,
+   "schema": "presence-1"
+  },
+  "presence-preparing": {
+   "request": "GET /presence",
+   "status": 200,
+   "schema": "presence-1"
+  },
+  "roles-put-200": {
+   "request": "PUT /roles/process_planner",
+   "status": 200,
+   "schema": "presence-1"
+  },
+  "roles-put-422": {
+   "request": "PUT /roles/process_planner",
+   "status": 422,
+   "schema": null
+  },
+  "runs-accepted": {
+   "request": "GET /runs",
+   "status": 200,
+   "schema": "runs-1"
+  },
+  "runs-delete-200": {
+   "request": "DELETE /runs/bracket-mass@2",
+   "status": 200,
+   "schema": null
+  },
+  "runs-delete-403": {
+   "request": "DELETE /runs/examples-plate-20261109T223223Z/open-01",
+   "status": 403,
+   "schema": null
+  },
+  "runs-delete-409": {
+   "request": "DELETE /runs/bracket-mass@2",
+   "status": 409,
+   "schema": null
+  },
+  "runs-parked": {
+   "request": "GET /runs",
+   "status": 200,
+   "schema": "runs-1"
+  }
+ }
+}
