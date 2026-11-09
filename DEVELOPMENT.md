@@ -150,9 +150,12 @@ The order is the activity instance of a product type, and the tool keeps the two
 - **The showing's certificate.** A showing that relaxes a requirement carries the secretary's statement of exhausted means, written
   from the record (the versions tried, the means used, the lightest version holding the rest with its figures). The order view
   shows it as one line with its citations, and the owner asks for no other evidence.
-- **The dialogue** between the tool and the requester is a contract of its own (`dialogue-1.json`, after order 2): the instance
-  log, with the placing, the mandate in force, the questions and answers, the showings with their findings and certificates, the
-  relaxations, the consents and the approval. The contracts between the repositories are the order, the feature list, presence,
+- **The dialogue** between the order's owner and the frame is a contract of its own (`dialogue-1.json`, sketched 2026-11-09 as
+  the dialogue's build's part 1): the dialogue the owner reads (the run's thread, and what waits: a showing with its alternatives,
+  their plans' figures, the relaxations asked, the findings at risk and the certificate, or a question), the owner's word on it
+  (accept with R12's relaxations, refuse with conditions or holds, decline with the reason, answer), and the frame's answer. The
+  owner's word is not bounded by the mandate, which binds the requester agent (decided 2026-11-09). The products home keeps the
+  dialogue's log beside the order once the owner approves. The contracts between the repositories are the order, the feature list, presence,
   the events and the dialogue, every one a schema in `am_order/schemas/`, which am-llm reads through the library and proposes
   changes to (decided 2026-11-08).
 - **Backtracking** (Johansson) is computed from the type's citations, never stored: from a metric to the needs, from a finding in

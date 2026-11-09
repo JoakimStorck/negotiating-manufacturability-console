@@ -153,3 +153,53 @@ def test_a_runs_result_has_an_example_of_every_outcome_and_may_be_absent():
             done = json.loads(json.dumps(schema("events-1.json")["examples"][0]))
             done["run"].update(status="done", result=r["result"])
             validate_events(done)
+
+
+
+# ------------------------------------------------------------------------ the dialogue
+
+def test_the_dialogues_examples_validate_each_by_its_own_part():
+    from am_order import validate_dialogue, validate_said, validate_word
+    examples = schema("dialogue-1.json")["examples"]
+    by = {"dialogue/1": validate_dialogue, "word/1": validate_word, "said/1": validate_said}
+    assert {e["schema"] for e in examples} == set(by)
+    assert {e["word"] for e in examples if e["schema"] == "word/1"} == {"accept", "refuse", "decline"}
+    for e in examples:
+        by[e["schema"]](e)
+    with pytest.raises(SchemaError):
+        validate_dialogue(next(e for e in examples if e["schema"] == "word/1"))       # a word is no dialogue
+
+
+def test_what_waits_carries_the_showing_whole():
+    dialogue = schema("dialogue-1.json")["examples"][0]
+    waits = dialogue["waits"]
+    alt = waits["entry"]["alternatives"][0]
+    assert waits["what"] == "showing" and waits["metrics"] == ["M6", "M8"] and waits["dialogue"] == waits["entry"]["call"]
+    assert alt["figures"]["print_time_s"] > 0 and alt["at_risk"][0]["reaches"] > alt["at_risk"][0]["margin"]
+    assert waits["entry"]["certificate"]["cites"]
+    broken = json.loads(json.dumps(dialogue))
+    del broken["waits"]["entry"]["certificate"]
+    from am_order import validate_dialogue
+    with pytest.raises(SchemaError) as e:
+        validate_dialogue(broken)
+    assert "certificate" in str(e.value)
+
+
+def test_a_word_has_what_its_kind_needs_and_nothing_else():
+    from am_order import validate_word
+    showing = "call-01M6ZJEHSH7RX2B6NX4VEGBZ6Z"
+    validate_word({"schema": "word/1", "word": "accept", "showing": showing})
+    validate_word({"schema": "word/1", "word": "refuse", "showing": showing, "held": ["req-14"], "text": "As given."})
+    validate_word({"schema": "word/1", "word": "answer", "question": "call-q", "text": "Yes."})
+    for wrong in (
+        {"schema": "word/1", "word": "accept"},                                                   # on no showing
+        {"schema": "word/1", "word": "refuse", "showing": showing, "text": "No."},                # neither conditions nor held
+        {"schema": "word/1", "word": "refuse", "showing": showing, "conditions": [{"replaces": "req-14"}], "text": "No."},   # a condition of nothing
+        {"schema": "word/1", "word": "decline", "showing": showing},                              # without its reason
+        {"schema": "word/1", "word": "decline", "showing": showing, "text": "No.", "relaxes": [{"replaces": "req-14", "margin": 0.8}]},
+        {"schema": "word/1", "word": "answer", "showing": showing, "text": "Yes."},                # an answer to no question
+        {"schema": "word/1", "word": "approve", "showing": showing},                              # no such word
+        {"schema": "word/1", "word": "accept", "showing": showing, "relaxes": [{"replaces": "M8", "margin": 0.8}]},   # a metric, not a requirement
+    ):
+        with pytest.raises(SchemaError):
+            validate_word(wrong)

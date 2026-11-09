@@ -1,0 +1,442 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "am-order/dialogue-1",
+  "title": "The dialogue and the owner's word",
+  "description": "The contract of the requester's dialogue between the order's owner and the frame (am-llm's design document 2.4 and 2.6; the dialogue's build). Three documents, told apart by `schema`. `dialogue/1`, served at `GET /runs/<id>/dialogue`: the run's dialogue in order and what waits for the owner's word, a showing with its alternatives, each plan's figures, the relaxations it asks, the findings at risk against their margins (R12) and the certificate of exhausted means; or a question. `word/1`, sent with `POST /runs/<id>/dialogue`: the owner's word on what waits, one of the requester's own tools in the owner's mouth: accept (the showing, the alternative where there are several, each margin at risk relaxed to what the plan reaches), refuse (the conditions the owner would accept instead and/or the requirements held as given, with a text), decline (with the reason), answer (a question, with a text). `said/1`, the frame's answer to a word it took (200): the word as recorded and the run going on in its own record. The frame refuses a word with 409 when the run is not parked or the word is not on what waits, and with 422 with the reasons, the schema's or the tool's in its own words. The owner's word is not bounded by the order's mandate, which binds the requester agent (decided 2026-11-09); the other checks of an acceptance hold. A sketch of 2026-11-09, written before the frame serves it.",
+  "oneOf": [{"$ref": "#/$defs/dialogue"}, {"$ref": "#/$defs/word"}, {"$ref": "#/$defs/said"}],
+  "$defs": {
+    "time": {"type": "string", "format": "date-time", "pattern": "Z$", "description": "ISO 8601 UTC, on the frame's clock"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "call": {"type": "string", "description": "A call of the run's record: the dialogue's word that carries it"},
+    "requirement": {
+      "type": "string",
+      "pattern": "^([a-z0-9-]+/)?req-[0-9]+$",
+      "description": "A requirement of the design shown: req-<n>, or <case>/req-<n>"
+    },
+    "certificate": {
+      "type": "object",
+      "required": ["text", "cites"],
+      "additionalProperties": false,
+      "description": "The secretary's statement of exhausted means, written from the record (design document 2.4), as events-1's showing carries it",
+      "properties": {
+        "text": {"type": "string", "description": "One line for the reader"},
+        "versions": {"type": "integer", "minimum": 0},
+        "means": {"type": "array", "items": {"enum": ["parameters", "material", "shape"]}},
+        "lightest": {"type": ["string", "null"]},
+        "cites": {"type": "array", "items": {"type": "string"}, "description": "The calls every number is from"}
+      }
+    },
+    "side": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A requirement's value and margin on one side of a relaxation",
+      "properties": {
+        "body": {"type": "object", "description": "The body's values, in the record's form"},
+        "margin": {"type": ["number", "null"]}
+      }
+    },
+    "relaxation": {
+      "type": "object",
+      "required": ["replaces", "kind", "from", "to"],
+      "additionalProperties": false,
+      "description": "A requirement an alternative relaxes: from the value as given to the value shown",
+      "properties": {
+        "replaces": {"$ref": "#/$defs/requirement"},
+        "metric": {"type": ["string", "null"], "description": "The order's metric it carries, where the order gave one"},
+        "kind": {"type": "string"},
+        "unit": {"type": ["string", "null"]},
+        "from": {"$ref": "#/$defs/side"},
+        "to": {"$ref": "#/$defs/side"},
+        "within_mandate": {
+          "type": ["boolean", "null"],
+          "description": "Whether the order's mandate on the metric covers it; null where the order gave no metric"
+        }
+      }
+    },
+    "at_risk": {
+      "type": "object",
+      "required": ["replaces", "margin", "reaches"],
+      "additionalProperties": false,
+      "description": "A finding at risk against its margin in the plan shown: R12's relaxation an acceptance must make, the margin to what the plan reaches",
+      "properties": {
+        "replaces": {"$ref": "#/$defs/requirement"},
+        "metric": {"type": ["string", "null"]},
+        "feature": {"type": ["string", "null"]},
+        "margin": {"type": "number"},
+        "reaches": {"type": "number"},
+        "unit": {"type": ["string", "null"]},
+        "call": {"type": ["string", "null"], "description": "The analysis call the value is from"}
+      }
+    },
+    "figures": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The plan's figures, each with its unit in its name",
+      "properties": {
+        "print_time_s": {"type": ["number", "null"]},
+        "material_g": {"type": ["number", "null"]},
+        "mass_g": {"type": ["number", "null"]}
+      }
+    },
+    "alternative": {
+      "type": "object",
+      "required": ["name", "design", "plan", "requirements", "at_risk"],
+      "additionalProperties": false,
+      "description": "One way a showing offers: its design version, its plan with the figures, what it relaxes, what it leaves at risk",
+      "properties": {
+        "name": {"type": ["string", "null"], "description": "Its name; null for a showing of one way"},
+        "design": {"type": "string"},
+        "plan": {"type": ["string", "null"]},
+        "figures": {"$ref": "#/$defs/figures"},
+        "requirements": {"type": "array", "items": {"$ref": "#/$defs/relaxation"}},
+        "at_risk": {"type": "array", "items": {"$ref": "#/$defs/at_risk"}},
+        "for_decision": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/requirement"},
+          "description": "The held requirements it relaxes, shown for the decision"
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["replaces"],
+      "additionalProperties": false,
+      "description": "A requirement the owner would accept instead of what was shown: the body's values that change, or the margin",
+      "properties": {
+        "replaces": {"$ref": "#/$defs/requirement"},
+        "body": {"type": "object"},
+        "margin": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "anyOf": [{"required": ["body"]}, {"required": ["margin"]}]
+    },
+    "relaxes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["replaces", "margin"],
+        "additionalProperties": false,
+        "properties": {"replaces": {"$ref": "#/$defs/requirement"}, "margin": {"type": "number", "exclusiveMinimum": 0}}
+      },
+      "description": "Each margin at risk relaxed to what the plan reaches (R12), as the showing's at_risk states it"
+    },
+    "entry": {
+      "type": "object",
+      "required": ["call", "time", "kind", "role", "actor", "text"],
+      "additionalProperties": false,
+      "description": "A word of the dialogue in the run's record, who said it and what it carries. The role is the side that spoke (the requester or the design engineer; the brief's own consent `brief`); the actor who spoke for it: the role's agent, a person in the role, or the order's owner",
+      "properties": {
+        "call": {"$ref": "#/$defs/call"},
+        "time": {"$ref": "#/$defs/time"},
+        "kind": {"enum": ["brief", "question", "answer", "showing", "remark", "accepted", "declined", "consent"]},
+        "role": {"enum": ["requester", "design_engineer", "brief"]},
+        "actor": {"enum": ["agent", "operator", "owner", "brief"]},
+        "text": {"type": "string"},
+        "design": {"type": ["string", "null"]},
+        "objective": {"type": ["string", "null"]},
+        "quantity": {"type": ["integer", "null"]},
+        "features": {"type": "array", "items": {"type": "string"}, "description": "A question's features"},
+        "answered": {"type": "boolean", "description": "Whether a question was answered"},
+        "question": {"type": ["string", "null"], "description": "The question an answer answers"},
+        "alternatives": {"type": "array", "items": {"$ref": "#/$defs/alternative"}, "description": "A showing's ways, one where it shows one"},
+        "certificate": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/certificate"}]},
+        "conditions": {"type": "array", "items": {"$ref": "#/$defs/condition"}, "description": "A refusal's conditions"},
+        "held": {"type": "array", "items": {"$ref": "#/$defs/requirement"}, "description": "A refusal's requirements held as given"},
+        "shown": {"type": ["string", "null"], "description": "The showing an acceptance or a decline is of"},
+        "alternative": {"type": ["string", "null"], "description": "The alternative an acceptance accepts"},
+        "relaxes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["replaces", "margin"],
+            "properties": {"replaces": {"type": "string"}, "margin": {"type": "number"}}
+          },
+          "description": "The margins an acceptance relaxed (R12)"
+        },
+        "changes": {"type": "array", "items": {"type": "string"}, "description": "What a consent within the brief covers"}
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "showing"}}}, "then": {"required": ["alternatives", "certificate"]}},
+        {"if": {"properties": {"kind": {"const": "accepted"}}}, "then": {"required": ["shown"]}},
+        {"if": {"properties": {"kind": {"const": "declined"}}}, "then": {"required": ["shown"]}},
+        {"if": {"properties": {"kind": {"const": "answer"}}}, "then": {"required": ["question"]}}
+      ]
+    },
+    "waits": {
+      "type": "object",
+      "required": ["what", "since", "dialogue", "metrics", "entry"],
+      "additionalProperties": false,
+      "description": "What waits for the owner's word: the showing or question the case parked on, the order's metrics it touches, and the entry itself as in the thread",
+      "properties": {
+        "what": {"enum": ["showing", "question"]},
+        "since": {"$ref": "#/$defs/time"},
+        "dialogue": {"$ref": "#/$defs/call"},
+        "metrics": {"type": "array", "items": {"type": "string"}},
+        "entry": {"$ref": "#/$defs/entry"}
+      }
+    },
+    "dialogue": {
+      "type": "object",
+      "required": ["schema", "at", "run", "waits", "thread"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {"const": "dialogue/1"},
+        "at": {"$ref": "#/$defs/time"},
+        "run": {
+          "type": "object",
+          "required": ["id", "order", "status"],
+          "additionalProperties": false,
+          "properties": {
+            "id": {"type": "string"},
+            "order": {
+              "oneOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "required": ["lineage", "revision", "sha256"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "lineage": {"type": "string"},
+                    "revision": {"type": "integer", "minimum": 1},
+                    "sha256": {"$ref": "#/$defs/sha"}
+                  }
+                }
+              ]
+            },
+            "status": {"enum": ["running", "parked", "done"]}
+          }
+        },
+        "waits": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/waits"}]},
+        "thread": {"type": "array", "items": {"$ref": "#/$defs/entry"}}
+      }
+    },
+    "word": {
+      "type": "object",
+      "required": ["schema", "word"],
+      "additionalProperties": false,
+      "description": "The owner's word on what waits: the requester's own tools in the owner's mouth (accept_design, remark with conditions or held, decline_order, answer_requester)",
+      "properties": {
+        "schema": {"const": "word/1"},
+        "word": {"enum": ["accept", "refuse", "decline", "answer"]},
+        "showing": {"$ref": "#/$defs/call", "description": "The showing the word is on"},
+        "question": {"$ref": "#/$defs/call", "description": "The question an answer answers"},
+        "alternative": {"type": "string", "description": "The alternative accepted, where the showing has several"},
+        "relaxes": {"$ref": "#/$defs/relaxes"},
+        "conditions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/condition"}},
+        "held": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/requirement"}},
+        "text": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"word": {"const": "accept"}}},
+          "then": {
+            "required": ["showing"],
+            "not": {"anyOf": [{"required": ["question"]}, {"required": ["conditions"]}, {"required": ["held"]}]}
+          }
+        },
+        {
+          "if": {"properties": {"word": {"const": "refuse"}}},
+          "then": {
+            "required": ["showing", "text"],
+            "anyOf": [{"required": ["conditions"]}, {"required": ["held"]}],
+            "not": {"anyOf": [{"required": ["question"]}, {"required": ["relaxes"]}, {"required": ["alternative"]}]}
+          }
+        },
+        {
+          "if": {"properties": {"word": {"const": "decline"}}},
+          "then": {
+            "required": ["showing", "text"],
+            "not": {
+              "anyOf": [
+                {"required": ["question"]},
+                {"required": ["relaxes"]},
+                {"required": ["conditions"]},
+                {"required": ["held"]},
+                {"required": ["alternative"]}
+              ]
+            }
+          }
+        },
+        {
+          "if": {"properties": {"word": {"const": "answer"}}},
+          "then": {
+            "required": ["question", "text"],
+            "not": {
+              "anyOf": [
+                {"required": ["showing"]},
+                {"required": ["relaxes"]},
+                {"required": ["conditions"]},
+                {"required": ["held"]},
+                {"required": ["alternative"]}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "said": {
+      "type": "object",
+      "required": ["schema", "run", "word", "call", "status"],
+      "additionalProperties": false,
+      "description": "The frame's answer to a word it took (200): the word as recorded and the run going on",
+      "properties": {
+        "schema": {"const": "said/1"},
+        "run": {"type": "string"},
+        "word": {"enum": ["accept", "refuse", "decline", "answer"]},
+        "call": {"$ref": "#/$defs/call"},
+        "status": {"enum": ["running", "parked", "done"]}
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "dialogue/1",
+      "at": "2026-11-09T07:20:00Z",
+      "run": {
+        "id": "bracket-ge@1",
+        "order": {"lineage": "bracket-ge", "revision": 1, "sha256": "55d9a9b78e390000000000000000000000000000000000000000000000000000"},
+        "status": "parked"
+      },
+      "waits": {
+        "what": "showing",
+        "since": "2026-11-09T07:14:09Z",
+        "dialogue": "call-01M6ZJEHSH7RX2B6NX4VEGBZ6Z",
+        "metrics": ["M6", "M8"],
+        "entry": {
+          "call": "call-01M6ZJEHSH7RX2B6NX4VEGBZ6Z",
+          "time": "2026-11-09T07:14:05Z",
+          "kind": "showing",
+          "role": "design_engineer",
+          "actor": "agent",
+          "text": "The engine bracket cannot meet req-14 (the 42-degree pin load, 128 N) at its margin of 0.6 as made, within the brief's means.",
+          "design": "bracket-ge@v6",
+          "alternatives": [
+            {
+              "name": null,
+              "design": "bracket-ge@v6",
+              "plan": "plan-bracket-ge-v6-mZ@v101",
+              "figures": {"print_time_s": 3313.9, "material_g": 23.1, "mass_g": 21.802},
+              "requirements": [
+                {
+                  "replaces": "req-14",
+                  "metric": "M8",
+                  "kind": "load_case",
+                  "unit": "1",
+                  "from": {"body": {"at_most": 1.0}, "margin": 0.6},
+                  "to": {"body": {"at_most": 1.0}, "margin": 0.806},
+                  "within_mandate": false
+                }
+              ],
+              "at_risk": [
+                {
+                  "replaces": "req-14",
+                  "metric": "M8",
+                  "feature": "pin-hole",
+                  "margin": 0.6,
+                  "reaches": 0.7743,
+                  "unit": "1",
+                  "call": "call-01M6ZJ4YRTSRFXFK9FN07M65N0"
+                }
+              ],
+              "for_decision": ["req-14"]
+            }
+          ],
+          "certificate": {
+            "text": "Since the brief 2 versions of bracket-ge made (by parameters 2); 2 goal calls, 1 reached; the lightest version holding every other requirement is bracket-ge@v6, 21.802 g printed.",
+            "versions": 2,
+            "means": ["parameters"],
+            "lightest": "bracket-ge@v6",
+            "cites": ["call-01M6ZJ10ZB50PD2T2YFK8BQZK1", "call-01M6ZJ4YRTSRFXFK9FN07M65N0"]
+          }
+        }
+      },
+      "thread": [
+        {
+          "call": "call-01M6ZHZZBRIEF0000000000000",
+          "time": "2026-11-09T07:02:10Z",
+          "kind": "brief",
+          "role": "requester",
+          "actor": "operator",
+          "text": "A bracket that carries a hanging load from a pin to a flat mounting face bolted to a frame.",
+          "design": "bracket-ge@v4",
+          "objective": "time",
+          "quantity": 10
+        },
+        {
+          "call": "call-01M6ZJEHSH7RX2B6NX4VEGBZ6Z",
+          "time": "2026-11-09T07:14:05Z",
+          "kind": "showing",
+          "role": "design_engineer",
+          "actor": "agent",
+          "text": "The engine bracket cannot meet req-14 (the 42-degree pin load, 128 N) at its margin of 0.6 as made, within the brief's means.",
+          "design": "bracket-ge@v6",
+          "alternatives": [
+            {
+              "name": null,
+              "design": "bracket-ge@v6",
+              "plan": "plan-bracket-ge-v6-mZ@v101",
+              "figures": {"print_time_s": 3313.9, "material_g": 23.1, "mass_g": 21.802},
+              "requirements": [
+                {
+                  "replaces": "req-14",
+                  "metric": "M8",
+                  "kind": "load_case",
+                  "unit": "1",
+                  "from": {"body": {"at_most": 1.0}, "margin": 0.6},
+                  "to": {"body": {"at_most": 1.0}, "margin": 0.806},
+                  "within_mandate": false
+                }
+              ],
+              "at_risk": [
+                {
+                  "replaces": "req-14",
+                  "metric": "M8",
+                  "feature": "pin-hole",
+                  "margin": 0.6,
+                  "reaches": 0.7743,
+                  "unit": "1",
+                  "call": "call-01M6ZJ4YRTSRFXFK9FN07M65N0"
+                }
+              ],
+              "for_decision": ["req-14"]
+            }
+          ],
+          "certificate": {
+            "text": "Since the brief 2 versions of bracket-ge made (by parameters 2); 2 goal calls, 1 reached; the lightest version holding every other requirement is bracket-ge@v6, 21.802 g printed.",
+            "versions": 2,
+            "means": ["parameters"],
+            "lightest": "bracket-ge@v6",
+            "cites": ["call-01M6ZJ10ZB50PD2T2YFK8BQZK1", "call-01M6ZJ4YRTSRFXFK9FN07M65N0"]
+          }
+        }
+      ]
+    },
+    {
+      "schema": "word/1",
+      "word": "accept",
+      "showing": "call-01M6ZJEHSH7RX2B6NX4VEGBZ6Z",
+      "relaxes": [{"replaces": "req-14", "margin": 0.7743}],
+      "text": "Accepted with the margin on M8 relaxed to what the plan reaches."
+    },
+    {
+      "schema": "word/1",
+      "word": "refuse",
+      "showing": "call-01M6ZJEHSH7RX2B6NX4VEGBZ6Z",
+      "conditions": [{"replaces": "req-14", "margin": 0.7}],
+      "text": "I would accept the margin on M8 at 0.7, not more."
+    },
+    {
+      "schema": "word/1",
+      "word": "decline",
+      "showing": "call-01M6ZJEHSH7RX2B6NX4VEGBZ6Z",
+      "text": "The reserve of 0.6 on the pin load is what the bracket's use demands; a plan reaching 0.77 is not acceptable."
+    },
+    {
+      "schema": "said/1",
+      "run": "bracket-ge@1",
+      "word": "accept",
+      "call": "call-01M6ZK0ACCEPT00000000000000",
+      "status": "running"
+    }
+  ]
+}
