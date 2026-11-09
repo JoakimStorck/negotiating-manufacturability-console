@@ -1094,9 +1094,11 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         held = saved_version(home, lineage)
         saved = home.load(lineage) if held else None
         facets = home.facets(lineage)
-        ready = saved is not None and facets["state"] == "confirmed" and saved.form == 2
+        ready = saved is not None and facets["state"] == "confirmed" and saved.form == 2 and not saved.accepted()
         why = None if ready else ("the order has no saved version yet" if saved is None else
                                   "the draft has changes not yet saved" if facets["state"] == "draft" else
+                                  f"revision {saved.data.get('revision')} is approved for manufacturing; a change of the order is a new "
+                                  "revision, placed again" if saved.accepted() else
                                   "the order is saved as order 1: answer the migration's notes and save it as order 2" if saved.form == 1 else
                                   f"the order is {facets['state']}, not confirmed: bind it to a design and confirm every binding")
         runs = reading.runs_of(lineage)

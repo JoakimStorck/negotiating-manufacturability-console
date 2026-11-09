@@ -306,6 +306,8 @@ def test_the_approval_writes_a_new_revision_the_features_and_the_dialogue(home_d
     assert reached(page) == "approved" and button(page) == "" and '<section id="approved">' in page
     assert "the value on M13 relaxed from 16 to 20 by the order&#39;s owner, beyond its mandate" in page
     assert f'href="/products/bracket-mass/dialogue/{RUN}"' in page and c.get(f"/products/bracket-mass/dialogue/{RUN}").json()["schema"] == "dialogue/1"
+    fragment = c.get("/products/bracket-mass/frame").text
+    assert "Not ready to be placed: revision 5 is approved for manufacturing" in fragment and "Place revision 5" not in fragment
     act = logged(tmp_path, "approve")[-1]["detail"]
     assert act["capacity"] == "orderer" and act["run"] == RUN and act["revision"] == 5
     # a later change of the order is a new order: placed again, without the approval's record

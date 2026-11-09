@@ -450,6 +450,9 @@ def _place(args, frame: Frame, home: Home) -> int:
     order = home.load(args.product)
     if not confirmed(order):
         raise HomeError(f"{args.product} is not confirmed: bind it to a design and confirm every binding before it is placed")
+    if order.accepted():
+        raise HomeError(f"{args.product} is approved for manufacturing, bound to {order.accepted()['plan']}: a change of the order is a new "
+                        "revision, placed again")
     if order.form == 1:
         raise HomeError(f"{args.product} is saved as order 1: migrate it (am-order migrate {lineage}), state what the notes ask and save, "
                         "then place the order-2 revision")
