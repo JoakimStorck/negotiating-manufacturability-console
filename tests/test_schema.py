@@ -176,6 +176,7 @@ def test_what_waits_carries_the_showing_whole():
     alt = waits["entry"]["alternatives"][0]
     assert waits["what"] == "showing" and waits["metrics"] == ["M6", "M8"] and waits["dialogue"] == waits["entry"]["call"]
     assert alt["figures"]["print_time_s"] > 0 and alt["at_risk"][0]["reaches"] > alt["at_risk"][0]["margin"]
+    assert alt["unmet"] == []                                                        # the plan shown meets the rest
     assert waits["entry"]["certificate"]["cites"]
     broken = json.loads(json.dumps(dialogue))
     del broken["waits"]["entry"]["certificate"]

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "am-order/dialogue-1",
   "title": "The dialogue and the owner's word",
-  "description": "The contract of the requester's dialogue between the order's owner and the frame (am-llm's design document 2.4 and 2.6; the dialogue's build). Three documents, told apart by `schema`. `dialogue/1`, served at `GET /runs/<id>/dialogue`: the run's dialogue in order and what waits for the owner's word, a showing with its alternatives, each plan's figures, the relaxations it asks, the findings at risk against their margins (R12) and the certificate of exhausted means; or a question. `word/1`, sent with `POST /runs/<id>/dialogue`: the owner's word on what waits, one of the requester's own tools in the owner's mouth: accept (the showing, the alternative where there are several, each margin at risk relaxed to what the plan reaches), refuse (the conditions the owner would accept instead and/or the requirements held as given, with a text), decline (with the reason), answer (a question, with a text). `said/1`, the frame's answer to a word it took (200): the word as recorded and the run going on in its own record. The frame refuses a word with 409 when the run is not parked or the word is not on what waits, and with 422 with the reasons, the schema's or the tool's in its own words. The owner's word is not bounded by the order's mandate, which binds the requester agent (decided 2026-11-09); the other checks of an acceptance hold. A sketch of 2026-11-09, written before the frame serves it.",
+  "description": "The contract of the requester's dialogue between the order's owner and the frame (am-llm's design document 2.4 and 2.6; the dialogue's build). Three documents, told apart by `schema`. `dialogue/1`, served at `GET /runs/<id>/dialogue`: the run's dialogue in order and what waits for the owner's word, a showing with its alternatives, each plan's figures, the relaxations it asks, the findings at risk against their margins (R12), the requirements it leaves unmet and the certificate of exhausted means; or a question. `word/1`, sent with `POST /runs/<id>/dialogue`: the owner's word on what waits, one of the requester's own tools in the owner's mouth: accept (the showing, the alternative where there are several, each margin at risk relaxed to what the plan reaches), refuse (the conditions the owner would accept instead and/or the requirements held as given, with a text), decline (with the reason), answer (a question, with a text). `said/1`, the frame's answer to a word it took (200): the word as recorded and the run going on in its own record. The frame refuses a word with 409 when the run is not parked or the word is not on what waits, and with 422 with the reasons, the schema's or the tool's in its own words. The owner's word is not bounded by the order's mandate, which binds the requester agent (decided 2026-11-09); the other checks of an acceptance hold. A sketch of 2026-11-09, written before the frame serves it.",
   "oneOf": [{"$ref": "#/$defs/dialogue"}, {"$ref": "#/$defs/word"}, {"$ref": "#/$defs/said"}],
   "$defs": {
     "time": {"type": "string", "format": "date-time", "pattern": "Z$", "description": "ISO 8601 UTC, on the frame's clock"},
@@ -68,6 +68,20 @@
         "call": {"type": ["string", "null"], "description": "The analysis call the value is from"}
       }
     },
+    "unmet": {
+      "type": "object",
+      "required": ["replaces", "kind"],
+      "additionalProperties": false,
+      "description": "A requirement the plan shown leaves unmet, as the certificate states it: an acceptance of the showing does not meet it; the owner refuses with conditions, or declines",
+      "properties": {
+        "replaces": {"$ref": "#/$defs/requirement"},
+        "metric": {"type": ["string", "null"], "description": "The order's metric it carries, where the order gave one"},
+        "kind": {"type": "string"},
+        "reaches": {"type": ["number", "null"], "description": "What the plan shown reaches, where the certificate has a value"},
+        "unit": {"type": ["string", "null"]},
+        "call": {"type": ["string", "null"], "description": "The analysis call the value is from"}
+      }
+    },
     "figures": {
       "type": "object",
       "additionalProperties": false,
@@ -82,7 +96,7 @@
       "type": "object",
       "required": ["name", "design", "plan", "requirements", "at_risk"],
       "additionalProperties": false,
-      "description": "One way a showing offers: its design version, its plan with the figures, what it relaxes, what it leaves at risk",
+      "description": "One way a showing offers: its design version, its plan with the figures, what it relaxes, what it leaves at risk and what it leaves unmet",
       "properties": {
         "name": {"type": ["string", "null"], "description": "Its name; null for a showing of one way"},
         "design": {"type": "string"},
@@ -90,6 +104,7 @@
         "figures": {"$ref": "#/$defs/figures"},
         "requirements": {"type": "array", "items": {"$ref": "#/$defs/relaxation"}},
         "at_risk": {"type": "array", "items": {"$ref": "#/$defs/at_risk"}},
+        "unmet": {"type": "array", "items": {"$ref": "#/$defs/unmet"}, "description": "The requirements the plan shown leaves unmet, from the certificate; empty where it leaves none"},
         "for_decision": {
           "type": "array",
           "items": {"$ref": "#/$defs/requirement"},
@@ -338,6 +353,7 @@
                   "call": "call-01M6ZJ4YRTSRFXFK9FN07M65N0"
                 }
               ],
+              "unmet": [],
               "for_decision": ["req-14"]
             }
           ],
@@ -398,6 +414,7 @@
                   "call": "call-01M6ZJ4YRTSRFXFK9FN07M65N0"
                 }
               ],
+              "unmet": [],
               "for_decision": ["req-14"]
             }
           ],
