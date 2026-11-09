@@ -4,28 +4,28 @@
 <h1>Metrics, heading by heading</h1>
 <form method="post" action="/products/{{ lineage }}/headings" hx-post="/products/{{ lineage }}/headings" hx-target="body">
 {% for h in V.headings() %}
-  {% set ms = order.data.metrics|selectattr("heading", "equalto", h.id)|list %}
+  {% set ms = order.type.metrics|selectattr("heading", "equalto", h.id)|list %}
   <h2>{{ h.name }} <span class="muted" style="font-weight:normal;font-size:.85rem">{{ h.covers }}</span></h2>
   {% if ms %}
   <table>
-  <tr><th>#</th><th>D/W</th><th>Metric</th><th>Ideal</th><th>Mandate</th><th>Needs</th><th></th></tr>
+  <tr><th>#</th><th>D/W</th><th>Metric</th><th>Ideal</th><th>Mandate (this order)</th><th>Needs</th><th></th></tr>
   {% for m in ms %}
   <tr class="{{ 'dropped' if m.dropped }}"><td><a href="/products/{{ lineage }}/metrics/{{ m.id }}">{{ m.id }}</a></td>
     <td>{{ "D" if m["class"] == "demand" else "W" if m["class"] == "wish" else "?" }}</td>
     <td>{{ m.text or name(order, m) }}<br><span class="muted">{{ name(order, m) }}</span></td>
-    <td>{{ value_text(m.value, m.unit) }}</td><td>{{ mandate_text(m.mandate, m.unit) }}</td><td>{{ m.needs|join(", ") }}</td>
+    <td>{{ value_text(m.value, m.unit) }}</td><td>{{ mandate_text(order.mandate(m), m.unit) }}</td><td>{{ m.needs|join(", ") }}</td>
     <td>{% set item = m.id %}{% include "_refusals.html" with context %}</td></tr>
   {% endfor %}
   </table>
   {% else %}
   <label class="muted">Nothing under it applies, because:</label>
-  <input name="h_{{ h.id }}" value="{{ (order.data.headings or {}).get(h.id, '') }}" size="70">
+  <input name="h_{{ h.id }}" value="{{ (order.type.headings or {}).get(h.id, '') }}" size="70">
   {% set item = h.id %}{% include "_refusals.html" with context %}
   {% endif %}
 {% endfor %}
 <p><button>Apply the statements</button></p>
 </form>
-{% set orphans = order.data.metrics|rejectattr("heading", "in", V.heading_ids())|list %}
+{% set orphans = order.type.metrics|rejectattr("heading", "in", V.heading_ids())|list %}
 {% if orphans %}<h2>Without a heading</h2><ul>{% for m in orphans %}<li><a href="/products/{{ lineage }}/metrics/{{ m.id }}">{{ m.id }}</a> {{ m.text }}</li>{% endfor %}</ul>{% endif %}
 <h2>New metric</h2>
 <form method="post" action="/products/{{ lineage }}/metrics">

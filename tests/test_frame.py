@@ -30,7 +30,7 @@ def folder(tmp_path):
 
 @pytest.fixture
 def stub(folder):
-    s = StubFrame(presence(FRAME_AT, parked_run="bracket-mass@2"))
+    s = StubFrame(presence(FRAME_AT, parked_run="bracket-mass@4"))
     s.add_run(run_document(folder, RUN, ("h1-bracket-mass", "open-01"), {"lineage": "bracket-mass", "revision": 3, "sha256": "b" * 64}),
               record_events(folder), {"requester": {"kind": "model", "name": "claude-haiku-5-5"}})
     return s
@@ -265,11 +265,11 @@ def test_an_order_placed_from_its_page(tool, stub, tmp_path):
     product = tool.get("/products/bracket-mass")
     assert 'hx-get="/products/bracket-mass/frame"' in product.text
     fragment = tool.get("/products/bracket-mass/frame")
-    assert "Place revision 2 at the frame" in fragment.text and "bracket-mass@2" in fragment.text and "parked" in fragment.text
+    assert "Place revision 4 at the frame" in fragment.text and "bracket-mass@4" in fragment.text and "parked" in fragment.text
     placed = tool.post("/products/bracket-mass/place")
-    assert placed.status_code == 201 and "Placed at the frame: the run bracket-mass@2 (placed)" in placed.text
+    assert placed.status_code == 201 and "Placed at the frame: the run bracket-mass@4 (placed)" in placed.text
     again = tool.post("/products/bracket-mass/place")
-    assert again.status_code == 409 and "Not placed: the order version bracket-mass@2 is placed already" in again.text
+    assert again.status_code == 409 and "Not placed: the order version bracket-mass@4 is placed already" in again.text
     stub.refuse_with = ["(the document): 'schema' is a required property"]
     stub.orders.clear()
     refused = tool.post("/products/bracket-mass/place")
@@ -303,9 +303,11 @@ def test_the_command_line_reads_the_frame_and_places(stub, home_dir, tmp_path, c
     out = capsys.readouterr().out
     assert "0:05:00" in out and "Design engineer" in out
     assert main(base + ["place", "bracket-mass"]) == 0
-    assert "bracket-mass@2" in capsys.readouterr().out
-    assert main(base + ["place", "bracket-mass@2"]) == 1
+    assert "bracket-mass@4" in capsys.readouterr().out
+    assert main(base + ["place", "bracket-mass@4"]) == 1
     assert "placed already" in capsys.readouterr().err
+    assert main(base + ["place", "bracket-mass@1"]) == 1                    # a version saved as order 1 is not placed
+    assert "saved as order 1: migrate it" in capsys.readouterr().err
     token.write_text("me=wrong\n", encoding="utf-8")
     assert main(base + ["runs"]) == 1
     err = capsys.readouterr().err
@@ -322,7 +324,7 @@ def test_a_version_is_placed_as_the_home_holds_it_whatever_the_line_endings(stub
     app = stub.app()
     monkeypatch.setattr("am_order.cli._client", lambda url: TestClient(app, base_url=url))
     assert main(["--home", str(home_dir), "--frame", "http://frame.test", "--token-file", str(token), "place", "bracket-mass"]) == 0
-    assert "bracket-mass@2" in capsys.readouterr().out
+    assert "bracket-mass@4" in capsys.readouterr().out
 
 
 
@@ -333,10 +335,10 @@ PARKED = schema("runs-1.json")["examples"][0]["runs"][0]["result"]
 
 
 def test_the_empty_state_draws_every_cell_with_its_beings_and_its_mark():
-    drawn, size = empty_cells(presence(FRAME_AT, parked_run="bracket-mass@2"))
+    drawn, size = empty_cells(presence(FRAME_AT, parked_run="bracket-mass@4"))
     by = {c["role"]: c for c in drawn}
     assert list(by) == list(R.ROLES) and size["width"] > 0 and size["height"] > 0
-    assert by["requester"]["lines"][0]["text"] == "order bracket-mass@2 parked: the owner's word is awaited"
+    assert by["requester"]["lines"][0]["text"] == "order bracket-mass@4 parked: the owner's word is awaited"
     assert by["design_engineer"]["lines"][0]["text"] == "design version: none yet"
     assert by["process_planner"]["lines"][0]["text"] == "plan: none yet"
     # the beings are drawn whether or not anybody decides over them; the mark says who does, dimmed where nobody does
@@ -403,8 +405,8 @@ def test_a_plan_candidate_shows_its_settings_and_verdict(stub):
 def resulting(stub, folder):
     """The stub's run with its result as the frame gives it, and a parked order's run beside it."""
     stub.runs[RUN]["run"]["result"] = ACCEPTED
-    parked_folder = make_run(folder.parents[1] / "orders" / "bracket-mass@2")
-    run = run_document(parked_folder, "bracket-mass@2", None, {"lineage": "bracket-mass", "revision": 2, "sha256": "a" * 64})
+    parked_folder = make_run(folder.parents[1] / "orders" / "bracket-mass@4")
+    run = run_document(parked_folder, "bracket-mass@4", None, {"lineage": "bracket-mass", "revision": 4, "sha256": "a" * 64})
     events = [e for e in record_events(parked_folder) if e["kind"] != "ended"]
     events.append({"seq": events[-1]["seq"] + 1, "time": at(601), "kind": "parked", "source": {"table": "call", "row": "c-park"}, "case": "case-1",
                    "what": "showing", "dialogue": "call-accept", "metrics": ["M13"]})
@@ -429,10 +431,10 @@ def test_a_run_without_a_result_says_so(tool):
 
 
 def test_a_parked_runs_card_says_what_waits_for_whom(tool, resulting):
-    t = tool.get("/frame/runs/bracket-mass@2").text
+    t = tool.get("/frame/runs/bracket-mass@4").text
     assert '<div class="result parked">' in t and "Parked: the owner&#39;s word is awaited" in t
     assert "A showing waits for the order&#39;s owner since 2026-11-08 16:26:51Z, on M13" in t
-    cells_now = tool.get("/frame/runs/bracket-mass@2").text
+    cells_now = tool.get("/frame/runs/bracket-mass@4").text
     assert "waits for the owner&#39;s word: a showing on M13" in cells_now
 
 
@@ -442,7 +444,10 @@ def test_the_catalogue_shows_a_plans_figures(tool, resulting):
 
 
 def test_the_orders_page_shows_the_result(tool, resulting):
-    # the order's latest revision at the frame is the run of revision 3, accepted
+    # the order's latest revision at the frame is the run of revision 4, parked; once it is gone, revision 3's, accepted
+    t = tool.get("/products/bracket-mass/frame").text
+    assert "The result of bracket-mass@4" in t and '<div class="result parked">' in t
+    tool.post("/products/bracket-mass/runs/bracket-mass@4/delete")
     t = tool.get("/products/bracket-mass/frame").text
     assert f"The result of {RUN}" in t and '<div class="result accepted">' in t and "the margin on M8 relaxed from 0.6 to 0.838" in t
 
@@ -452,18 +457,18 @@ def test_the_orders_page_shows_the_result(tool, resulting):
 
 def test_an_orders_run_is_deleted_and_its_version_placed_again(tool, resulting, tmp_path):
     page = tool.get("/products/bracket-mass/frame").text
-    assert 'hx-confirm="Delete the run bracket-mass@2 at the frame? Its record goes, and revision 2 may be placed again."' in page
+    assert 'hx-confirm="Delete the run bracket-mass@4 at the frame? Its record goes, and revision 4 may be placed again."' in page
     # the version has a run at the frame: placing it again is refused until the run is deleted
     again = tool.post("/products/bracket-mass/place")
     assert again.status_code == 409 and "placed already" in again.text
-    deleted = tool.post("/products/bracket-mass/runs/bracket-mass@2/delete")
-    assert deleted.status_code == 200 and "Deleted at the frame: the run bracket-mass@2; its version may be placed again." in deleted.text
-    assert 'href="/frame/runs/bracket-mass@2"' not in deleted.text and "DELETE /runs/bracket-mass@2" in resulting.asked
+    deleted = tool.post("/products/bracket-mass/runs/bracket-mass@4/delete")
+    assert deleted.status_code == 200 and "Deleted at the frame: the run bracket-mass@4; its version may be placed again." in deleted.text
+    assert 'href="/frame/runs/bracket-mass@4"' not in deleted.text and "DELETE /runs/bracket-mass@4" in resulting.asked
     placed = tool.post("/products/bracket-mass/place")
-    assert placed.status_code == 201 and "Placed at the frame: the run bracket-mass@2 (placed)" in placed.text
+    assert placed.status_code == 201 and "Placed at the frame: the run bracket-mass@4 (placed)" in placed.text
     log = [json.loads(line) for f in (tmp_path / "logs").glob("*.jsonl") for line in f.read_text().splitlines()]
     deletes = [e for e in log if e["action"] == "delete run"]
-    assert len(deletes) == 1 and deletes[0]["detail"]["capacity"] == "orderer" and deletes[0]["detail"]["run"] == "bracket-mass@2"
+    assert len(deletes) == 1 and deletes[0]["detail"]["capacity"] == "orderer" and deletes[0]["detail"]["run"] == "bracket-mass@4"
 
 
 def test_a_run_being_prepared_is_not_deleted(tool, resulting):
@@ -476,9 +481,9 @@ def test_a_run_being_prepared_is_not_deleted(tool, resulting):
 
 
 def test_only_the_products_own_runs_are_deleted_from_its_page(tool, resulting):
-    refused = tool.post("/products/plate/runs/bracket-mass@2/delete")
-    assert refused.status_code == 404 and "Not deleted: bracket-mass@2 is no run of an order of plate at the frame." in refused.text
-    assert "bracket-mass@2" in resulting.runs
+    refused = tool.post("/products/plate/runs/bracket-mass@4/delete")
+    assert refused.status_code == 404 and "Not deleted: bracket-mass@4 is no run of an order of plate at the frame." in refused.text
+    assert "bracket-mass@4" in resulting.runs
 
 
 def test_the_command_line_deletes_an_orders_run(resulting, tmp_path, capsys, monkeypatch):
@@ -487,10 +492,10 @@ def test_the_command_line_deletes_an_orders_run(resulting, tmp_path, capsys, mon
     app = resulting.app()
     monkeypatch.setattr("am_order.cli._client", lambda url: TestClient(app, base_url=url))
     base = ["--frame", "http://frame.test", "--token-file", str(token), "runs", "delete"]
-    assert main(base + ["bracket-mass@2"]) == 0
-    assert "bracket-mass@2 deleted" in capsys.readouterr().out and "bracket-mass@2" not in resulting.runs
-    assert main(base + ["bracket-mass@2"]) == 1
-    assert "no run bracket-mass@2" in capsys.readouterr().err
+    assert main(base + ["bracket-mass@4"]) == 0
+    assert "bracket-mass@4 deleted" in capsys.readouterr().out and "bracket-mass@4" not in resulting.runs
+    assert main(base + ["bracket-mass@4"]) == 1
+    assert "no run bracket-mass@4" in capsys.readouterr().err
 
 
 

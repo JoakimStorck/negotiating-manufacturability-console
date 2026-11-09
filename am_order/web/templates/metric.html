@@ -4,7 +4,7 @@
 <h1>{{ m.id }} <span class="muted" style="font-weight:normal">{{ m.text }}</span></h1>
 {% set item = m.id %}{% include "_refusals.html" with context %}
 {% set value = m.value or {} %}{% set form = (value.keys()|list or [""])[0] %}{% set v = value.get(form) %}
-{% set u = m.under or {} %}{% set mandate = m.mandate or {"form": "held"} %}
+{% set u = m.under or {} %}{% set mandate = order.mandate(m) %}
 <form method="post" action="/products/{{ lineage }}/metrics/{{ m.id }}" hx-post="/products/{{ lineage }}/metrics/{{ m.id }}" hx-target="body">
 <div class="grid2">
   <label>Class</label><select name="class"><option value="">(choose)</option>{% for c in ["demand", "wish"] %}<option {% if m["class"] == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
@@ -33,10 +33,19 @@
   <label>Sources</label><textarea name="source" rows="2" placeholder="kind: reference, one per line (requester, standard, project, reference)">{{ sources_text(m.source) }}</textarea>
   <label>Verified by</label><input name="verified_by" value="{{ m.verified_by or '' }}" size="50">
   <label>Carried by</label><div>{% for o in order.objects() %}<label><input type="checkbox" name="carried_by" value="{{ o.id }}" {% if o.id in (m.carried_by or []) %}checked{% endif %}>{{ o.id }} {{ o.name }}</label> {% endfor %}</div>
+  <span></span><div><button>Apply</button> <button class="quiet" name="action" value="drop">Drop the metric</button></div>
+</div>
+</form>
+<h2>This order's mandate</h2>
+<p class="muted">The mandate is this order's, not the product's: what the requester may accept on {{ m.id }} without asking you.
+Held, the value stands; an interval, the requester may accept up to its far end; released, the requester may give the metric up.
+Another order of the product may give another.</p>
+<form method="post" action="/products/{{ lineage }}/metrics/{{ m.id }}/mandate" hx-post="/products/{{ lineage }}/metrics/{{ m.id }}/mandate" hx-target="body">
+<div class="grid2">
   <label>Mandate</label>
   <div>{% for f in V.MANDATES %}<label><input type="radio" name="mandate" value="{{ f }}" {% if mandate.form == f %}checked{% endif %}>{{ f }}</label> {% endfor %}
     far end <input name="far" value="{{ mandate.to|join(', ') if mandate.to is iterable and mandate.to is not string and mandate.to is not mapping else (mandate.to.lower ~ ', ' ~ mandate.to.upper) if mandate.to is mapping else mandate.to if mandate.to is not none else '' }}" placeholder="a value, lower, upper, or as_needed"></div>
-  <span></span><div><button>Apply</button> <button class="quiet" name="action" value="drop">Drop the metric</button></div>
+  <span></span><div><button>Apply to this order</button></div>
 </div>
 </form>
 <p><a href="/products/{{ lineage }}/metrics">All metrics</a></p>

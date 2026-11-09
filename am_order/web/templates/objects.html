@@ -5,9 +5,11 @@
 <p class="muted">The product's features as the owner sees them. A place is a box (<code>box x0 y0 z0 x1 y1 z1</code>) or a cylinder
 (<code>cylinder px py pz dx dy dz radius length</code>, the point the centre of its base) in the part's coordinates, mm, one line per instance.
 The tool draws nothing: a place shows as its numbers and its checks.</p>
+<p>Each object is <b>fixed</b>, an interface the design keeps, or <b>free</b>, the design may change around it (the part free: its
+shape). The design level derives from the binding which of a design's parameters that frees.</p>
 <table>
-<tr><th>#</th><th>Name</th><th>Kind</th><th>Count</th><th>Datum</th><th>Description</th><th>Place</th><th></th></tr>
-{% for o in order.data.objects %}
+<tr><th>#</th><th>Name</th><th>Kind</th><th>Count</th><th>Datum</th><th>Description</th><th>Place</th><th>Change</th><th></th></tr>
+{% for o in order.type.objects %}
 <tr class="{{ 'dropped' if o.dropped }}">
 <form method="post" action="/products/{{ lineage }}/objects/{{ o.id }}" hx-post="/products/{{ lineage }}/objects/{{ o.id }}" hx-target="body">
   <td>{{ o.id }}</td><td><input name="name" value="{{ o.name }}"></td>
@@ -16,6 +18,8 @@ The tool draws nothing: a place shows as its numbers and its checks.</p>
   <td><select name="datum"><option value="">–</option>{% for d in ["A", "B", "C"] %}<option {% if o.datum == d %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></td>
   <td><input name="text" value="{{ o.text }}"></td>
   <td><textarea name="place" rows="{{ [1, (o.count or 1)]|max }}" cols="42">{{ place_text(o.place) }}</textarea></td>
+  <td><select name="change" title="free: the design may change around it; fixed: an interface the design keeps">{% for c in ["fixed", "free"] %}<option {% if order.change(o) == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    <div class="muted" style="font-size:.85rem">{{ CHANGE[order.change(o)] }}</div></td>
   <td><button class="quiet" name="action" value="edit">Apply</button> {% if not o.dropped %}<button class="quiet" name="action" value="drop">Drop</button>{% endif %}
     {% set item = o.id %}{% include "_refusals.html" with context %}</td>
 </form></tr>
@@ -24,7 +28,7 @@ The tool draws nothing: a place shows as its numbers and its checks.</p>
 <h2>New object</h2>
 <form method="post" action="/products/{{ lineage }}/objects" hx-post="/products/{{ lineage }}/objects" hx-target="body">
   <input name="name" placeholder="name"> <select name="kind">{% for k in V.OBJECT_KINDS %}<option>{{ k }}</option>{% endfor %}</select>
-  <input name="count" value="1" size="3"> <select name="datum"><option value="">no datum</option><option>A</option><option>B</option><option>C</option></select>
+  <input name="count" value="1" size="3"> <select name="change"><option>fixed</option><option>free</option></select> <select name="datum"><option value="">no datum</option><option>A</option><option>B</option><option>C</option></select>
   <input name="text" placeholder="description"><br><textarea name="place" rows="2" placeholder="place: box ... or cylinder ..., one line per instance"></textarea>
   <button>Add an object</button>
 </form>

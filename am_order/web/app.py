@@ -27,10 +27,10 @@ from fastapi.templating import Jinja2Templates
 from .. import vocab as V
 from ..bind import bind as bind_order, confirm, proposals, reject
 from ..check import RULES, check
-from ..diff import diff, mandate_text, value_text
+from ..diff import diff, level_text, mandate_text, value_text
 from ..export import export
 from ..home import Home, HomeError, ReadOnly, Refused
-from ..order import Order
+from ..order import ANSWERING, CHANGE, Order
 from ..render import TABLES, TITLES, metric_name, table
 from .. import runs as R
 from ..picture import empty_cells, overview, plan_figures, result_card
@@ -174,8 +174,8 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
                refresh: float = 3.0) -> FastAPI:
     app = FastAPI(title="am-order", docs_url=None, redoc_url=None, openapi_url=None)
     templates = Jinja2Templates(directory=str(HERE / "templates"))
-    templates.env.globals.update(value_text=value_text, mandate_text=mandate_text, heading_name=V.heading_name, place_text=place_text,
-                                 sources_text=sources_text, TITLES=TITLES)
+    templates.env.globals.update(value_text=value_text, mandate_text=mandate_text, level_text=level_text, heading_name=V.heading_name,
+                                 place_text=place_text, sources_text=sources_text, TITLES=TITLES, ANSWERING=ANSWERING, CHANGE=CHANGE)
     app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
     log = Log(log_dir)
     app.state.home, app.state.log = home, log
@@ -191,13 +191,15 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         return result_card(run.entry.outcome if run.entry.status == "done" else "parked", run.entry.reason, run.entry.result, run)
 
     def features_of(order: Order):
-        return home.features(order.data["design"]) if order.data.get("design") else None
+        return home.features(order.type["design"]) if order.type.get("design") else None
 
     def refusals_of(lineage: str, order: Order):
         previous = home.load(lineage) if home.folder(lineage) and (home._folder(lineage) / "order.json").exists() else None
         return check(order, features=features_of(order), previous=previous)
 
-    def page(request: Request, template: str, lineage: str | None, action: str, message: str | None = None, status: int = 200, **ctx):
+    def page(request: Request, template: str, lineage: str | None, action: str, message: str | None = None, status: int = 200,
+             logged: dict | None = None, **ctx):
+        """A page, its action logged with the refusals shown; `logged` adds to the log's detail (an act's capacity and section)."""
         message = message or request.query_params.get("message")
         order = ctx.get("order")
         refusals = refusals_of(lineage, order) if order is not None and lineage else []
@@ -206,7 +208,8 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             by_item.setdefault(r.item, []).append(r)
         facets = home.facets(lineage) if lineage and home.folder(lineage) else None
         writable = home.writable(lineage) if lineage and home.folder(lineage) else True
-        log.write(request.url.path, action, refusals, {"message": message} if message else None)
+        detail = {**(logged or {}), **({"message": message} if message else {})}
+        log.write(request.url.path, action, refusals, detail or None)
         return templates.TemplateResponse(request, template, {"home": home, "lineage": lineage, "refusals": refusals, "by_item": by_item,
                                                               "message": message, "facets": facets, "writable": writable, "V": V,
                                                               "session": log.session, **ctx}, status_code=status)
@@ -216,8 +219,9 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             raise HTTPException(404, f"{lineage} is not in the products home")
         return home.working(lineage)
 
-    def edit(request: Request, lineage: str, change, template: str, action: str, **ctx):
-        """Apply a change to the draft and show the page, or the reason the change is not made."""
+    def edit(request: Request, lineage: str, change, template: str, action: str, section: str = "type", **ctx):
+        """Apply a change to the draft and show the page, or the reason the change is not made. An edit of a product is the
+        orderer's act, logged with the capacity and the section it writes, the type's or this order's."""
         order = working(lineage)
         try:
             change(order)
@@ -228,7 +232,15 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             order, message, status = working(lineage), str(e), 403
         except (ValueError, KeyError) as e:
             order, message, status = working(lineage), str(e), 400
-        return page(request, template, lineage, action, message, status, order=order, **ctx)
+        return page(request, template, lineage, action, message, status, logged={"capacity": "orderer", "section": section},
+                    order=order, **ctx)
+
+    def migrated(lineage: str) -> Order | None:
+        """The order as it stands, migrated, where it is saved as order 1: the page says so with the notes."""
+        if home.folder(lineage) is None or not (home._folder(lineage) / "order.json").exists():
+            return None
+        stands = home.load(lineage)
+        return Order.from_v1(stands.raw) if stands.form == 1 else None
 
     # ---------------------------------------------------------------- products
 
@@ -327,7 +339,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
 
     @app.get("/products/{lineage}", response_class=HTMLResponse)
     def product(request: Request, lineage: str):
-        return page(request, "product.html", lineage, "view", order=working(lineage))
+        return page(request, "product.html", lineage, "view", order=working(lineage), migrated=migrated(lineage))
 
     @app.post("/products/{lineage}/product", response_class=HTMLResponse)
     async def product_edit(request: Request, lineage: str):
@@ -335,16 +347,26 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
 
         def change(o: Order):
             o.data["title"] = form.get("title") or o.data.get("title")
-            o.data["product"]["name"] = form.get("name") or o.data["product"]["name"]
-            o.data["product"]["purpose"] = form.get("purpose") or ""
-            b = o.data.setdefault("brief", {})
-            b["objective"] = form.get("objective") or None
-            b["quantity"] = int(_num(form.get("quantity"))) if _num(form.get("quantity")) else None
-            b["may_change"] = [t.strip() for t in (form.get("may_change") or "").split(",") if t.strip()]
-            b["may_relax"] = [t.strip() for t in (form.get("may_relax") or "").split(",") if t.strip()]
+            o.type["product"]["name"] = form.get("name") or o.type["product"]["name"]
+            o.type["product"]["purpose"] = form.get("purpose") or ""
+        return edit(request, lineage, change, "product.html", "edit product", migrated=migrated(lineage))
+
+    @app.post("/products/{lineage}/order", response_class=HTMLResponse)
+    async def order_edit(request: Request, lineage: str):
+        """This order's section: the brief (text, objective, quantity) and the answering policy."""
+        form = await request.form()
+
+        def change(o: Order):
+            b = o.instance.setdefault("brief", {})
             if form.get("brief_text") is not None:
                 b["text"] = form.get("brief_text")
-        return edit(request, lineage, change, "product.html", "edit product")
+            b["objective"] = form.get("objective") or None
+            b["quantity"] = int(_num(form.get("quantity"))) if _num(form.get("quantity")) else None
+            if form.get("answering"):
+                if form["answering"] not in ANSWERING:
+                    raise ValueError(f"the answering policy is park or decline, not {form['answering']!r}")
+                o.instance["answering"] = form["answering"]
+        return edit(request, lineage, change, "product.html", "edit order", section="order", migrated=migrated(lineage))
 
     @app.post("/products/{lineage}/needs", response_class=HTMLResponse)
     async def need_add(request: Request, lineage: str):
@@ -453,7 +475,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             if m is None:
                 raise KeyError(f"no metric {mid}")
             if form.get("action") == "drop":
-                m["dropped"] = True
+                o.drop(mid)
                 return
             m["class"] = form.get("class") or None
             m["heading"] = form.get("heading") or None
@@ -478,10 +500,20 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             m["source"] = sources_from_text(form.get("source") or "")
             m["verified_by"] = form.get("verified_by") or None
             m["carried_by"] = picked(form, "carried_by")
-            m["mandate"] = mandate_from_form(form)
         return _metric_edit(request, lineage, mid, change, form)
 
-    def _metric_edit(request, lineage, mid, change, form):
+    @app.post("/products/{lineage}/metrics/{mid}/mandate", response_class=HTMLResponse)
+    async def mandate_edit(request: Request, lineage: str, mid: str):
+        """A metric's mandate in this order, written to the order's section."""
+        form = await request.form()
+
+        def change(o: Order):
+            if o.metric(mid) is None:
+                raise KeyError(f"no metric {mid}")
+            o.set_mandate(mid, mandate_from_form(form))
+        return _metric_edit(request, lineage, mid, change, form, action="edit mandate", section="order")
+
+    def _metric_edit(request, lineage, mid, change, form, action: str | None = None, section: str = "type"):
         order = working(lineage)
         try:
             change(order)
@@ -491,7 +523,8 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
             order, message, status = working(lineage), str(e), 403
         except (ValueError, KeyError) as e:
             order, message, status = working(lineage), str(e), 400
-        return page(request, "metric.html", lineage, "drop metric" if form.get("action") == "drop" else "edit metric", message, status,
+        action = action or ("drop metric" if form.get("action") == "drop" else "edit metric")
+        return page(request, "metric.html", lineage, action, message, status, logged={"capacity": "orderer", "section": section, "metric": mid},
                     order=order, m=order.metric(mid), quantities=V.quantities(), loads=V.loads())
 
     @app.post("/products/{lineage}/headings", response_class=HTMLResponse)
@@ -499,7 +532,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         form = await request.form()
 
         def change(o: Order):
-            stated = dict(o.data.get("headings") or {})
+            stated = dict(o.type.get("headings") or {})
             for h in V.heading_ids():
                 if f"h_{h}" in form:
                     text = (form.get(f"h_{h}") or "").strip()
@@ -507,7 +540,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
                         stated[h] = text
                     else:
                         stated.pop(h, None)
-            o.data["headings"] = stated
+            o.type["headings"] = stated
         return edit(request, lineage, change, "metrics.html", "state headings", name=metric_name)
 
     @app.get("/products/{lineage}/matrix", response_class=HTMLResponse)
@@ -562,7 +595,7 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         def change(o: Order):
             count = _num(form.get("count")) or 1
             o.add_object(form.get("name") or "", form.get("kind") or "face", int(count), form.get("datum") or None, form.get("text") or "",
-                         parse_place(form.get("place") or ""))
+                         parse_place(form.get("place") or ""), change=form.get("change") or "fixed")
         return edit(request, lineage, change, "objects.html", "add object")
 
     @app.post("/products/{lineage}/objects/{oid}", response_class=HTMLResponse)
@@ -578,12 +611,15 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
                 return
             obj.update(name=form.get("name") or obj["name"], kind=form.get("kind") or obj["kind"], count=int(_num(form.get("count")) or 1),
                        datum=form.get("datum") or None, text=form.get("text") or "")
+            if form.get("change"):
+                o.set_change(oid, form["change"])
             place = parse_place(form.get("place") or "")
             if place is None:
                 obj.pop("place", None)
             else:
                 obj["place"] = place
-        return edit(request, lineage, change, "objects.html", "drop object" if form.get("action") == "drop" else "edit object")
+        action = "drop object" if form.get("action") == "drop" else f"edit object ({form.get('change')})" if form.get("change") else "edit object"
+        return edit(request, lineage, change, "objects.html", action)
 
     # ---------------------------------------------------------------- the binding
 
@@ -600,11 +636,11 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
 
         def change(o: Order):
             if action == "bind":
-                design = form.get("design") or o.data.get("design")
+                design = form.get("design") or o.type.get("design")
                 features = home.features(design) if design else None
                 if features is None:
                     raise KeyError(f"no feature list of {design!r} in the products home")
-                previous = home.features(o.data["design"]) if o.data.get("design") and o.data["design"] != design else None
+                previous = home.features(o.type["design"]) if o.type.get("design") and o.type["design"] != design else None
                 report = bind_order(o, features, previous)
                 detail.update(declared=report["declared"], matched=report["matched"])
             elif action == "confirm":
@@ -868,9 +904,10 @@ def create_app(home: Home, log_dir: Path | None = None, runs_root: Path | None =
         held = saved_version(home, lineage)
         saved = home.load(lineage) if held else None
         facets = home.facets(lineage)
-        ready = saved is not None and facets["state"] == "confirmed"
+        ready = saved is not None and facets["state"] == "confirmed" and saved.form == 2
         why = None if ready else ("the order has no saved version yet" if saved is None else
                                   "the draft has changes not yet saved" if facets["state"] == "draft" else
+                                  "the order is saved as order 1: answer the migration's notes and save it as order 2" if saved.form == 1 else
                                   f"the order is {facets['state']}, not confirmed: bind it to a design and confirm every binding")
         runs = reading.runs_of(lineage)
         latest = next((r for r in runs if r.get("result") or r["status"] in ("done", "parked")), None)
@@ -1010,7 +1047,7 @@ def _tree(home: Home, groups: dict, rows: list[dict]) -> list[dict]:
 
 
 def _binding_ctx(home: Home, order: Order, design: str) -> dict:
-    design = design or order.data.get("design") or ""
+    design = design or order.type.get("design") or ""
     features = home.features(design) if design else None
     rows, props = [], {}
     if features is not None:

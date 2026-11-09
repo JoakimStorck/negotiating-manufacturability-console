@@ -1,9 +1,9 @@
 {% if sides %}
 <table><tr><th>Metric</th><th>{{ sides[0].lineage }}{% if sides[0].data.revision %} r{{ sides[0].data.revision }}{% endif %}</th><th>{{ sides[1].lineage }}{% if sides[1].data.revision %} r{{ sides[1].data.revision }}{% endif %}</th></tr>
-{% for mid in (sides[0].data.metrics + sides[1].data.metrics)|map(attribute="id")|unique %}
+{% for mid in (sides[0].type.metrics + sides[1].type.metrics)|map(attribute="id")|unique %}
 {% set x = sides[0].metric(mid) %}{% set y = sides[1].metric(mid) %}
 <tr><td>{{ mid }}</td>
-  <td class="{{ 'dropped' if x and x.dropped }}">{% if x %}{{ x.quantity }}: {{ value_text(x.value, x.unit) }}; {{ mandate_text(x.mandate, x.unit) }}{% else %}–{% endif %}</td>
-  <td class="{{ 'dropped' if y and y.dropped }}">{% if y %}{{ y.quantity }}: {{ value_text(y.value, y.unit) }}; {{ mandate_text(y.mandate, y.unit) }}{% else %}–{% endif %}</td></tr>
+  <td class="{{ 'dropped' if x and x.dropped }}">{% if x %}{{ x.quantity }}: {{ value_text(x.value, x.unit) }}; {{ mandate_text(sides[0].mandate(x), x.unit) }}{% else %}–{% endif %}</td>
+  <td class="{{ 'dropped' if y and y.dropped }}">{% if y %}{{ y.quantity }}: {{ value_text(y.value, y.unit) }}; {{ mandate_text(sides[1].mandate(y), y.unit) }}{% else %}–{% endif %}</td></tr>
 {% endfor %}</table>
 {% endif %}

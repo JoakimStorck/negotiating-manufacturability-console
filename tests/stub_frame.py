@@ -284,7 +284,7 @@ def presence(at: str, parked_run: str | None = None) -> dict:
                  "machine": {"class": "fff-3axis-0.4", "adapter": "virtual", "job": None}},
                 {"id": "core-one-1", "kind": "machine", "since": since, "seen": at, "state": "unavailable", "note": "no host is configured for its adapter",
                  "machine": {"class": "fff-3axis-0.4", "adapter": "instrumented", "job": None}}]
-    runs = [{"id": parked_run, "order": {"lineage": "bracket-mass", "revision": 2, "sha256": "a" * 64}, "state": "parked", "since": iso(t - timedelta(minutes=5)),
+    runs = [{"id": parked_run, "order": {"lineage": "bracket-mass", "revision": int(parked_run.rsplit("@", 1)[1]), "sha256": "a" * 64}, "state": "parked", "since": iso(t - timedelta(minutes=5)),
              "outcome": None}] if parked_run else []
     return {"schema": "presence/1", "at": at, "down_after": 30.0, "frame": {"name": "workshop-1", "version": "9836798a5c6f", "since": since, "scenario": None},
             "parts": roles + machines, "runs": runs}

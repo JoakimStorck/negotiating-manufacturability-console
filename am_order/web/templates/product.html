@@ -2,6 +2,11 @@
 {% block title %}{{ order.data.title }}{% endblock %}
 {% block content %}
 <h1>{{ order.data.title }}</h1>
+{% if migrated %}
+<div class="message bad">The order as it stands is saved as order 1: it is shown as order 2, and the next save writes order 2 as a new revision.
+{% if migrated.notes %}State first what the migration could not carry over:<ul>{% for n in migrated.notes %}<li>{{ n }}</li>{% endfor %}</ul>
+Free objects are set on the <a href="/products/{{ lineage }}/objects">objects</a>.{% endif %}</div>
+{% endif %}
 <div class="grid2">
   <div>
     <img class="picture" src="/products/{{ lineage }}/picture" alt="no overview picture" onerror="this.replaceWith(document.createTextNode('No overview picture.'))">
@@ -9,17 +14,35 @@
   <form method="post" action="/products/{{ lineage }}/product" hx-post="/products/{{ lineage }}/product" hx-target="body">
     <div class="grid2">
       <label>Title</label><input name="title" value="{{ order.data.title }}">
-      <label>Name</label><input name="name" value="{{ order.data.product.name }}">
-      <label>Purpose</label><textarea name="purpose" rows="2">{{ order.data.product.purpose }}</textarea>
-      <label>Brief</label><textarea name="brief_text" rows="3">{{ order.data.brief.text if order.data.brief else "" }}</textarea>
-      <label>Objective</label><input name="objective" value="{{ (order.data.brief or {}).objective or '' }}">
-      <label>Quantity</label><input name="quantity" value="{{ (order.data.brief or {}).quantity or '' }}">
-      <label>May change</label><input name="may_change" value="{{ ((order.data.brief or {}).may_change or [])|join(', ') }}">
-      <label>May relax</label><input name="may_relax" value="{{ ((order.data.brief or {}).may_relax or [])|join(', ') }}">
+      <label>Name</label><input name="name" value="{{ order.type.product.name }}">
+      <label>Purpose</label><textarea name="purpose" rows="2">{{ order.type.product.purpose }}</textarea>
       <span></span><button>Apply</button>
     </div>
   </form>
 </div>
+{% set brief = order.brief() %}{% set answering = order.answering() %}
+<h2>This order</h2>
+<p class="muted">The order is this order of the product: its intent, what happens to a case its mandates do not cover, and what the
+frame has decided for it. What may be relaxed is each metric's mandate (on its <a href="/products/{{ lineage }}/metrics">metric</a>);
+what may change in the design is said on the <a href="/products/{{ lineage }}/objects">objects</a>, each fixed or free.</p>
+<form method="post" action="/products/{{ lineage }}/order" hx-post="/products/{{ lineage }}/order" hx-target="body">
+  <div class="grid2">
+    <label>Brief</label><textarea name="brief_text" rows="3">{{ brief.text }}</textarea>
+    <label>Objective</label><input name="objective" value="{{ brief.objective or '' }}" placeholder="time, strength, mass or cost">
+    <label>Quantity</label><input name="quantity" value="{{ brief.quantity if brief.quantity is not none else '' }}">
+    <label>A case the mandates do not cover</label>
+    <div>{% for key, words in ANSWERING.items() %}<label><input type="radio" name="answering" value="{{ key }}" {% if answering == key %}checked{% endif %}>
+      {{ key }}: {{ words }}</label><br>{% endfor %}</div>
+    <span></span><button>Apply to this order</button>
+  </div>
+  {% set item = "order" %}{% include "_refusals.html" with context %}
+</form>
+<table>
+<tr><th>Requirements in force</th><td>{% if order.in_force() %}<ul>{% for r in order.in_force() %}<li>the {{ r.what }} on {{ r.metric }} relaxed from {{ level_text(r["from"]) }} to {{ level_text(r.to) }} by the {{ r.by.role|replace("_", " ") }} ({{ r.by.actor }}) in {{ r.run }}{% if r.showing %}, on the showing {{ r.showing }}{% endif %}</li>{% endfor %}</ul>
+  {% else %}<span class="muted">none yet; written when the frame accepts a plan for this order</span>{% endif %}</td></tr>
+<tr><th>Accepted plan</th><td>{% set a = order.accepted() %}{% if a %}{{ a.plan }} for {{ a.design }} in {{ a.run }}
+  {% else %}<span class="muted">none yet; written when the frame accepts a plan for this order</span>{% endif %}</td></tr>
+</table>
 <h3>Overview picture</h3>
 <form method="post" action="/products/{{ lineage }}/picture" enctype="multipart/form-data" class="inline">
   <input type="file" name="file" accept="image/png,image/jpeg"> <button class="quiet">Set the owner's picture</button></form>
@@ -28,7 +51,7 @@
 <h2>Customer needs</h2>
 <table>
 <tr><th>#</th><th>Need</th><th>Importance</th><th>Primary need</th><th></th></tr>
-{% for n in order.data.needs %}
+{% for n in order.type.needs %}
 <tr class="{{ 'dropped' if n.dropped }}">
   <form method="post" action="/products/{{ lineage }}/needs/{{ n.id }}" hx-post="/products/{{ lineage }}/needs/{{ n.id }}" hx-target="body">
   <td>{{ n.id }}</td><td><input name="text" value="{{ n.text }}" size="40"></td>

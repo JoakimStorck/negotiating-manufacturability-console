@@ -42,10 +42,10 @@
 <aside>
 {% if chosen %}
   <h2>{{ chosen_facets.title }}</h2>
-  {% if chosen_facets.state != "draft" or chosen.data.product.picture or chosen.data.design %}<img class="picture" src="/products/{{ selected }}/picture" alt="" onerror="this.remove()">{% endif %}
-  <p>{{ chosen.data.product.purpose }}</p>
+  {% if chosen_facets.state != "draft" or chosen.type.product.picture or chosen.type.design %}<img class="picture" src="/products/{{ selected }}/picture" alt="" onerror="this.remove()">{% endif %}
+  <p>{{ chosen.type.product.purpose }}</p>
   <p><a href="/products/{{ selected }}">Open</a> · {{ chosen_facets.group }} · {{ chosen_facets.category }} · {{ chosen_facets.state }}</p>
-  <p class="muted">{{ chosen.needs()|length }} needs, {{ chosen.metrics()|length }} metrics, {{ chosen.objects()|length }} objects{% if chosen.data.design %}, bound to {{ chosen.data.design }}{% endif %}</p>
+  <p class="muted">{{ chosen.needs()|length }} needs, {{ chosen.metrics()|length }} metrics, {{ chosen.objects()|length }} objects{% if chosen.type.design %}, bound to {{ chosen.type.design }}{% endif %}</p>
   <form method="post" action="/products/{{ selected }}/derive"><input name="lineage" placeholder="new id"> <input name="name" placeholder="name"> <button>Derive into user</button></form>
   <form method="post" action="/products/{{ selected }}/manage"><input type="hidden" name="action" value="move"><input name="group" placeholder="group path" list="groups"> <button class="quiet">Move</button></form>
   <form method="post" action="/products/{{ selected }}/manage"><input type="hidden" name="action" value="tag"><input name="add" placeholder="add tags"> <input name="remove" placeholder="remove tags"> <button class="quiet">Tag</button></form>

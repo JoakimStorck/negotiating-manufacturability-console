@@ -33,9 +33,14 @@ def refusals(html: str) -> list[str]:
 def metric_form(**kw) -> dict:
     form = {"class": "demand", "heading": "geometry", "text": "", "object": "", "quantity": "", "unit": "", "comparator": "", "value": "",
             "lower": "", "nominal": "", "upper": "", "load_type": "", "magnitude": "", "load_unit": "", "direction": "", "at": "",
-            "under_name": "", "under_text": "", "source": "", "verified_by": "", "mandate": "held", "far": ""}
+            "under_name": "", "under_text": "", "source": "", "verified_by": ""}
     form.update(kw)
     return form
+
+
+def mandate(client: TestClient, mid: str, form: str, far: str = "", product: str = "artifact"):
+    """A metric's mandate in this order, set on its page."""
+    return client.post(f"/products/{product}/metrics/{mid}/mandate", data={"mandate": form, "far": far})
 
 
 def course(client: TestClient) -> dict:
@@ -62,15 +67,14 @@ def course(client: TestClient) -> dict:
                                                     verified_by="calliper", carried_by="O1"))
     r = client.post(f"{P}/metrics/M2", data=metric_form(text="the central hole", object="O2", quantity="diameter", comparator="band",
                                                         lower="9.9", nominal="10", upper="10.1", needs="N1", source="requester: the fixture's pin",
-                                                        verified_by="pin gauge", carried_by="O2", mandate="interval", far="9.95, 10.05"))
+                                                        verified_by="pin gauge", carried_by="O2"))
     seen["metric without a unit"] = [x for x in refusals(r.text) if x[1] == "M2"]
-    r = client.post(f"{P}/metrics/M2", data=metric_form(text="the central hole", object="O2", quantity="diameter", unit="mm", comparator="band",
-                                                        lower="9.9", nominal="10", upper="10.1", needs="N1", source="requester: the fixture's pin",
-                                                        verified_by="pin gauge", carried_by="O2", mandate="interval", far="9.95, 10.05"))
+    client.post(f"{P}/metrics/M2", data=metric_form(text="the central hole", object="O2", quantity="diameter", unit="mm", comparator="band",
+                                                    lower="9.9", nominal="10", upper="10.1", needs="N1", source="requester: the fixture's pin",
+                                                    verified_by="pin gauge", carried_by="O2"))
+    r = mandate(client, "M2", "interval", "9.95, 10.05")
     seen["interval inside the ideal"] = [x for x in refusals(r.text) if x[1] == "M2"]
-    r = client.post(f"{P}/metrics/M2", data=metric_form(text="the central hole", object="O2", quantity="diameter", unit="mm", comparator="band",
-                                                        lower="9.9", nominal="10", upper="10.1", needs="N1", source="requester: the fixture's pin",
-                                                        verified_by="pin gauge", carried_by="O2", mandate="interval", far="9.8, 10.2"))
+    r = mandate(client, "M2", "interval", "9.8, 10.2")
     seen["M2 cleared"] = [x for x in refusals(r.text) if x[1] == "M2"]
     client.post(f"{P}/metrics/M3", data={**metric_form(text="the lateral holes", object="O3", quantity="position", unit="mm", comparator="at_most",
                                                        value="0.2", source="requester: the side fixtures", verified_by="CMM against datum A"),
@@ -81,9 +85,7 @@ def course(client: TestClient) -> dict:
                                                         quantity="production_time", unit="min", comparator="at_most", value="60",
                                                         source="project: the lab's day", verified_by="the print's log", carried_by="O1"))
     seen["a wish held"] = [x for x in refusals(r.text) if x[1] == "M5"]
-    client.post(f"{P}/metrics/M5", data=metric_form(**{"class": "wish"}, heading="production", text="printed in an hour", object="O1",
-                                                    quantity="production_time", unit="min", comparator="at_most", value="60",
-                                                    source="project: the lab's day", verified_by="the print's log", carried_by="O1", mandate="release"))
+    mandate(client, "M5", "release")
     r = client.post(f"{P}/metrics/M6", data=metric_form(heading="material", text="in PLA", object="O1", quantity="material", unit="-",
                                                         comparator="equals", value="Prusament PLA", source="project: the lab's stock",
                                                         verified_by="the filament's label", carried_by="O1"))
@@ -115,18 +117,15 @@ def course(client: TestClient) -> dict:
     # revised: a value tightened, a mandate widened, a need dropped, a metric added
     client.post(f"{P}/metrics/M2", data=metric_form(text="the central hole", object="O2", quantity="diameter", unit="mm", comparator="band",
                                                     lower="9.95", nominal="10", upper="10.05", needs=["N1", "N2"], source="requester: the fixture's pin",
-                                                    verified_by="pin gauge", carried_by="O2", mandate="interval", far="9.8, 10.2"))
-    client.post(f"{P}/metrics/M4", data=metric_form(text="the base flat", object="O4", quantity="flatness", unit="mm", comparator="at_most",
-                                                    value="0.1", needs="N3", source="requester", verified_by="surface plate", carried_by="O4",
-                                                    mandate="interval", far="0.2"))
+                                                    verified_by="pin gauge", carried_by="O2"))
+    mandate(client, "M4", "interval", "0.2")
     r = client.post(f"{P}/needs/N3", data={"action": "drop"})
     seen["a dropped need still cited"] = [x for x in refusals(r.text) if x[0] in ("named", "necessary")]
     r = client.post(f"{P}/metrics/M4", data=metric_form(text="the base flat", object="O4", quantity="flatness", unit="mm", comparator="at_most",
-                                                        value="0.1", source="requester", verified_by="surface plate", carried_by="O4",
-                                                        mandate="interval", far="0.2"))
+                                                        value="0.1", source="requester", verified_by="surface plate", carried_by="O4"))
     r = client.post(f"{P}/metrics/M4", data=metric_form(text="the base flat", object="O4", quantity="flatness", unit="mm", comparator="at_most",
                                                         value="0.1", source="standard: ISO 1101, the face as datum A", verified_by="surface plate",
-                                                        carried_by="O4", mandate="interval", far="0.2"))
+                                                        carried_by="O4"))
     r = client.post(f"{P}/metrics", data={"heading": "geometry", "text": "the central hole round"}, follow_redirects=True)
     r = client.post(f"{P}/metrics/M7", data=metric_form(text="the central hole round", object="O2", quantity="roundness", unit="mm",
                                                         comparator="at_most", value="0.05", needs="N2", source="requester", verified_by="CMM",
@@ -237,3 +236,65 @@ def test_serve_on_the_examples(home_dir):
     finally:
         proc.terminate()
         proc.wait(timeout=10)
+
+
+def test_the_order_section_edited_and_logged_as_the_orderers(app, home_dir, tmp_path):
+    """Answering, fixed or free and a mandate, each set on its page: written to the order 2 (the order's section, the object's
+    change) and logged as the orderer's acts, with the section they write."""
+    c = TestClient(app)
+    c.post("/products/bracket-mass/derive", data={"lineage": "mass", "name": "Mass"})
+    page = c.get("/products/mass").text
+    assert "<h2>This order</h2>" in page and "May change" not in page and "May relax" not in page
+    assert "parks at the frame for your word" in page and "is declined by the requester on the evidence of exhausted means" in page
+    assert page.count("none yet; written when the frame accepts a plan for this order") == 2
+    r = c.post("/products/mass/order", data={"brief_text": "Ten brackets, light.", "objective": "mass", "quantity": "12", "answering": "park"})
+    assert r.status_code == 200
+    objects = c.get("/products/mass/objects").text
+    assert objects.count(">the design may change around it<") == 4 and objects.count(">an interface the design keeps<") == 5  # O1, O6, O7, O9 free
+    r = c.post("/products/mass/objects/O8", data={"name": "web", "kind": "wall", "count": "1", "datum": "", "text": "", "place": "",
+                                                  "change": "free", "action": "edit"})
+    assert r.status_code == 200
+    metric = c.get("/products/mass/metrics/M13").text
+    assert "<h2>This order's mandate</h2>" in metric and "The mandate is this order's, not the product's" in metric
+    r = mandate(c, "M13", "interval", "20", product="mass")
+    assert r.status_code == 200 and not [x for x in refusals(r.text) if x[1] == "M13"]
+    assert "interval to 20 g" in c.get("/products/mass/metrics").text
+    draft = Home(home_dir).draft("mass")
+    assert draft.instance["brief"] == {"text": "Ten brackets, light.", "objective": "mass", "quantity": 12}
+    assert draft.answering() == "park" and draft.change("O8") == "free" and draft.mandates()["M13"] == {"form": "interval", "to": 20}
+    assert "mandate" not in draft.metric("M13")
+    log = [json.loads(line) for path in (tmp_path / "log").glob("*.jsonl") for line in path.read_text(encoding="utf-8").splitlines()]
+    acts = {e["action"]: e["detail"] for e in log if e["action"] in ("edit order", "edit object (free)", "edit mandate")}
+    assert acts["edit order"] == {"capacity": "orderer", "section": "order"}
+    assert acts["edit mandate"] == {"capacity": "orderer", "section": "order", "metric": "M13"}
+    assert acts["edit object (free)"] == {"capacity": "orderer", "section": "type"}
+    r = c.post("/products/mass/order", data={"answering": "never"})
+    assert r.status_code == 400 and "park or decline" in r.text
+    saved = c.post("/products/mass/save")
+    assert "saved as revision 2" in saved.text
+    history = html.unescape(c.get("/products/mass/history?a=1&b=2").text)
+    for line in ("brief quantity: 10 -> 12", "brief objective: \"time\" -> \"mass\"", "object O8 (web): fixed -> free", "mandate M13: held -> interval to 20 g"):
+        assert line in history
+
+
+def test_a_product_saved_as_order_1_is_shown_as_order_2_with_the_notes(app, home_dir):
+    """A home from before order 2: the order as it stands is order 1. Its page shows it as order 2 with the migration's notes,
+    and Save writes order 2 as a new revision."""
+    folder = home_dir / "own" / "plate"
+    first = next(p for p in (folder / "versions").glob("*.json") if json.loads(p.read_bytes())["schema"] == "order/1")
+    (folder / "order.json").write_bytes(first.read_bytes())
+    for p in (folder / "versions").glob("*.json"):
+        if p != first:
+            p.unlink()
+    own = create_app(Home(home_dir, allow_own=True), None)
+    c = TestClient(own)
+    page = html.unescape(c.get("/products/plate").text)
+    assert "saved as order 1" in page and "may_change named thickness: state which objects are free" in page
+    assert "Not ready" not in page
+    c.post("/products/plate/objects/O6", data={"name": "body", "kind": "wall", "count": "1", "datum": "", "text": "", "place": "",
+                                               "change": "free", "action": "edit"})
+    saved = c.post("/products/plate/save")
+    assert "saved as revision 2" in saved.text and "saved as order 1" not in saved.text
+    order = Home(home_dir).load("plate")
+    assert order.form == 2 and [o["id"] for o in order.free()] == ["O6"] and Home(home_dir).load("plate@1").form == 1
+    assert "form: order 1 -&gt; order 2" in c.get("/products/plate/history?a=1&b=2").text
