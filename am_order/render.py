@@ -4,8 +4,10 @@
 - `needs`: the customer needs (Ulrich & Eppinger), with their importance, grouped under the primary needs;
 - `metrics`: the metrics, each with its importance, the highest of its needs';
 - `matrix`: the needs-metrics matrix;
-- `specification`: the target specification, the ideal values, with the mandate only where asked;
-- `traceability`: the chain need -> metric -> object -> feature, and how each metric is verified.
+- `specification`: the target specification, the ideal values, with this order's mandate only where asked;
+- `traceability`: the chain need -> metric -> object -> feature, and how each metric is verified;
+- `objects`: the product's objects, each fixed (an interface the design keeps) or free (the design may change around it);
+- `order`: this order: the brief (text, objective, quantity), the answering policy, the requirements in force and the accepted plan.
 
     text = render(order, "markdown")                      # every table
     html = render(order, "html", ["matrix"], mandate=True)
@@ -15,12 +17,13 @@ from __future__ import annotations
 import html as H
 
 from . import vocab as V
-from .diff import mandate_text, value_text
-from .order import Order
+from .diff import level_text, mandate_text, value_text
+from .order import ANSWERING, CHANGE, Order
 
-TABLES = ("requirements", "needs", "metrics", "matrix", "specification", "traceability")
+TABLES = ("requirements", "needs", "metrics", "matrix", "specification", "traceability", "objects", "order")
 TITLES = {"requirements": "Requirements list", "needs": "Customer needs", "metrics": "Metrics", "matrix": "Needs-metrics matrix",
-          "specification": "Target specification", "traceability": "Traceability"}
+          "specification": "Target specification", "traceability": "Traceability", "objects": "Objects", "order": "This order"}
+NONE_YET = "none yet; written when the frame accepts a plan for this order"
 
 
 def _order(order) -> Order:
@@ -54,7 +57,7 @@ def table(order, name: str, mandate: bool = False) -> tuple[list[str], list[list
             for m in [m for m in metrics if m.get("heading") == h["id"]]:
                 rows.append([m["id"], "D" if m.get("class") == "demand" else "W", h["name"], m.get("text") or metric_name(order, m),
                              value_text(m.get("value"), m.get("unit")), _source(m)])
-        stated = order.data.get("headings") or {}
+        stated = order.type.get("headings") or {}
         for h in V.headings():
             if stated.get(h["id"]) and not any(m.get("heading") == h["id"] for m in metrics):
                 rows.append(["", "", h["name"], stated[h["id"]], "(the owner's statement)", "owner"])
@@ -77,10 +80,10 @@ def table(order, name: str, mandate: bool = False) -> tuple[list[str], list[list
             if mandate:
                 row.append(mandate_text(order.mandate(m), None))
             rows.append(row)
-        return ["#", "Metric", "Unit", "Ideal value"] + (["Mandate"] if mandate else []), rows
+        return ["#", "Metric", "Unit", "Ideal value"] + (["Mandate (this order)"] if mandate else []), rows
     if name == "traceability":
         rows = []
-        design = order.data.get("design")
+        design = order.type.get("design")
         for m in metrics:
             for oid in m.get("carried_by") or [m.get("object")]:
                 o = order.obj(oid)
@@ -90,6 +93,20 @@ def table(order, name: str, mandate: bool = False) -> tuple[list[str], list[list
                     ", ".join(f["name"] + ("" if f["confirmed"] else " (unconfirmed)") for f in (order.binding(oid) or {}).get("features", []))
                 rows.append([", ".join(m.get("needs", [])), m["id"], f"{oid} {o['name']}", feats or "unbound", m.get("verified_by") or ""])
         return ["Needs", "Metric", "Object", "Features" + (f" of {design}" if design else ""), "Verified by"], rows
+    if name == "objects":
+        rows = [[o["id"], o["name"], o["kind"], str(o.get("count") or 1), o.get("datum") or "", f"{order.change(o)}: {CHANGE[order.change(o)]}"]
+                for o in order.objects()]
+        return ["#", "Object", "Kind", "Count", "Datum", "Change"], rows
+    if name == "order":
+        b, answering = order.brief(), order.answering()
+        rows = [["Brief", b["text"]], ["Objective", b["objective"] or ""], ["Quantity", "" if b["quantity"] is None else str(b["quantity"])],
+                ["Answering", f"{answering}: {ANSWERING[answering]}" if answering in ANSWERING else "not stated"]]
+        relaxed = [f"the {r['what']} on {r['metric']} relaxed from {level_text(r['from'])} to {level_text(r['to'])} by the "
+                   f"{r['by']['role'].replace('_', ' ')} ({r['by']['actor']}) in {r['run']}" for r in order.in_force()]
+        rows.append(["In force", "; ".join(relaxed) or NONE_YET])
+        a = order.accepted()
+        rows.append(["Accepted", f"{a['plan']} for {a['design']} in {a['run']}" if a else NONE_YET])
+        return ["", "This order"], rows
     raise KeyError(f"no table {name!r}; one of {TABLES}")
 
 

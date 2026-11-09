@@ -4,10 +4,12 @@
     order = import_xlsx(path)            # an edited workbook comes in as a draft, to be checked
     export(order, "reqif", path)         # the metrics as specification objects, the needs and the matrix as relations
 
-The workbook's sheets: Product, Customer needs, Objects, Requirements list (every field of each metric, its value and its mandate
-among them), Needs-metrics matrix (a tick per need and metric: the metrics' needs are read from it), Headings, Bindings; and,
-regenerated on every export and not read back, Metrics, Target specification and Traceability. A workbook exported and imported
-unchanged gives the same order.
+The workbook's sheets, read back: the product's requirements (the type) in Product, Customer needs, Objects (each fixed or free),
+Requirements list (every field of each metric, its value among them), Needs-metrics matrix (a tick per need and metric: the
+metrics' needs are read from it), Headings and Bindings; this order's in This order (the brief, the answering policy, the
+requirements in force, the accepted plan) and This order's mandates (one row per metric delegated). Regenerated on every export
+and not read back: Metrics, Target specification (with the mandates) and Traceability. A workbook exported and imported unchanged
+gives the same order. ReqIF carries the order as a specification object of its own beside the metrics, needs and objects.
 """
 from __future__ import annotations
 
@@ -22,10 +24,13 @@ from . import render as R
 from . import vocab as V
 from .order import Order, plain
 
-READ_BACK = ("Product", "Customer needs", "Objects", "Requirements list", "Needs-metrics matrix", "Headings", "Bindings")
+TYPE_SHEETS = ("Product", "Customer needs", "Objects", "Requirements list", "Needs-metrics matrix", "Headings", "Bindings")
+ORDER_SHEETS = ("This order", "This order's mandates")
+READ_BACK = TYPE_SHEETS + ORDER_SHEETS
 SHOWN = ("Metrics", "Target specification", "Traceability")
 METRIC_COLUMNS = ["id", "class", "heading", "text", "object", "quantity", "unit", "comparator", "value", "lower", "nominal", "upper",
-                  "under", "source", "verified_by", "carried_by", "mandate", "far end", "dropped"]
+                  "under", "source", "verified_by", "carried_by", "dropped"]
+TOP = ("lineage", "title", "parent", "group", "tags", "revision", "previous", "saved")
 
 
 def _order(order) -> Order:
@@ -69,38 +74,50 @@ def export(order, fmt: str, path: Path | str | None = None) -> bytes:
 
 # -------------------------------------------------------------------- the workbook
 
+def _far(to) -> object:
+    """A mandate's far end in a cell: a number, as_needed, or the numbers joined by commas."""
+    if to is None or to == "as_needed" or isinstance(to, (int, float)):
+        return to
+    return _vec([to["lower"], to["upper"]]) if isinstance(to, dict) else _vec(to)
+
+
+def _unfar(far, form: str | None):
+    if far is None or far == "as_needed" or isinstance(far, (int, float)):
+        return far
+    parts = _unvec(far)
+    return {"lower": parts[0], "upper": parts[1]} if form in ("band", "equals") else parts
+
+
 def xlsx_bytes(order: Order) -> bytes:
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
-    d = order.data
+    d, t, o = order.data, order.type, order.instance
     wb = Workbook()
     ws = wb.active
     ws.title = "Product"
-    brief = d.get("brief") or {}
-    rows = [("lineage", d["lineage"]), ("title", d.get("title")), ("name", d["product"].get("name")), ("purpose", d["product"].get("purpose")),
-            ("picture", _j(d["product"].get("picture"))), ("parent", _j(d.get("parent"))), ("group", d.get("group")), ("tags", _j(d.get("tags"))),
-            ("design", d.get("design")), ("brief text", brief.get("text")), ("brief objective", brief.get("objective")),
-            ("brief quantity", brief.get("quantity")), ("brief may_change", _j(brief.get("may_change"))),
-            ("brief may_relax", _j(brief.get("may_relax"))), ("revision", d.get("revision")), ("previous", d.get("previous")),
-            ("saved", d.get("saved")), ("present", _j(sorted(d)))]
+    rows = [("lineage", d["lineage"]), ("title", d.get("title")), ("name", t["product"].get("name")), ("purpose", t["product"].get("purpose")),
+            ("picture", _j(t["product"].get("picture"))), ("parent", _j(d.get("parent"))), ("group", d.get("group")), ("tags", _j(d.get("tags"))),
+            ("design", t.get("design")), ("revision", d.get("revision")), ("previous", d.get("previous")), ("saved", d.get("saved")),
+            ("present", _j(sorted(d))), ("present in the type", _j(sorted(t)))]
     ws.append(["field", "value"])
     for r in rows:
         ws.append(list(r))
 
     ws = wb.create_sheet("Customer needs")
     ws.append(["id", "group", "text", "importance", "dropped"])
-    for n in d["needs"]:
+    for n in t["needs"]:
         ws.append([n["id"], n.get("group"), n["text"], n.get("importance"), bool(n.get("dropped"))])
 
     ws = wb.create_sheet("Objects")
-    ws.append(["id", "name", "kind", "count", "datum", "text", "place", "dropped"])
-    for o in d["objects"]:
-        ws.append([o["id"], o["name"], o["kind"], o.get("count"), o.get("datum"), o.get("text"), _j(o.get("place")), bool(o.get("dropped"))])
+    ws.append(["id", "name", "kind", "count", "datum", "text", "place", "change", "dropped"])
+    for x in t["objects"]:
+        ws.append([x["id"], x["name"], x["kind"], x.get("count"), x.get("datum"), x.get("text"), _j(x.get("place")), x.get("change"),
+                   bool(x.get("dropped"))])
 
     ws = wb.create_sheet("Requirements list")
     ws.append(METRIC_COLUMNS)
-    for m in d["metrics"]:
+    for m in t["metrics"]:
         value = m.get("value") or {}
         form = next(iter(value), None)
         v = value.get(form) if form else None
@@ -109,35 +126,42 @@ def xlsx_bytes(order: Order) -> bytes:
             lower, nominal, upper, v = v.get("lower"), v.get("nominal"), v.get("upper"), None
         elif isinstance(v, list):
             v = _vec(v)
-        mandate = m.get("mandate") or {"form": "held"}
-        to = mandate.get("to")
-        far = None if to is None else to if to == "as_needed" or isinstance(to, (int, float)) else _vec([to["lower"], to["upper"]]) \
-            if isinstance(to, dict) else _vec(to)
         ws.append([m["id"], m.get("class"), m.get("heading"), m.get("text"), m.get("object"), m.get("quantity"), m.get("unit"), form, v,
                    lower, nominal, upper, _j(m.get("under")), _j(m.get("source")), m.get("verified_by"), _list(m.get("carried_by")),
-                   mandate["form"], far, bool(m.get("dropped"))])
-        if "mandate" not in m:
-            ws.cell(ws.max_row, METRIC_COLUMNS.index("mandate") + 1).value = None
+                   bool(m.get("dropped"))])
 
     ws = wb.create_sheet("Needs-metrics matrix")
-    ws.append(["need"] + [m["id"] for m in d["metrics"]])
-    for n in d["needs"]:
-        ws.append([n["id"]] + ["x" if n["id"] in m.get("needs", []) else None for m in d["metrics"]])
+    ws.append(["need"] + [m["id"] for m in t["metrics"]])
+    for n in t["needs"]:
+        ws.append([n["id"]] + ["x" if n["id"] in m.get("needs", []) else None for m in t["metrics"]])
 
     ws = wb.create_sheet("Headings")
     ws.append(["heading", "name", "statement"])
     for h in V.headings():
-        ws.append([h["id"], h["name"], (d.get("headings") or {}).get(h["id"])])
+        ws.append([h["id"], h["name"], (t.get("headings") or {}).get(h["id"])])
 
     ws = wb.create_sheet("Bindings")
     ws.append(["object", "design", "feature", "how", "confirmed", "from", "rejected"])
-    for b in d.get("bindings", []):
+    for b in t.get("bindings", []):
         for f in b["features"]:
             ws.append([b["object"], b["design"], f["name"], f["how"], f["confirmed"], f.get("from"), False])
         for name in b.get("rejected", []):
             ws.append([b["object"], b["design"], name, None, None, None, True])
         if not b["features"] and not b.get("rejected"):
             ws.append([b["object"], b["design"], None, None, None, None, None])
+
+    ws = wb.create_sheet("This order")
+    brief = o.get("brief") or {}
+    ws.append(["field", "value"])
+    for r in (("brief text", brief.get("text")), ("objective", brief.get("objective")), ("quantity", brief.get("quantity")),
+              ("answering", o.get("answering")), ("in force", _j(o.get("in_force"))), ("accepted", _j(o.get("accepted"))),
+              ("present", _j(sorted(o))), ("present in the brief", _j(sorted(brief)))):
+        ws.append(list(r))
+
+    ws = wb.create_sheet("This order's mandates")
+    ws.append(["metric", "mandate", "far end"])
+    for mid, mandate in (o.get("mandates") or {}).items():
+        ws.append([mid, mandate["form"], _far(mandate.get("to"))])
 
     for title, name in (("Metrics", "metrics"), ("Target specification", "specification"), ("Traceability", "traceability")):
         ws = wb.create_sheet(title)
@@ -146,8 +170,10 @@ def xlsx_bytes(order: Order) -> bytes:
         for r in rows:
             ws.append(r)
     ws = wb.create_sheet("About")
-    ws.append([f"The order {d['lineage']}, written by am-order. The sheets {', '.join(READ_BACK)} are read back on import; "
-               f"{', '.join(SHOWN)} are regenerated on every export. The matrix's ticks are the metrics' needs."])
+    ws.append([f"The order {d['lineage']}, written by am-order (order 2). The product's requirements, the same for every order of it: "
+               f"{', '.join(TYPE_SHEETS)}. This order's: {', '.join(ORDER_SHEETS)}; a metric without a mandate there is held. "
+               f"All of them are read back on import; {', '.join(SHOWN)} are regenerated on every export. The matrix's ticks are the "
+               "metrics' needs."])
     for sheet in wb.worksheets:
         for c in sheet[1]:
             c.font = Font(bold=True)
@@ -169,34 +195,31 @@ def import_xlsx(source) -> Order:
     wb = load_workbook(io.BytesIO(source) if isinstance(source, bytes) else source, data_only=True)
     p = {r["field"]: r["value"] for r in _rows(wb["Product"])}
     present = set(_uj(p.get("present")) or [])
-    d = {"schema": "order/1", "lineage": p["lineage"], "title": p.get("title"),
-         "product": {"name": p.get("name"), "purpose": p.get("purpose") or "", "picture": _uj(p.get("picture"))},
-         "parent": _uj(p.get("parent")), "tags": _uj(p.get("tags")) or [], "design": p.get("design")}
+    in_type = set(_uj(p.get("present in the type")) or [])
+    d = {"schema": "order/2", "lineage": p["lineage"], "title": p.get("title"), "parent": _uj(p.get("parent")), "tags": _uj(p.get("tags")) or []}
+    t = {"product": {"name": p.get("name"), "purpose": p.get("purpose") or "", "picture": _uj(p.get("picture"))}, "design": p.get("design")}
     if p.get("group"):
         d["group"] = p["group"]
-    brief = {"objective": p.get("brief objective"), "quantity": p.get("brief quantity"),
-             "may_change": _uj(p.get("brief may_change")) or [], "may_relax": _uj(p.get("brief may_relax")) or []}
-    if p.get("brief text") is not None:
-        brief["text"] = p["brief text"]
-    d["brief"] = brief
     for k in ("revision", "previous", "saved"):
         if p.get(k) is not None or k in present:
             d[k] = p.get(k)
-    d["needs"] = []
+    t["needs"] = []
     for r in _rows(wb["Customer needs"]):
         n = {"id": r["id"], "text": r["text"] or "", "importance": r["importance"], "group": r["group"] or ""}
         if r["dropped"]:
             n["dropped"] = True
-        d["needs"].append(n)
-    d["objects"] = []
+        t["needs"].append(n)
+    t["objects"] = []
     for r in _rows(wb["Objects"]):
-        o = {"id": r["id"], "name": r["name"], "kind": r["kind"], "count": r["count"] if r["count"] is not None else 1,
+        x = {"id": r["id"], "name": r["name"], "kind": r["kind"], "count": r["count"] if r["count"] is not None else 1,
              "datum": r["datum"], "text": r["text"] or ""}
         if r["place"]:
-            o["place"] = _uj(r["place"])
+            x["place"] = _uj(r["place"])
+        if r.get("change"):
+            x["change"] = r["change"]
         if r["dropped"]:
-            o["dropped"] = True
-        d["objects"].append(o)
+            x["dropped"] = True
+        t["objects"].append(x)
     ticks: dict[str, list[str]] = {}
     matrix = list(wb["Needs-metrics matrix"].iter_rows(values_only=True))
     if matrix:
@@ -205,9 +228,10 @@ def import_xlsx(source) -> Order:
             for mid, cell in zip(cols, row[1:]):
                 if cell not in (None, ""):
                     ticks.setdefault(mid, []).append(row[0])
-    d["metrics"] = []
+    t["metrics"], forms = [], {}
     for r in _rows(wb["Requirements list"]):
         form = r["comparator"]
+        forms[r["id"]] = form
         if form == "band":
             band = {"lower": r["lower"], "upper": r["upper"]}
             if r["nominal"] is not None:
@@ -223,20 +247,10 @@ def import_xlsx(source) -> Order:
         m = {"id": r["id"], "class": r["class"], "heading": r["heading"], "text": r["text"] or "", "object": r["object"],
              "quantity": r["quantity"], "unit": r["unit"], "under": _uj(r["under"]), "value": value, "needs": ticks.get(r["id"], []),
              "source": _uj(r["source"]) or [], "verified_by": r["verified_by"], "carried_by": _unlist(r["carried_by"])}
-        if r["mandate"]:
-            mandate = {"form": r["mandate"]}
-            far = r["far end"]
-            if far is not None:
-                if far == "as_needed" or isinstance(far, (int, float)):
-                    mandate["to"] = far
-                else:
-                    parts = _unvec(far)
-                    mandate["to"] = {"lower": parts[0], "upper": parts[1]} if form in ("band", "equals") else parts
-            m["mandate"] = mandate
         if r["dropped"]:
             m["dropped"] = True
-        d["metrics"].append(m)
-    d["headings"] = {r["heading"]: r["statement"] for r in _rows(wb["Headings"]) if r.get("statement")}
+        t["metrics"].append(m)
+    t["headings"] = {r["heading"]: r["statement"] for r in _rows(wb["Headings"]) if r.get("statement")}
     bindings: dict[tuple, dict] = {}
     for r in _rows(wb["Bindings"]):
         b = bindings.setdefault((r["object"], r["design"]), {"object": r["object"], "design": r["design"], "features": [], "rejected": []})
@@ -249,9 +263,31 @@ def import_xlsx(source) -> Order:
             if r["from"]:
                 f["from"] = r["from"]
             b["features"].append(f)
-    d["bindings"] = list(bindings.values())
+    t["bindings"] = list(bindings.values())
+    if in_type:
+        t = {k: v for k, v in t.items() if k in in_type or k in ("product", "needs", "objects", "metrics")}
+    d["type"] = t
+    q = {r["field"]: r["value"] for r in _rows(wb["This order"])}
+    in_order = set(_uj(q.get("present")) or [])
+    in_brief = set(_uj(q.get("present in the brief")) or [])
+    brief = {"text": q.get("brief text") or "", "objective": q.get("objective"), "quantity": q.get("quantity")}
+    if in_brief:
+        brief = {k: v for k, v in brief.items() if k in in_brief}
+    o = {"brief": brief, "mandates": {}}
+    for r in _rows(wb["This order's mandates"]):
+        mandate = {"form": r["mandate"]}
+        if r["far end"] is not None:
+            mandate["to"] = _unfar(r["far end"], forms.get(r["metric"]))
+        o["mandates"][r["metric"]] = mandate
+    if q.get("answering"):
+        o["answering"] = q["answering"]
+    o["in_force"] = _uj(q.get("in force")) or []
+    o["accepted"] = _uj(q.get("accepted"))
+    if in_order:
+        o = {k: v for k, v in o.items() if k in in_order or k in ("brief", "mandates")}
+    d["order"] = o
     if present:
-        d = {k: v for k, v in d.items() if k in present or k in ("schema", "lineage", "product", "needs", "objects", "metrics")}
+        d = {k: v for k, v in d.items() if k in present or k in ("schema", "lineage", "type", "order")}
     return Order(plain(d))
 
 
@@ -261,15 +297,17 @@ NS = "http://www.omg.org/spec/ReqIF/20110401/reqif.xsd"
 ATTRIBUTES = {"Metric": ["id", "class", "heading", "text", "object", "quantity", "unit", "value", "under", "source", "verified_by",
                          "carried_by", "mandate", "importance", "dropped"],
               "Need": ["id", "text", "importance", "group", "dropped"],
-              "Object": ["id", "name", "kind", "count", "datum", "text", "place", "dropped"]}
+              "Object": ["id", "name", "kind", "count", "datum", "text", "place", "change", "dropped"],
+              "Order": ["id", "brief", "objective", "quantity", "answering", "in_force", "accepted"]}
 RELATIONS = {"measures": ("Metric", "Need"), "concerns": ("Metric", "Object")}
 
 
 def reqif_bytes(order: Order, now: str | None = None) -> bytes:
-    """The order as ReqIF 1.2: the metrics, needs and objects as specification objects with their attributes as strings, the
-    matrix as `measures` relations (metric to need) and each metric's object as a `concerns` relation; one specification, the
-    requirements list, with the metrics under their headings."""
-    d = order.data
+    """The order as ReqIF 1.2: the metrics (each with this order's mandate), needs and objects (each fixed or free) as
+    specification objects with their attributes as strings, and this order as one more (`order`: the brief, the answering policy,
+    the requirements in force, the accepted plan); the matrix as `measures` relations (metric to need) and each metric's object as
+    a `concerns` relation; one specification, the requirements list, with the metrics under their headings."""
+    d, ty = order.data, order.type
     now = now or datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     ET.register_namespace("", NS)
     q = lambda tag: f"{{{NS}}}{tag}"
@@ -310,15 +348,18 @@ def reqif_bytes(order: Order, now: str | None = None) -> bytes:
             ET.SubElement(ET.SubElement(av, q("DEFINITION")), q("ATTRIBUTE-DEFINITION-STRING-REF")).text = ident("attr", kind, a)
         ET.SubElement(ET.SubElement(so, q("TYPE")), q("SPEC-OBJECT-TYPE-REF")).text = ident("type", kind)
 
-    for m in d["metrics"]:
-        spec_object("Metric", m, {"importance": order.importance(m), "mandate": m.get("mandate") or {"form": "held"}})
-    for n in d["needs"]:
+    for m in ty["metrics"]:
+        spec_object("Metric", m, {"importance": order.importance(m), "mandate": order.mandate(m)})
+    for n in ty["needs"]:
         spec_object("Need", n)
-    for o in d["objects"]:
-        spec_object("Object", o)
+    for o in ty["objects"]:
+        spec_object("Object", o, {"change": order.change(o)})
+    b = order.brief()
+    spec_object("Order", {"id": "order"}, {"brief": b["text"], "objective": b["objective"], "quantity": b["quantity"],
+                                           "answering": order.answering(), "in_force": order.in_force(), "accepted": order.accepted()})
     relations = ET.SubElement(content, q("SPEC-RELATIONS"))
-    pairs = [("measures", m["id"], n) for m in d["metrics"] for n in m.get("needs", [])]
-    pairs += [("concerns", m["id"], m["object"]) for m in d["metrics"] if m.get("object") and order.obj(m["object"])]
+    pairs = [("measures", m["id"], n) for m in ty["metrics"] for n in m.get("needs", [])]
+    pairs += [("concerns", m["id"], m["object"]) for m in ty["metrics"] if m.get("object") and order.obj(m["object"])]
     for rel, src, tgt in pairs:
         r = ET.SubElement(relations, q("SPEC-RELATION"), {"IDENTIFIER": ident(rel, src, tgt), "LAST-CHANGE": now, "LONG-NAME": rel})
         ET.SubElement(ET.SubElement(r, q("SOURCE")), q("SPEC-OBJECT-REF")).text = ident(src)
@@ -328,7 +369,7 @@ def reqif_bytes(order: Order, now: str | None = None) -> bytes:
     spec = ET.SubElement(specs, q("SPECIFICATION"), {"IDENTIFIER": ident("list"), "LAST-CHANGE": now, "LONG-NAME": "Requirements list"})
     ET.SubElement(ET.SubElement(spec, q("TYPE")), q("SPECIFICATION-TYPE-REF")).text = ident("type", "list")
     children = ET.SubElement(spec, q("CHILDREN"))
-    for m in d["metrics"]:
+    for m in ty["metrics"]:
         h = ET.SubElement(children, q("SPEC-HIERARCHY"), {"IDENTIFIER": ident("h", m["id"]), "LAST-CHANGE": now,
                                                            "LONG-NAME": V.heading_name(m.get("heading"))})
         ET.SubElement(ET.SubElement(h, q("OBJECT")), q("SPEC-OBJECT-REF")).text = ident(m["id"])

@@ -1,5 +1,6 @@
 """The workbook round trip for each example, an edited workbook checked as a draft, and the ReqIF export parsed back."""
 import io
+import json
 
 import pytest
 from openpyxl import load_workbook
@@ -46,10 +47,40 @@ def test_reqif_of_the_bracket_parsed_back(bracket):
     data = export(bracket, "reqif")
     assert data.startswith(b'<?xml') and b"http://www.omg.org/spec/ReqIF/20110401/reqif.xsd" in data
     parsed = read_reqif(data)
-    d = bracket.data
-    assert {k: len(v) for k, v in parsed["objects"].items()} == {"Metric": len(d["metrics"]), "Need": len(d["needs"]), "Object": len(d["objects"])}
+    d = bracket.type
+    assert {k: len(v) for k, v in parsed["objects"].items()} == {"Metric": len(d["metrics"]), "Need": len(d["needs"]), "Object": len(d["objects"]),
+                                                                 "Order": 1}
     measures = [(s, t) for kind, s, t in parsed["relations"] if kind == "measures"]
     assert sorted(measures) == sorted((m["id"], n) for m in d["metrics"] for n in m["needs"])
     assert len([r for r in parsed["relations"] if r[0] == "concerns"]) == len(d["metrics"])
     m6 = next(o for o in parsed["objects"]["Metric"] if o["id"] == "M6")["attributes"]
     assert m6["quantity"] == "utilisation" and '"at_most": 0.6' in m6["value"] and m6["importance"] == "5"
+    assert json.loads(m6["mandate"]) == {"form": "held"}
+    m13 = next(o for o in parsed["objects"]["Metric"] if o["id"] == "M13")["attributes"]
+    assert json.loads(m13["mandate"]) == bracket.mandate("M13") == {"form": "release"}           # this order's mandate on the metric
+    objects = {o["id"]: o["attributes"] for o in parsed["objects"]["Object"]}
+    assert objects["O6"]["change"] == "free" and objects["O2"]["change"] == "fixed"
+    order = parsed["objects"]["Order"][0]["attributes"]
+    assert order["answering"] == "park" and order["quantity"] == "10" and order["in_force"] == "[]" and "accepted" not in order
+
+
+def test_the_workbooks_sheets_say_which_are_the_orders_and_carry_it(home):
+    order = home.load("bracket-mass")
+    wb = load_workbook(io.BytesIO(export(order, "xlsx")))
+    assert {"This order", "This order's mandates"} <= set(wb.sheetnames)
+    assert "This order's: This order, This order's mandates" in wb["About"]["A1"].value
+    rows = {r[0]: r[1] for r in wb["This order"].iter_rows(min_row=2, values_only=True)}
+    assert rows["answering"] == "decline" and rows["quantity"] == 10
+    assert {r[0]: (r[1], r[2]) for r in wb["This order's mandates"].iter_rows(min_row=2, values_only=True)} == \
+        {"M6": ("interval", 0.85), "M7": ("interval", 0.85), "M8": ("interval", 0.85), "M9": ("interval", 0.85)}
+    head = [c.value for c in wb["Objects"][1]]
+    assert {r[0]: r[head.index("change")] for r in wb["Objects"].iter_rows(min_row=2, values_only=True)}["O1"] == "free"
+    assert "mandate" not in [c.value for c in wb["Requirements list"][1]]     # the type's sheet holds no mandate
+    # an edited mandate and answering come back into the order's section
+    ws = wb["This order's mandates"]
+    ws.append(["M13", "interval", "as_needed"])
+    next(r for r in wb["This order"].iter_rows(min_row=2) if r[0].value == "answering")[1].value = "park"
+    buf = io.BytesIO()
+    wb.save(buf)
+    back = import_xlsx(buf.getvalue())
+    assert back.mandate("M13") == {"form": "interval", "to": "as_needed"} and back.answering() == "park"
