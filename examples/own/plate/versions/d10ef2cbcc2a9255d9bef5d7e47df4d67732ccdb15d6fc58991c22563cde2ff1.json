@@ -1,0 +1,561 @@
+{
+ "group": "G2",
+ "lineage": "plate",
+ "order": {
+  "accepted": null,
+  "answering": "park",
+  "brief": {
+   "objective": "time",
+   "quantity": 10,
+   "text": "A flat mounting plate with two holes for M3 screws, screwed to a frame by its underside and carrying a light, evenly spread load on its top. The top is visible. Printed in PLA on the lab's CORE One+; a small series; print time matters most."
+  },
+  "in_force": [],
+  "mandates": {}
+ },
+ "parent": null,
+ "previous": "2cecc49cad501647e937715dff7f6db070d5026e4dbeece83095645304e5dd16",
+ "revision": 2,
+ "saved": "2026-11-09T18:50:06.705658Z",
+ "schema": "order/2",
+ "tags": [],
+ "title": "The plate",
+ "type": {
+  "bindings": [
+   {
+    "design": "plate@v3",
+    "features": [
+     {
+      "confirmed": true,
+      "how": "declared",
+      "name": "underside"
+     }
+    ],
+    "object": "O2",
+    "rejected": []
+   },
+   {
+    "design": "plate@v3",
+    "features": [
+     {
+      "confirmed": true,
+      "how": "declared",
+      "name": "edge-long"
+     }
+    ],
+    "object": "O3",
+    "rejected": []
+   },
+   {
+    "design": "plate@v3",
+    "features": [
+     {
+      "confirmed": true,
+      "how": "declared",
+      "name": "hole-1"
+     },
+     {
+      "confirmed": true,
+      "how": "declared",
+      "name": "hole-2"
+     }
+    ],
+    "object": "O4",
+    "rejected": []
+   },
+   {
+    "design": "plate@v3",
+    "features": [
+     {
+      "confirmed": true,
+      "how": "declared",
+      "name": "top"
+     }
+    ],
+    "object": "O5",
+    "rejected": []
+   },
+   {
+    "design": "plate@v3",
+    "features": [
+     {
+      "confirmed": true,
+      "how": "declared",
+      "name": "body"
+     }
+    ],
+    "object": "O6",
+    "rejected": []
+   }
+  ],
+  "design": "plate@v3",
+  "headings": {
+   "assembly": "The interfaces to the frame stand under Geometry; the part is fitted with standard fasteners.",
+   "costs": "The time and the material per part stand under Production; nothing else is asked.",
+   "energy": "Nothing applies: the part takes no energy and serves at room temperature.",
+   "kinematics": "Nothing applies: the part has no moving parts and moves only with the frame it is fixed to.",
+   "maintenance": "Nothing applies: the part needs no servicing.",
+   "operation": "Nothing applies beyond the loads under Forces.",
+   "quality_control": "Every demand names how it is verified; the inspection plan is cases/plate/README.md, its section on inspection.",
+   "recycling": "Nothing applies beyond the material under Material.",
+   "safety": "Nothing applies beyond the loads it carries, which stand under Forces.",
+   "schedules": "Nothing applies: the order is not bound to a date.",
+   "signals": "Nothing applies: the part carries no signals and shows nothing.",
+   "transport": "Nothing applies: the part is small and light enough for any parcel."
+  },
+  "metrics": [
+   {
+    "carried_by": [
+     "O1"
+    ],
+    "class": "demand",
+    "heading": "geometry",
+    "id": "M1",
+    "needs": [
+     "N1"
+    ],
+    "object": "O1",
+    "quantity": "envelope",
+    "source": [
+     {
+      "kind": "requester",
+      "ref": "cases/plate/README.md 3 #1"
+     }
+    ],
+    "text": "Envelope",
+    "under": null,
+    "unit": "mm",
+    "value": {
+     "at_most": [
+      60,
+      42,
+      4
+     ]
+    },
+    "verified_by": "calliper"
+   },
+   {
+    "carried_by": [
+     "O4"
+    ],
+    "class": "demand",
+    "heading": "geometry",
+    "id": "M2",
+    "needs": [
+     "N2"
+    ],
+    "object": "O4",
+    "quantity": "diameter",
+    "source": [
+     {
+      "kind": "requester",
+      "ref": "cases/plate/README.md 3 #2"
+     }
+    ],
+    "text": "Two clearance holes for M3, axis across the plate",
+    "under": null,
+    "unit": "mm",
+    "value": {
+     "band": {
+      "lower": 3.3,
+      "nominal": 3.4,
+      "upper": 3.5
+     }
+    },
+    "verified_by": "pin gauge"
+   },
+   {
+    "carried_by": [
+     "O4"
+    ],
+    "class": "demand",
+    "heading": "geometry",
+    "id": "M3",
+    "needs": [
+     "N1"
+    ],
+    "object": "O4",
+    "quantity": "position",
+    "source": [
+     {
+      "kind": "requester",
+      "ref": "cases/plate/README.md 3 #3"
+     }
+    ],
+    "text": "Hole spacing to the frame, 31 mm",
+    "under": {
+     "datums": [
+      "O2",
+      "O3"
+     ],
+     "text": "the 31 mm spacing"
+    },
+    "unit": "mm",
+    "value": {
+     "at_most": 0.1
+    },
+    "verified_by": "calliper or CMM against datums A and B"
+   },
+   {
+    "carried_by": [
+     "O2"
+    ],
+    "class": "demand",
+    "heading": "geometry",
+    "id": "M4",
+    "needs": [
+     "N3"
+    ],
+    "object": "O2",
+    "quantity": "flatness",
+    "source": [
+     {
+      "kind": "requester",
+      "ref": "cases/plate/README.md 3 #4"
+     }
+    ],
+    "text": "Underside flat against the frame",
+    "under": null,
+    "unit": "mm",
+    "value": {
+     "at_most": 0.2
+    },
+    "verified_by": "surface plate or dial gauge"
+   },
+   {
+    "carried_by": [
+     "O5"
+    ],
+    "class": "demand",
+    "heading": "ergonomics",
+    "id": "M5",
+    "needs": [
+     "N4"
+    ],
+    "object": "O5",
+    "quantity": "finish",
+    "source": [
+     {
+      "kind": "requester",
+      "ref": "cases/plate/README.md 3 #5"
+     }
+    ],
+    "text": "Top surface visible",
+    "under": null,
+    "unit": "-",
+    "value": {
+     "holds": "no marks of support on the face"
+    },
+    "verified_by": "visual inspection"
+   },
+   {
+    "carried_by": [
+     "O5",
+     "O6"
+    ],
+    "class": "demand",
+    "heading": "forces",
+    "id": "M6",
+    "needs": [
+     "N5"
+    ],
+    "object": "O5",
+    "quantity": "utilisation",
+    "source": [
+     {
+      "kind": "project",
+      "ref": "cases/plate/README.md 3 #6, #7; cases/plate/loads.md"
+     }
+    ],
+    "text": "No permanent deformation under the load spread over the top, held at the two holes",
+    "under": {
+     "at": "O5",
+     "direction": [
+      0,
+      0,
+      -1
+     ],
+     "held_by": [
+      "O4"
+     ],
+     "magnitude": 500,
+     "type": "force",
+     "unit": "N"
+    },
+    "unit": "1",
+    "value": {
+     "at_most": 0.6
+    },
+    "verified_by": "load test to the onset of permanent deformation"
+   },
+   {
+    "carried_by": [
+     "O1"
+    ],
+    "class": "demand",
+    "heading": "material",
+    "id": "M7",
+    "needs": [],
+    "object": "O1",
+    "quantity": "material",
+    "source": [
+     {
+      "kind": "requester",
+      "ref": "the brief"
+     },
+     {
+      "kind": "project",
+      "ref": "the brief's material; the load case (req-8) was sized in PLA (cases/plate/loads.md)"
+     }
+    ],
+    "text": "The part's material",
+    "under": null,
+    "unit": "-",
+    "value": {
+     "equals": "Prusament PLA"
+    },
+    "verified_by": "the filament's label"
+   },
+   {
+    "carried_by": [
+     "O1"
+    ],
+    "class": "demand",
+    "heading": "production",
+    "id": "M8",
+    "needs": [
+     "N6"
+    ],
+    "object": "O1",
+    "quantity": "production_time",
+    "source": [
+     {
+      "kind": "project",
+      "ref": "the brief's bound: 20 % over the plan that resolves the case at its step"
+     }
+    ],
+    "text": "The time to print one part",
+    "under": null,
+    "unit": "s",
+    "value": {
+     "at_most": 1140
+    },
+    "verified_by": "the plan's time and the print's log"
+   },
+   {
+    "carried_by": [
+     "O1"
+    ],
+    "class": "demand",
+    "heading": "production",
+    "id": "M9",
+    "needs": [
+     "N6"
+    ],
+    "object": "O1",
+    "quantity": "material_used",
+    "source": [
+     {
+      "kind": "project",
+      "ref": "the brief's bound: 20 % over the plan that resolves the case at its step"
+     }
+    ],
+    "text": "The material to print one part",
+    "under": null,
+    "unit": "g",
+    "value": {
+     "at_most": 9
+    },
+    "verified_by": "the plan's material and the part weighed"
+   }
+  ],
+  "needs": [
+   {
+    "group": "Fits the frame",
+    "id": "N1",
+    "importance": 5,
+    "text": "Fits the frame"
+   },
+   {
+    "group": "Fits the frame",
+    "id": "N2",
+    "importance": 5,
+    "text": "Takes the screws"
+   },
+   {
+    "group": "Fits the frame",
+    "id": "N3",
+    "importance": 4,
+    "text": "Sits flat"
+   },
+   {
+    "group": "Looks finished",
+    "id": "N4",
+    "importance": 3,
+    "text": "Looks finished"
+   },
+   {
+    "group": "Carries its load",
+    "id": "N5",
+    "importance": 5,
+    "text": "Carries the load"
+   },
+   {
+    "group": "Quick to make",
+    "id": "N6",
+    "importance": 4,
+    "text": "Quick"
+   }
+  ],
+  "objects": [
+   {
+    "change": "fixed",
+    "count": 1,
+    "datum": null,
+    "id": "O1",
+    "kind": "part",
+    "name": "plate",
+    "place": {
+     "box": {
+      "max": [
+       60,
+       42,
+       4
+      ],
+      "min": [
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "text": "the part as a whole"
+   },
+   {
+    "change": "fixed",
+    "count": 1,
+    "datum": "A",
+    "id": "O2",
+    "kind": "face",
+    "name": "underside",
+    "place": {
+     "box": {
+      "max": [
+       60,
+       42,
+       1.5
+      ],
+      "min": [
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "text": "screwed flat to the frame"
+   },
+   {
+    "change": "fixed",
+    "count": 1,
+    "datum": "B",
+    "id": "O3",
+    "kind": "edge",
+    "name": "edge long",
+    "place": {
+     "box": {
+      "max": [
+       60,
+       1.5,
+       1.5
+      ],
+      "min": [
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "text": "the long edge"
+   },
+   {
+    "change": "fixed",
+    "count": 2,
+    "datum": null,
+    "id": "O4",
+    "kind": "hole",
+    "name": "hole",
+    "place": [
+     {
+      "cylinder": {
+       "direction": [
+        0,
+        0,
+        1
+       ],
+       "length": 4,
+       "point": [
+        14.5,
+        21,
+        0
+       ],
+       "radius": 1.7
+      }
+     },
+     {
+      "cylinder": {
+       "direction": [
+        0,
+        0,
+        1
+       ],
+       "length": 4,
+       "point": [
+        45.5,
+        21,
+        0
+       ],
+       "radius": 1.7
+      }
+     }
+    ],
+    "text": "clearance holes for M3"
+   },
+   {
+    "change": "fixed",
+    "count": 1,
+    "datum": null,
+    "id": "O5",
+    "kind": "face",
+    "name": "top",
+    "place": {
+     "box": {
+      "max": [
+       60,
+       42,
+       4
+      ],
+      "min": [
+       0,
+       0,
+       2.5
+      ]
+     }
+    },
+    "text": "the visible top, where the load is spread"
+   },
+   {
+    "change": "free",
+    "count": 1,
+    "datum": null,
+    "id": "O6",
+    "kind": "wall",
+    "name": "body",
+    "text": "the plate under bending"
+   }
+  ],
+  "product": {
+   "name": "The plate",
+   "picture": null,
+   "purpose": "A flat mounting plate screwed to a frame by its underside, carrying a light, evenly spread load on its visible top: the control case"
+  }
+ }
+}

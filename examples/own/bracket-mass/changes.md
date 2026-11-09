@@ -31,3 +31,20 @@
 the held case: the mass demand held (experiments/h1-bracket-mass-held.json)
 
 - mandate M13: interval, as needed -> held
+
+## Revision 3, 179f745e224a, 2026-11-09T18:50:07.105355Z
+
+migrated from order 1 (bracket-mass@1); free: O6, O7, O9
+
+- form: order 1 -> order 2: the mandates moved from the metrics to the order's section, the brief's text, objective and quantity to the order's brief
+- object O6 (lug): fixed -> free
+- object O7 (lug underside): fixed -> free
+- object O9 (fillet lug mount): fixed -> free
+- mandate M13: held -> interval, as needed
+
+## Revision 4, be6cc79c44e2, 2026-11-09T18:50:07.243563Z
+
+migrated from order 1 (bracket-mass@2); free: O6, O7, O9; answering: decline
+
+- answering: park -> decline
+- mandate M13: interval, as needed -> held
