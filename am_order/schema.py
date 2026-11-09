@@ -1,5 +1,6 @@
-"""The contracts, each versioned by its file name: with a design system the order (`schemas/order-1.json`) and the feature list
-(`schemas/features-1.json`), against which every read and every save validates; with am-llm's standing frame its presence
+"""The contracts, each versioned by its file name: with a design system the order (`schemas/order-2.json`, and `schemas/order-1.json`
+for the versions saved before it) and the feature list (`schemas/features-1.json`), against which every read and every save
+validates, an order by the form its `schema` names; with am-llm's standing frame its presence
 (`schemas/presence-1.json`), its runs (`schemas/runs-1.json`) and a run's events (`schemas/events-1.json`), sketched before the frame is built and validated as the
 frame serves them. Every schema carries an example of its form."""
 from __future__ import annotations
@@ -11,7 +12,8 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 HERE = Path(__file__).parent / "schemas"
-ORDER = "order-1.json"
+ORDER = "order-2.json"
+ORDERS = {"order/1": "order-1.json", "order/2": "order-2.json"}
 FEATURES = "features-1.json"
 PRESENCE = "presence-1.json"
 EVENTS = "events-1.json"
@@ -45,7 +47,9 @@ def errors(document: dict, name: str) -> list[str]:
 
 
 def validate_order(order: dict) -> dict:
-    found = errors(order, ORDER)
+    """An order of either form, by its `schema`: order 2, or order 1 for a version saved before order 2."""
+    name = ORDERS.get(order.get("schema"), ORDER) if isinstance(order, dict) else ORDER
+    found = errors(order, name)
     if found:
         raise SchemaError(f"the order {order.get('lineage')!r}" if isinstance(order, dict) else "the order", found)
     return order

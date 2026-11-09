@@ -1,0 +1,330 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "am-order/order-2",
+  "title": "The order",
+  "description": "A product's requirements and this order of it, in two sections, after the ARTI cube. `type` is the activity type's product side, a being the orderer authors: the product, the design version bound to it, the customer needs and the metrics after Ulrich & Eppinger (each metric a row of the requirements list after Pahl & Beitz), the product's objects as the owner sees them, each `fixed` or `free`, and the binding of the objects to a design version's features. `order` is the activity instance, a being over which the orderer and the requester agent decide: the brief (the order's intent), the mandate per metric, the owner's answering policy, the requirements in force and the accepted plan. A new order of the same product is a new version that changes only `order`. The schema holds the form; the checks (am_order/check.py) hold what a requirement as stated must be. `order-1.json` is the form before the two sections, read for the versions saved in it and migrated by `Order.from_v1`.",
+  "type": "object",
+  "required": ["schema", "lineage", "type", "order"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "order/2"},
+    "lineage": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "The product's id; it never changes. Names the type and every order of it"},
+    "title": {"type": "string", "description": "The product's title; it may change"},
+    "parent": {"oneOf": [{"type": "null"}, {"type": "object", "required": ["lineage", "version"], "additionalProperties": false,
+                                             "properties": {"lineage": {"type": "string"}, "version": {"$ref": "#/$defs/sha"}}}],
+               "description": "The product version this one was derived from"},
+    "group": {"type": "string", "description": "The id of the group the product stands in (groups.json)"},
+    "tags": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "revision": {"type": "integer", "minimum": 1, "description": "Set by the home on save"},
+    "previous": {"type": ["string", "null"], "description": "The version saved before this one, by its hash; set by the home"},
+    "saved": {"type": "string", "description": "When the version was saved, ISO 8601 UTC; set by the home"},
+    "type": {
+      "type": "object",
+      "required": ["product", "needs", "objects", "metrics"],
+      "additionalProperties": false,
+      "description": "The activity type, product side: the product's requirements as the orderer writes them (a being). The same for every order of the product",
+      "properties": {
+        "product": {
+          "type": "object", "required": ["name"], "additionalProperties": false,
+          "description": "Activity type, product side: what the product is",
+          "properties": {
+            "name": {"type": "string"},
+            "purpose": {"type": "string", "description": "What the product is for, in words"},
+            "picture": {"oneOf": [
+              {"type": "null"},
+              {"type": "object", "required": ["source"], "additionalProperties": false,
+               "properties": {"source": {"const": "design"}}},
+              {"type": "object", "required": ["source", "sha256", "type"], "additionalProperties": false,
+               "properties": {"source": {"const": "owner"}, "sha256": {"$ref": "#/$defs/sha"},
+                              "type": {"enum": ["image/png", "image/jpeg"]}, "name": {"type": "string"}}}
+            ]}
+          }
+        },
+        "design": {"type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{0,63}@v[1-9][0-9]*$",
+                   "description": "Activity type, product side: the design version the requirements are bound to, the design side's being, which the design engineer decides over"},
+        "needs": {"type": "array", "items": {"$ref": "#/$defs/need"}, "description": "Activity type, product side: the customer needs"},
+        "objects": {"type": "array", "items": {"$ref": "#/$defs/object"},
+                    "description": "Activity type, product side: the product's objects as the owner sees them, each fixed (an interface the design keeps) or free (the design may change around it)"},
+        "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"},
+                    "description": "Activity type, product side: the requirements, each with its value, the limit and all the order asks"},
+        "headings": {"type": "object", "additionalProperties": {"type": "string"},
+                     "description": "Activity type, product side: per checklist heading with no metric, the owner's statement that nothing applies"},
+        "bindings": {"type": "array", "items": {"$ref": "#/$defs/binding"},
+                     "description": "Activity type, product side: the objects bound to the features of design versions"}
+      }
+    },
+    "order": {
+      "type": "object",
+      "required": ["brief", "mandates"],
+      "additionalProperties": false,
+      "description": "The activity instance: this order of the product (a being), over which the orderer and the requester agent decide, the agent within the mandates",
+      "properties": {
+        "brief": {
+          "type": "object", "additionalProperties": false,
+          "description": "Activity instance: the order's intent. What may be relaxed is each metric's mandate; what may change in the design is said on the type's objects",
+          "properties": {
+            "text": {"type": "string", "description": "The order in the orderer's words"},
+            "objective": {"type": ["string", "null"], "description": "What matters most once the requirements are met (time, strength, mass, cost)"},
+            "quantity": {"type": ["integer", "null"], "minimum": 1, "description": "How many parts are ordered"}
+          }
+        },
+        "mandates": {
+          "type": "object",
+          "propertyNames": {"pattern": "^M[1-9][0-9]*$"},
+          "additionalProperties": {"$ref": "#/$defs/mandate"},
+          "description": "Activity instance: per metric id of the type, what the requester may accept without asking the owner. A metric without one is held"
+        },
+        "answering": {
+          "enum": ["park", "decline"],
+          "description": "Activity instance: the owner's answering policy, for a case the mandates do not cover: `park`, the case parks at the frame for the owner's word; `decline`, the requester declines the order on the evidence of exhausted means"
+        },
+        "in_force": {
+          "type": "array", "items": {"$ref": "#/$defs/relaxation"},
+          "description": "Activity instance: the relaxations made within the mandates in a run, the requirements in force being the type's values with these applied. Written by the dialogue"
+        },
+        "accepted": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/accepted"}],
+          "description": "Activity instance: the plan accepted for this order, null until one is. Written by the dialogue"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "time": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "need": {
+      "type": "object", "required": ["id", "text"], "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^N[1-9][0-9]*$"},
+        "text": {"type": "string"},
+        "importance": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+        "group": {"type": "string", "description": "The primary need it stands under"},
+        "dropped": {"type": "boolean"}
+      }
+    },
+    "region": {
+      "type": "object", "minProperties": 1, "maxProperties": 1, "additionalProperties": false,
+      "properties": {
+        "box": {"type": "object", "required": ["min", "max"], "additionalProperties": false,
+                "properties": {"min": {"$ref": "#/$defs/vec3"}, "max": {"$ref": "#/$defs/vec3"}}},
+        "cylinder": {"type": "object", "required": ["point", "direction", "radius", "length"], "additionalProperties": false,
+                     "properties": {"point": {"$ref": "#/$defs/vec3", "description": "The centre of the base"},
+                                    "direction": {"$ref": "#/$defs/vec3"},
+                                    "radius": {"type": "number", "exclusiveMinimum": 0},
+                                    "length": {"type": "number", "exclusiveMinimum": 0}}}
+      }
+    },
+    "object": {
+      "type": "object", "required": ["id", "name", "kind"], "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^O[1-9][0-9]*$"},
+        "name": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["face", "hole", "slot", "edge", "wall", "part"]},
+        "count": {"type": "integer", "minimum": 1},
+        "datum": {"enum": ["A", "B", "C", null]},
+        "text": {"type": "string"},
+        "place": {"oneOf": [{"$ref": "#/$defs/region"}, {"type": "array", "items": {"$ref": "#/$defs/region"}, "minItems": 1}],
+                  "description": "Where the object lies in the part's coordinates (mm): one region, or one per instance"},
+        "change": {"enum": ["fixed", "free"],
+                   "description": "Activity type, product side: `fixed`, an interface the design keeps; `free`, the design may change around it (the part free: its shape). Absent, fixed. The design level derives from the binding which of a design's parameters this frees"},
+        "dropped": {"type": "boolean"}
+      }
+    },
+    "value": {
+      "type": "object", "minProperties": 1, "additionalProperties": false,
+      "properties": {
+        "at_most": {"oneOf": [{"type": "number"}, {"$ref": "#/$defs/vec3"}]},
+        "at_least": {"type": "number"},
+        "band": {"type": "object", "required": ["lower", "upper"], "additionalProperties": false,
+                 "properties": {"nominal": {"type": "number"}, "lower": {"type": "number"}, "upper": {"type": "number"}}},
+        "equals": {"type": ["number", "string"]},
+        "holds": {"type": "string"}
+      }
+    },
+    "level": {
+      "description": "A metric's level: a number, three sizes, or a band",
+      "oneOf": [{"type": "number"}, {"$ref": "#/$defs/vec3"},
+                {"type": "object", "required": ["lower", "upper"], "additionalProperties": false,
+                 "properties": {"lower": {"type": "number"}, "upper": {"type": "number"}}}]
+    },
+    "under": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "type": {"enum": ["force", "torque", "pressure"]},
+        "magnitude": {"type": "number"},
+        "unit": {"type": "string"},
+        "direction": {"$ref": "#/$defs/vec3"},
+        "at": {"type": "string", "description": "The object the load acts at"},
+        "held_by": {"type": "array", "items": {"type": "string"}, "description": "The objects that hold the part"},
+        "datums": {"type": "array", "items": {"type": "string"}, "description": "The objects the metric is referred to"},
+        "name": {"type": "string"},
+        "text": {"type": "string", "description": "Other conditions in words"}
+      }
+    },
+    "source": {
+      "type": "object", "required": ["kind"], "additionalProperties": false,
+      "properties": {"kind": {"enum": ["requester", "standard", "project", "reference"]}, "ref": {"type": "string"}}
+    },
+    "mandate": {
+      "type": "object", "required": ["form"], "additionalProperties": false,
+      "description": "Activity instance: what the owner delegates on one metric: `held`, the value stands; `interval`, the requester may accept up to the far end; `release`, the requester may give the metric up",
+      "properties": {
+        "form": {"enum": ["held", "interval", "release"]},
+        "to": {"description": "The interval's far end: a value of the metric's form, or as_needed",
+               "oneOf": [{"$ref": "#/$defs/level"}, {"const": "as_needed"}]}
+      }
+    },
+    "metric": {
+      "type": "object", "required": ["id"], "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^M[1-9][0-9]*$"},
+        "class": {"enum": ["demand", "wish", null]},
+        "heading": {"type": ["string", "null"]},
+        "text": {"type": "string"},
+        "object": {"type": ["string", "null"]},
+        "quantity": {"type": ["string", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "under": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/under"}]},
+        "value": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/value"}]},
+        "needs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "source": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+        "verified_by": {"type": ["string", "null"]},
+        "carried_by": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "description": "The objects that carry the metric"},
+        "dropped": {"type": "boolean"}
+      }
+    },
+    "binding": {
+      "type": "object", "required": ["object", "design", "features"], "additionalProperties": false,
+      "properties": {
+        "object": {"type": "string"},
+        "design": {"type": "string"},
+        "features": {"type": "array", "items": {
+          "type": "object", "required": ["name", "how", "confirmed"], "additionalProperties": false,
+          "properties": {"name": {"type": "string"}, "how": {"enum": ["declared", "matched", "proposed"]},
+                         "confirmed": {"type": "boolean"}, "from": {"type": "string", "description": "For matched: the earlier version's feature"}}}},
+        "rejected": {"type": "array", "items": {"type": "string"}, "description": "Features the owner rejected for the object; never proposed again"}
+      }
+    },
+    "relaxation": {
+      "type": "object",
+      "required": ["metric", "what", "from", "to", "by", "showing", "run", "time"],
+      "additionalProperties": false,
+      "description": "Activity instance: one relaxation made within a metric's mandate in a run",
+      "properties": {
+        "metric": {"type": "string", "pattern": "^M[1-9][0-9]*$"},
+        "what": {"enum": ["margin", "value"], "description": "The margin beneath a physical limit, or the value itself"},
+        "from": {"$ref": "#/$defs/level"},
+        "to": {"$ref": "#/$defs/level"},
+        "by": {
+          "type": "object", "required": ["role", "actor"], "additionalProperties": false,
+          "properties": {
+            "role": {"enum": ["requester", "design_engineer", "process_planner", "production_planner", "quality_engineer", "machine_operator",
+                              "maintenance_technician"]},
+            "actor": {"enum": ["agent", "operator", "owner"]}
+          }
+        },
+        "showing": {"type": ["string", "null"], "description": "The dialogue's call of the showing it was made on"},
+        "run": {"type": "string", "description": "The frame's run it was made in"},
+        "time": {"$ref": "#/$defs/time"}
+      }
+    },
+    "accepted": {
+      "type": "object",
+      "required": ["run", "plan", "design", "design_sha256"],
+      "additionalProperties": false,
+      "description": "Activity instance: the plan accepted for the order, with the design version it was made for",
+      "properties": {
+        "run": {"type": "string", "description": "The frame's run that accepted it"},
+        "plan": {"type": "string", "description": "The plan's id in the run's record"},
+        "design": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}@v[1-9][0-9]*$", "description": "The design version the plan was made for"},
+        "design_sha256": {"$ref": "#/$defs/sha", "description": "The design record's hash, as its feature list gives it"},
+        "time": {"$ref": "#/$defs/time"}
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "order/2",
+      "lineage": "bracket-mass",
+      "title": "The engine bracket with a mass demand",
+      "parent": null,
+      "group": "G2",
+      "tags": ["engine bracket"],
+      "type": {
+        "product": {"name": "The engine bracket with a mass demand", "purpose": "The engine bracket on a frame that moves, where every gram counts", "picture": {"source": "design"}},
+        "design": "bracket-mass@v1",
+        "needs": [{"id": "N1", "text": "Carries the handling loads", "importance": 5, "group": "Carries its load"},
+                  {"id": "N7", "text": "Weighs as little as it can", "importance": 4, "group": "Light"}],
+        "objects": [
+          {"id": "O1", "name": "bracket", "kind": "part", "count": 1, "datum": null, "text": "the part as a whole", "change": "free",
+           "place": {"box": {"min": [0, 0, 0], "max": [100, 60, 40]}}},
+          {"id": "O2", "name": "mount face", "kind": "face", "count": 1, "datum": "A", "text": "the face that sits flat against the frame", "change": "fixed",
+           "place": {"box": {"min": [0, 0, 0], "max": [60, 60, 1.5]}}},
+          {"id": "O5", "name": "pin hole", "kind": "hole", "count": 1, "datum": null, "text": "the hole the load's pin goes through", "change": "fixed"},
+          {"id": "O6", "name": "lug", "kind": "wall", "count": 1, "datum": null, "text": "the lug that carries the pin", "change": "free"}
+        ],
+        "metrics": [
+          {"id": "M6", "class": "demand", "heading": "forces", "text": "No permanent deformation under load case 1, with a reserve", "object": "O5",
+           "quantity": "utilisation", "unit": "1", "value": {"at_most": 0.6}, "needs": ["N1"],
+           "under": {"type": "force", "magnitude": 108, "unit": "N", "direction": [0, 0, -1], "at": "O5", "held_by": ["O2"], "name": "vertical, downward"},
+           "source": [{"kind": "project", "ref": "cases/bracket-ge/README.md 2 #6, #14"}], "verified_by": "load test to the onset of permanent deformation",
+           "carried_by": ["O5", "O6"]},
+          {"id": "M13", "class": "demand", "heading": "forces", "text": "The part's mass as printed", "object": "O1", "quantity": "mass", "unit": "g",
+           "value": {"at_most": 16}, "needs": ["N7"], "under": null, "source": [{"kind": "requester", "ref": "cases/bracket-mass/README.md 2 #15"}],
+           "verified_by": "the part weighed to 0.01 g", "carried_by": ["O1"]}
+        ],
+        "headings": {"schedules": "Nothing applies: the order is not bound to a date."},
+        "bindings": [
+          {"object": "O2", "design": "bracket-mass@v1", "features": [{"name": "mount-face", "how": "declared", "confirmed": true}], "rejected": []},
+          {"object": "O5", "design": "bracket-mass@v1", "features": [{"name": "pin-hole", "how": "declared", "confirmed": true}], "rejected": []},
+          {"object": "O6", "design": "bracket-mass@v1", "features": [{"name": "lug", "how": "declared", "confirmed": true}], "rejected": []}
+        ]
+      },
+      "order": {
+        "brief": {"text": "A bracket that carries a hanging load from a pin to a flat mounting face; every gram counts.", "objective": "time", "quantity": 10},
+        "mandates": {"M6": {"form": "interval", "to": 0.85}, "M13": {"form": "interval", "to": "as_needed"}},
+        "answering": "park",
+        "in_force": [],
+        "accepted": null
+      },
+      "revision": 3,
+      "previous": "e6011872895f9bf153a3212614ca9d28f0174f80f5de362a3aa67fb537f1c465",
+      "saved": "2026-11-09T10:00:00.000000Z"
+    },
+    {
+      "schema": "order/2",
+      "lineage": "plate",
+      "title": "Mounting plate",
+      "type": {
+        "product": {"name": "Mounting plate", "purpose": "Holds a light load on a frame", "picture": null},
+        "design": "plate@v3",
+        "needs": [{"id": "N1", "text": "Carries the load on its top", "importance": 5, "group": "Carries its load"}],
+        "objects": [
+          {"id": "O1", "name": "plate", "kind": "part", "change": "fixed"},
+          {"id": "O5", "name": "top", "kind": "face", "change": "fixed"},
+          {"id": "O6", "name": "body", "kind": "wall", "change": "free"}
+        ],
+        "metrics": [
+          {"id": "M5", "class": "demand", "heading": "forces", "object": "O5", "quantity": "utilisation", "unit": "1", "value": {"at_most": 0.6},
+           "needs": ["N1"], "verified_by": "load test", "carried_by": ["O5", "O6"]}
+        ],
+        "bindings": [{"object": "O6", "design": "plate@v3", "features": [{"name": "body", "how": "declared", "confirmed": true}]}]
+      },
+      "order": {
+        "brief": {"text": "A flat mounting plate; print time matters most.", "objective": "time", "quantity": 10},
+        "mandates": {"M5": {"form": "interval", "to": 0.85}},
+        "answering": "decline",
+        "in_force": [
+          {"metric": "M5", "what": "margin", "from": 0.6, "to": 0.72, "by": {"role": "requester", "actor": "agent"}, "showing": "call-01M6XZQT7Y",
+           "run": "plate@4", "time": "2026-11-20T09:14:40Z"}
+        ],
+        "accepted": {"run": "plate@4", "plan": "plan-plate@v4-mZ@1", "design": "plate@v4",
+                     "design_sha256": "9b0e4f6c1d2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4", "time": "2026-11-20T09:15:02Z"}
+      },
+      "revision": 4,
+      "previous": "2cecc49cad501647e937715dff7f6db070d5026e4dbeece83095645304e5dd16",
+      "saved": "2026-11-20T09:20:00.000000Z"
+    }
+  ]
+}
