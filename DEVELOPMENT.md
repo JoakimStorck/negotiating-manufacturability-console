@@ -116,6 +116,23 @@ The order is the activity instance of a product type, and the tool keeps the two
 - **The instance** is the order: quantity, objective, the mandate per metric (an interval the organisation may decide within
   without asking), the owner's answering policy (now, later, never), the dialogue so far, the requirements in force (the type's
   values with each relaxation made within the mandate, by whom and on which showing), the accepted plan.
+- **As built (order 2, `order-2.json`):** one document per order version in two sections, `type` and `order`, in the products home
+  as before (a folder per lineage, the versions by hash, derive, compare, the change record and the checks). `type` holds the
+  product, the bound design version, the needs, the objects, the metrics, the headings' statements and the bindings; each object
+  is `fixed` (an interface the design keeps) or `free` (the design may change around it; the part free is its shape free), which
+  is all the order says of what may change: the design level derives from the binding which of a design's parameters that frees.
+  `order` holds the brief (text, objective, quantity: the order's intent), the mandates by metric id (a metric without one is
+  held), the answering policy (`park`: a case the mandates do not cover parks at the frame for the owner's word; `decline`: the
+  requester declines on the evidence of exhausted means), the requirements in force and the accepted plan, the last two empty
+  until the dialogue writes them. A new order of the same product is a new revision that changes only `order`; splitting the type
+  into a store of its own is a move of the section. A version saved as order 1 stays as it was, named by its hash, and is read
+  through its migration (`Order.from_v1`, with the notes of what `may_change` named that the tool cannot carry); every save
+  writes order 2, and compare goes through order 2, so a mandate moved is not a mandate lost. The pages edit the type and the
+  order apart: the brief and the answering policy on the product's page under *This order*, each object's change on the
+  objects' page, a metric's mandate on its page under *This order's mandate*; the tables, the workbook (the order's two sheets
+  named so) and ReqIF (an `Order` object, the mandate on each metric, the change on each object) carry them; the interaction
+  log records each act with the capacity (orderer) and the section it writes. The checks add the rule `delegated`: a mandate on
+  a metric the type has and that stands, the answering policy stated, a free part only with a design bound.
 - **The flow.** The person places the order, a state of the order beside draft, checked, bound and confirmed; the tool never
   starts a run, the standing frame does, one run per order version, and the order carries the pointer to it. The requester
   translates the order downward into the brief and the organisation prepares. A question the mandate does not cover parks the case at the frame until the owner answers in the
@@ -181,6 +198,12 @@ and the placing of a decision maker (`next` is null, the alternatives the frame'
 
 Here, done:
 
+5. **Order 2** (`../am-llm/probes/order-2-build-report.md`, its first section): `order-2.json` with the type's and the order's
+   sections, the objects fixed or free, the mandates and the answering policy on the order, the requirements in force and the
+   accepted plan given their place; `Order` reading both forms with one face, `Order.from_v1` and `am-order migrate` with its
+   notes; the rule `delegated`; the pages, tables, workbook and ReqIF; the examples re-written as order-2 revisions. am-llm's
+   adapter follows and the pin moves.
+
 12. **The decision makers set from the overview** (`../am-llm/probes/makers-selector-build-report.md`): `Frame.set_maker`
     (`PUT /roles/<role>`); a role's mark opening the selector in the empty state and in a run, as system operator, `next` shown
     at the mark until it is the maker; who will take the order on its page; `runs set ROLE=MAKER`; the act logged with its capacity.
@@ -206,9 +229,6 @@ Here, done:
 
 Here, in this order:
 
-5. **Order 2**: the type and the instance in the schema, the brief as intent with the objects `fixed` or `free` (`may_change` and
-   `may_relax` gone), the mandate per metric, the answering policy, the requirements in force; migration from order 1 with the
-   examples re-written; am-llm's adapter follows and the pin moves.
 6. **The dialogue contract** (`dialogue-1.json`) over the frame and the order view against it: parking answered, consenting, the
    acceptance of a plan at risk as a relaxation, the certificate, approving, bound to versions; the accepted version's feature
    list, picture and models published into the person's products home.
