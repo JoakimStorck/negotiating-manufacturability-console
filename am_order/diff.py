@@ -1,7 +1,9 @@
 """What changed between two orders, item by item: the change record's lines and the comparison of two versions or two products.
 
-Each change is {what, id, text}: `what` is one of metric, need, object, value, mandate, binding, group, tags, picture, title,
-product, brief, heading, design; `id` the item it concerns.
+Each change is {what, id, text}: `what` is one of form, metric, need, object, change, value, mandate, binding, group, tags,
+picture, title, product, brief, answering, in_force, accepted, heading, design; `id` the item it concerns. Two orders are compared in their order-2
+form, so that a version saved as order 1 and one saved as order 2 differ only where their content does: a mandate moved from
+the metric to the order is the same mandate.
 """
 from __future__ import annotations
 
@@ -45,6 +47,14 @@ def mandate_text(mandate: dict | None, unit: str | None = None) -> str:
     return f"interval to {_n(to)}{u}"
 
 
+def level_text(v, unit: str | None = None) -> str:
+    """A level of a metric in words: a number, three sizes, or a band."""
+    u = f" {unit}" if unit and unit not in ("-", "1") else ""
+    if isinstance(v, dict):
+        return f"{_n(v['lower'])} to {_n(v['upper'])}{u}"
+    return f"{_n(v)}{u}"
+
+
 def _n(v) -> str:
     if isinstance(v, list):
         return " x ".join(_n(x) for x in v)
@@ -66,9 +76,13 @@ def diff(a: Order | dict, b: Order | dict) -> list[dict]:
     def add(what, item, text):
         out.append({"what": what, "id": item, "text": text})
 
+    if a.form != b.form:
+        add("form", "product", f"form: order {a.form} -> order {b.form}" + (": the mandates moved from the metrics to the order's section, the brief's text, objective "
+                                                        "and quantity to the order's brief" if {a.form, b.form} == {1, 2} else ""))
     if a.data.get("title") != b.data.get("title"):
         add("title", "product", f"title: {a.data.get('title')!r} -> {b.data.get('title')!r}")
-    pa, pb = a.data["product"], b.data["product"]
+    ta_, tb_ = a.type, b.type
+    pa, pb = ta_["product"], tb_["product"]
     for k in ("name", "purpose"):
         if pa.get(k) != pb.get(k):
             add("product", "product", f"product {k}: {pa.get(k)!r} -> {pb.get(k)!r}")
@@ -79,36 +93,42 @@ def diff(a: Order | dict, b: Order | dict) -> list[dict]:
     ta, tb = set(a.data.get("tags", [])), set(b.data.get("tags", []))
     if ta != tb:
         add("tags", "product", "tags: " + ", ".join([f"+{t}" for t in sorted(tb - ta)] + [f"-{t}" for t in sorted(ta - tb)]))
-    if a.data.get("design") != b.data.get("design"):
-        add("design", "product", f"design: {a.data.get('design')} -> {b.data.get('design')}")
-    if _j(a.data.get("brief")) != _j(b.data.get("brief")):
-        for k in sorted(set(a.data.get("brief") or {}) | set(b.data.get("brief") or {})):
-            va, vb = (a.data.get("brief") or {}).get(k), (b.data.get("brief") or {}).get(k)
-            if _j(va) != _j(vb):
-                add("brief", "brief", f"brief {k}: {_j(va)} -> {_j(vb)}")
-    ha, hb = a.data.get("headings") or {}, b.data.get("headings") or {}
+    if ta_.get("design") != tb_.get("design"):
+        add("design", "product", f"design: {ta_.get('design')} -> {tb_.get('design')}")
+    ba_, bb_ = a.brief(), b.brief()
+    for k in ("text", "objective", "quantity"):
+        if _j(ba_.get(k)) != _j(bb_.get(k)):
+            add("brief", "brief", f"brief {k}: {_j(ba_.get(k))} -> {_j(bb_.get(k))}")
+    if a.answering() != b.answering():
+        add("answering", "order", f"answering: {a.answering()} -> {b.answering()}")
+    ha, hb = ta_.get("headings") or {}, tb_.get("headings") or {}
     for k in sorted(set(ha) | set(hb)):
         if ha.get(k) != hb.get(k):
             add("heading", k, f"heading {k}: " + ("stated" if k not in ha else "statement withdrawn" if k not in hb else "statement changed"))
 
-    for kind, la, lb in (("need", a.data["needs"], b.data["needs"]), ("object", a.data["objects"], b.data["objects"])):
+    for kind, la, lb in (("need", ta_["needs"], tb_["needs"]), ("object", ta_["objects"], tb_["objects"])):
         da, db = {x["id"]: x for x in la}, {x["id"]: x for x in lb}
         for i in db:
             if i not in da:
                 add(kind, i, f"{kind} {i} added: {db[i].get('text') or db[i].get('name')!r}")
             elif db[i].get("dropped") and not da[i].get("dropped"):
                 add(kind, i, f"{kind} {i} dropped")
-            elif _j(da[i]) != _j(db[i]):
-                keys = sorted(k for k in set(da[i]) | set(db[i]) if _j(da[i].get(k)) != _j(db[i].get(k)))
-                add(kind, i, f"{kind} {i} changed: {', '.join(keys)}")
+            else:
+                if kind == "object" and a.change(da[i]) != b.change(db[i]):
+                    add("change", i, f"object {i} ({db[i]['name']}): {a.change(da[i])} -> {b.change(db[i])}")
+                keys = sorted(k for k in set(da[i]) | set(db[i]) if k != "change" and _j(da[i].get(k)) != _j(db[i].get(k)))
+                if keys:
+                    add(kind, i, f"{kind} {i} changed: {', '.join(keys)}")
         for i in da:
             if i not in db:
                 add(kind, i, f"{kind} {i} removed")
 
-    ma, mb = {m["id"]: m for m in a.data["metrics"]}, {m["id"]: m for m in b.data["metrics"]}
+    ma, mb = {m["id"]: m for m in ta_["metrics"]}, {m["id"]: m for m in tb_["metrics"]}
     for i, m in mb.items():
         if i not in ma:
             add("metric", i, f"metric {i} added: {m.get('quantity')} {value_text(m.get('value'), m.get('unit'))}")
+            if b.mandate(i)["form"] != "held":
+                add("mandate", i, f"mandate {i}: {mandate_text(b.mandate(i), m.get('unit'))}")
             continue
         o = ma[i]
         if m.get("dropped") and not o.get("dropped"):
@@ -116,8 +136,8 @@ def diff(a: Order | dict, b: Order | dict) -> list[dict]:
             continue
         if _j(o.get("value")) != _j(m.get("value")):
             add("value", i, f"value {i}: {value_text(o.get('value'), o.get('unit'))} -> {value_text(m.get('value'), m.get('unit'))}")
-        if _j(o.get("mandate") or {"form": "held"}) != _j(m.get("mandate") or {"form": "held"}):
-            add("mandate", i, f"mandate {i}: {mandate_text(o.get('mandate'), o.get('unit'))} -> {mandate_text(m.get('mandate'), m.get('unit'))}")
+        if _j(a.mandate(i)) != _j(b.mandate(i)):
+            add("mandate", i, f"mandate {i}: {mandate_text(a.mandate(i), o.get('unit'))} -> {mandate_text(b.mandate(i), m.get('unit'))}")
         keys = [k for k in METRIC_FIELDS if _j(o.get(k)) != _j(m.get(k))]
         if keys:
             add("metric", i, f"metric {i} changed: {', '.join(keys)}")
@@ -125,8 +145,14 @@ def diff(a: Order | dict, b: Order | dict) -> list[dict]:
         if i not in mb:
             add("metric", i, f"metric {i} removed")
 
-    ba = {(x["object"], x["design"]): x for x in a.data.get("bindings", [])}
-    bb = {(x["object"], x["design"]): x for x in b.data.get("bindings", [])}
+    fa, fb = a.in_force(), b.in_force()
+    for r in fb[len(fa):] if _j(fa) == _j(fb[:len(fa)]) else fb:
+        add("in_force", r["metric"], f"in force: the {r['what']} on {r['metric']} relaxed from {level_text(r['from'])} to {level_text(r['to'])} in {r['run']}")
+    if _j(a.accepted()) != _j(b.accepted()):
+        x = b.accepted()
+        add("accepted", "order", f"accepted: {x['plan']} for {x['design']} in {x['run']}" if x else "accepted: none")
+    ba = {(x["object"], x["design"]): x for x in ta_.get("bindings", [])}
+    bb = {(x["object"], x["design"]): x for x in tb_.get("bindings", [])}
     for key in sorted(set(ba) | set(bb)):
         xa, xb = ba.get(key), bb.get(key)
         if _j(xa) == _j(xb):

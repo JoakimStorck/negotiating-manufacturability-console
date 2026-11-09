@@ -12,11 +12,11 @@ MFCAD_WORDS = {"6sides": "hexagonal", "_": " "}
 
 def test_declared_by_name_and_count(home):
     order = home.load("bracket-ge")
-    order.data["bindings"] = []
+    order.type["bindings"] = []
     report = bind(order, home.features("bracket-ge@v4"))
     assert report["declared"]["O4"] == ["bolt-hole-1", "bolt-hole-2", "bolt-hole-3", "bolt-hole-4"]
     assert report["declared"]["O5"] == ["pin-hole"] and not report["proposals"]
-    assert all(not f["confirmed"] for b in order.data["bindings"] for f in b["features"])
+    assert all(not f["confirmed"] for b in order.type["bindings"] for f in b["features"])
 
 
 def _f(name, kind, point=None, direction=None, centroid=(0, 0, 0), key="axis", origin="declared"):

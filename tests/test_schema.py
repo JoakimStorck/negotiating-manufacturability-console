@@ -22,14 +22,68 @@ def test_every_example_validates():
 
 def test_a_document_out_of_form_is_refused():
     order = Order.new("x").data
-    order["metrics"].append({"id": "M1", "value": {"between": 3}})
+    order["type"]["metrics"].append({"id": "M1", "value": {"between": 3}})
     with pytest.raises(SchemaError) as e:
         validate_order(order)
-    assert "metrics/0/value" in str(e.value)
+    assert "type/metrics/0/value" in str(e.value)
+    order["type"]["metrics"] = []
+    for bad in ({"answering": "ask"}, {"mandates": {"m1": {"form": "held"}}}, {"may_change": ["shape"]}):
+        with pytest.raises(SchemaError):
+            validate_order({**order, "order": {**order["order"], **bad}})
+    with pytest.raises(SchemaError):                                       # order 1's fields are not order 2's
+        validate_order({**order, "brief": {"may_relax": []}})
     with pytest.raises(SchemaError):
         validate_order({**Order.new("x").data, "lineage": "Not A Lineage"})
     with pytest.raises(SchemaError):
         validate_features({"schema": "features/1"})
+
+
+def test_order_2_validates_its_own_examples_and_order_1_stays_readable():
+    examples = schema("order-2.json")["examples"]
+    assert examples and any(e["order"]["in_force"] for e in examples) and any(e["order"]["accepted"] is None for e in examples)
+    for example in examples:
+        validate_order(example)
+    for version in (EXAMPLES / "own" / "bracket-mass" / "versions").glob("*.json"):
+        d = json.loads(version.read_text(encoding="utf-8"))
+        if d["schema"] == "order/1":
+            validate_order(d)                                              # by order-1.json
+            with pytest.raises(SchemaError):
+                validate_order({**d, "schema": "order/2"})
+
+
+def test_every_order_1_version_migrates_to_an_order_2_that_validates_with_its_notes():
+    """The migration's notes name exactly what may_change named that the tool cannot carry: the design's parameters."""
+    named = {"plate": ["thickness"], "l-bracket": [], "bracket-ge": ["lug_thickness", "fillet_radius", "underside_angle"],
+             "bracket-mass": ["lug_thickness", "fillet_radius", "underside_angle"]}
+    seen = 0
+    for lineage in REFERENCE:
+        for version in (EXAMPLES / "own" / lineage / "versions").glob("*.json"):
+            d = json.loads(version.read_text(encoding="utf-8"))
+            if d["schema"] != "order/1":
+                continue
+            seen += 1
+            order = Order.from_v1(d)
+            validate_order(order.data)
+            carried = [p for p in d["brief"]["may_change"] if p not in ("shape",)]
+            assert carried == named[lineage]
+            assert order.notes == ([f"may_change named {', '.join(carried)}: state which objects are free"] if carried else [])
+            assert (order.change(order.part()) == "free") == ("shape" in d["brief"]["may_change"])
+            assert order.mandates() == {m["id"]: m["mandate"] for m in d["metrics"] if m.get("mandate", {"form": "held"})["form"] != "held"}
+            assert order.answering() == "park" and order.in_force() == [] and order.accepted() is None
+    assert seen == 5
+
+
+def test_the_migration_notes_material_and_may_relax():
+    d = next(json.loads(p.read_text(encoding="utf-8")) for p in (EXAMPLES / "own" / "plate" / "versions").glob("*.json")
+             if json.loads(p.read_text(encoding="utf-8"))["schema"] == "order/1")
+    d["brief"]["may_change"] = ["material", "shape"]
+    d["brief"]["may_relax"] = ["M5"]
+    order = Order.from_v1(d)
+    assert order.notes == ["may_change named material: give the material's metric a mandate that is not held where the design may change it",
+                           "may_relax named M5, which no mandate delegates: give each the mandate it may be relaxed within"]
+    assert order.change(order.part()) == "free"
+    next(m for m in d["metrics"] if m["id"] == "M5")["mandate"] = {"form": "interval", "to": 0.85}
+    assert Order.from_v1(d).notes[1:] == []                               # may_relax dropped: its metric has a mandate
 
 
 def test_the_frames_contracts_validate_their_own_examples():

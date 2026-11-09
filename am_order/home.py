@@ -241,10 +241,10 @@ class Home:
         return self._read(path, lineage) if path.exists() else None
 
     def working(self, ref: str) -> Order:
-        """What an edit starts from: the draft where one is kept, else the order as it stands; `PRODUCT@<version>` that version."""
-        if "@" in ref:
-            return self.load(ref)
-        return self.draft(ref) or self.load(ref)
+        """What an edit starts from, in its order-2 form: the draft where one is kept, else the order as it stands;
+        `PRODUCT@<version>` that version. A version saved as order 1 comes as its migration, with the notes."""
+        order = self.load(ref) if "@" in ref else self.draft(ref) or self.load(ref)
+        return order if order.form == 2 else Order.from_v1(order.raw)
 
     @_writer
     def put_draft(self, lineage: str, order: Order) -> None:
@@ -291,13 +291,16 @@ class Home:
 
     @_writer
     def save(self, order: Order, note: str = "") -> Saved | None:
-        """Save a new version when the checks pass; refused, the draft is kept (`Refused`). Nothing changed, no version (None)."""
+        """Save a new version when the checks pass; refused, the draft is kept (`Refused`). Nothing changed, no version (None).
+        Every save writes order 2: an order read as order 1 is saved as its migration, a new version."""
+        if order.form == 1:
+            order = Order.from_v1(order.raw)
         lineage = order.lineage
         folder = self._folder(lineage)
         self._require_writable(lineage)
         order.validate()
         previous = self.load(lineage) if (folder / "order.json").exists() else None
-        refusals = check(order, features=self.features(order.data["design"]) if order.data.get("design") else None, previous=previous)
+        refusals = check(order, features=self.features(order.type["design"]) if order.type.get("design") else None, previous=previous)
         if refusals:
             write_atomic(folder / "draft.json", canonical(order.data))
             raise Refused(lineage, refusals)
@@ -368,7 +371,7 @@ class Home:
         origin = self.load(source)
         folder = self._folder(src_lineage)
         version = sha256((folder / "order.json").read_bytes()) if "@" not in source else self._version_path(folder, source.partition("@")[2]).stem
-        self.create(lineage, name or origin.data.get("title"), origin.data["product"].get("purpose", ""),
+        self.create(lineage, name or origin.data.get("title"), origin.type["product"].get("purpose", ""),
                     group or self.group_path(origin.data.get("group")), category=category)
         made = self.root / category / lineage
         try:
@@ -376,7 +379,7 @@ class Home:
             data = json.loads(json.dumps(data))
             data["lineage"] = lineage
             data["title"] = name or origin.data.get("title")
-            data["product"]["name"] = name or data["product"]["name"]
+            data["type"]["product"]["name"] = name or data["type"]["product"]["name"]
             data["parent"] = {"lineage": src_lineage, "version": version}
             data["group"] = self._group_id(group) if group else data.get("group") or self._group_id(None)
             order = Order(data)
@@ -428,7 +431,7 @@ class Home:
             raise HomeError(f"no feature list of {design} in the products home")
         lineage = lineage or slug(features["lineage"])
         order = self.create(lineage, features.get("title") or features["lineage"], "", group)
-        order.data["design"] = design
+        order.type["design"] = design
         skeleton_objects(order, features)
         self.put_draft(lineage, order)
         return order
@@ -444,25 +447,25 @@ class Home:
         if not target.exists():
             write_atomic(target, data)
         picture = {"source": "owner", "sha256": sha, "type": kind, **({"name": name} if name else {})}
-        return self.edit(lineage, lambda o: o.data["product"].update(picture=picture))
+        return self.edit(lineage, lambda o: o.type["product"].update(picture=picture))
 
     @_writer
     def picture_from_design(self, lineage: str) -> Saved | None:
-        return self.edit(lineage, lambda o: o.data["product"].update(picture={"source": "design"}))
+        return self.edit(lineage, lambda o: o.type["product"].update(picture={"source": "design"}))
 
     @_writer
     def clear_picture(self, lineage: str) -> Saved | None:
-        return self.edit(lineage, lambda o: o.data["product"].update(picture=None))
+        return self.edit(lineage, lambda o: o.type["product"].update(picture=None))
 
     def picture(self, order: Order) -> tuple[Path, str] | None:
         """The overview picture's file and type: the owner's, else the bound design's, else none."""
-        p = order.data["product"].get("picture")
+        p = order.type["product"].get("picture")
         if p and p["source"] == "owner":
             folder = self._folder(order.lineage)
             ext = "png" if p["type"] == "image/png" else "jpg"
             path = folder / "pictures" / f"{p['sha256']}.{ext}"
             return (path, p["type"]) if path.exists() else None
-        design = order.data.get("design")
+        design = order.type.get("design")
         if design:
             f = self.features(design)
             if f is not None:
@@ -609,11 +612,11 @@ class Home:
         if kept is None or kept[0] != signature:
             order = self._read(path, lineage)
             metrics = order.metrics()
-            design = order.data.get("design")
+            design = order.type.get("design")
             if draft:
                 state = "draft"
             elif design:
-                bound = [f for b in order.data.get("bindings", []) if b["design"] == design for f in b["features"]]
+                bound = [f for b in order.type.get("bindings", []) if b["design"] == design for f in b["features"]]
                 state = "confirmed" if bound and all(f["confirmed"] for f in bound) else "bound"
             else:
                 state = "checked"

@@ -4,7 +4,7 @@
     frame.presence()          # presence-1: the frame, its roles with their decision makers, the machines, its runs
     frame.runs()              # runs-1: the catalogue
     frame.events(run, after)  # events-1: a run as it stands and its events after a sequence number
-    frame.place(document)     # an order-1 version placed; the frame makes the run
+    frame.place(document)     # an order version placed; the frame makes the run
 
 The frame is am-llm's (its design document 2.6); the contracts are this package's schemas, and every document the frame answers
 with is validated against its schema as it arrives. What can go wrong is one of four things, each `FrameError` with its `kind`:
@@ -156,7 +156,7 @@ class Frame:
         return self._document(f"/runs/{self._run_path(run_id)}/events", validate_events, f"events of {run_id}", after=after)
 
     def order(self, ref: str) -> dict:
-        """An order version as placed (`GET /orders/<lineage>@<revision>`, order-1)."""
+        """An order version as placed (`GET /orders/<lineage>@<revision>`), order 2 or order 1 as it was placed."""
         from .schema import validate_order
         return self._document(f"/orders/{quote(ref, safe='@')}", validate_order, f"order {ref}")
 

@@ -152,7 +152,7 @@ def _set(order: Order, oid: str, design: str, names: list[str], how: str, source
     b = order.binding(oid, design)
     if b is None:
         b = {"object": oid, "design": design, "features": [], "rejected": []}
-        order.data.setdefault("bindings", []).append(b)
+        order.type.setdefault("bindings", []).append(b)
     have = {f["name"] for f in b["features"]}
     for n in names:
         if n not in have:
@@ -167,8 +167,8 @@ def bind(order: Order, features: dict, previous: dict | None = None) -> dict:
     the order (unconfirmed), the order's design set to the list's; returns {declared, matched, proposals, unbound}, the proposals
     ranked per object still short of its count. `previous`: the feature list of the version the order was bound to before."""
     design = features["design"]
-    earlier = order.data.get("design")
-    order.data["design"] = design
+    earlier = order.type.get("design")
+    order.type["design"] = design
     report = {"design": design, "declared": {}, "matched": {}, "proposals": {}, "unbound": []}
     mapping = {}
     if previous is not None and earlier and earlier != design:
@@ -204,14 +204,14 @@ def proposals(order: Order, oid: str, features: dict, limit: int = 5) -> list[di
     design = features["design"]
     b = order.binding(oid, design) or {}
     have = {f["name"] for f in b.get("features", [])}
-    taken = {f["name"] for x in order.data.get("bindings", []) if x["design"] == design and x["object"] != oid for f in x["features"]}
+    taken = {f["name"] for x in order.type.get("bindings", []) if x["design"] == design and x["object"] != oid for f in x["features"]}
     ranked = [r for r in rank(o, features, taken, set(b.get("rejected", []))) if r["name"] not in have]
     return [r for r in ranked if r["score"] > 0][:limit]
 
 
 def confirm(order: Order, oid: str, name: str | None = None, design: str | None = None) -> None:
     """The owner confirms a proposal (adding it to the binding) or, without a name, every feature of the object's binding."""
-    design = design or order.data.get("design")
+    design = design or order.type.get("design")
     if name is not None:
         b = order.binding(oid, design)
         if b is None or name not in {f["name"] for f in b["features"]}:
@@ -230,11 +230,11 @@ def confirm(order: Order, oid: str, name: str | None = None, design: str | None 
 
 def reject(order: Order, oid: str, name: str, design: str | None = None) -> None:
     """The owner rejects a feature for an object: it leaves the binding and is not proposed again."""
-    design = design or order.data.get("design")
+    design = design or order.type.get("design")
     b = order.binding(oid, design)
     if b is None:
         b = {"object": oid, "design": design, "features": [], "rejected": []}
-        order.data.setdefault("bindings", []).append(b)
+        order.type.setdefault("bindings", []).append(b)
     b["features"] = [f for f in b["features"] if f["name"] != name]
     b.setdefault("rejected", [])
     if name not in b["rejected"]:

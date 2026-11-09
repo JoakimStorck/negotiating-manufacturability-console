@@ -4,13 +4,14 @@
 
     home = Home("products")                       # a products home (or AM_ORDER_HOME)
     order = home.load("bracket-ge")               # the order as it stands; "bracket-ge@2" a revision of it
-    refusals = check(order, features=home.features(order.data["design"]))
+    refusals = check(order, features=home.features(order.type["design"]))
     report = bind(order, home.features("bracket-ge@v4"))
     text = render(order, "markdown")
     export(order, "xlsx", "bracket-ge.xlsx")
 
-Every other interface (the command line, the web app) calls only this. The contracts with a design system are the two schemas,
-`schemas/order-1.json` and `schemas/features-1.json`.
+Every other interface (the command line, the web app) calls only this. The contracts with a design system are the schemas
+`schemas/order-2.json` (the order in two sections, `type` and `order`; `schemas/order-1.json` for the versions saved before it)
+and `schemas/features-1.json`.
 """
 from .bind import bind, confirm, proposals, reject
 from .check import Refusal, check

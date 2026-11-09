@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 import re
 
 from .diff import mandate_text, value_text
+from .order import Order
 from .runs import DIALOGUE, RANK, ROLES, TITLES, Event, Run, State
 
 # the time picture is a strip pinned to the page's bottom: x in percent of the axis's width (the strip's width is the window's),
@@ -97,12 +98,12 @@ def _maker_word(maker: dict | None) -> str | None:
 
 
 def _metric_lines(order: dict) -> list[str]:
-    """The order's metrics with their values and mandates, those with a mandate first, alike ones joined (M6–M9)."""
+    """The order's metrics with their values and mandates (an order document of either form), those with a mandate first, alike
+    ones joined (M6–M9)."""
     rows = []
-    for m in order.get("metrics") or []:
-        if m.get("dropped"):
-            continue
-        mandate = m.get("mandate") or {"form": "held"}
+    face = Order(order, validate=False)
+    for m in face.metrics():
+        mandate = face.mandate(m)
         rows.append((m["id"], f"{(m.get('quantity') or '').replace('_', ' ')} {value_text(m.get('value'), m.get('unit'))}",
                      mandate_text(mandate, m.get("unit")), mandate.get("form") != "held"))
     out, held = [], 0
@@ -182,9 +183,13 @@ def beings(role: str, run: Run | None, st: State | None, ctx: dict) -> tuple[lis
     out, picture = [], None
     if role == "requester":
         if run is not None and run.order:
-            name = ((order or {}).get("product") or {}).get("name") or (order or {}).get("title")
+            name = ((Order(order, validate=False).type.get("product") if order else None) or {}).get("name") or (order or {}).get("title")
             out.append(line(f"order {run.order[0]}@{run.order[1]}" + (f": {name}" if name else ""), "head"))
             out += [line(t) for t in _metric_lines(order)] if order else [line("its metrics: the order is not read", "muted")]
+            answering = Order(order, validate=False).answering() if order and order.get("schema") == "order/2" else None
+            if answering:
+                out.append(line({"park": "beyond the mandates: parks for the owner's word",
+                                 "decline": "beyond the mandates: declined on the evidence"}[answering]))
         elif run is not None:
             out.append(line("a scenario's brief, no order", "muted"))
         else:

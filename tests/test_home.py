@@ -7,6 +7,7 @@ import time
 import pytest
 
 from am_order import Home, HomeError, ReadOnly, Refused
+from am_order.order import canonical, sha256
 from am_order.schema import SchemaError
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 64
@@ -33,13 +34,13 @@ def test_an_own_product_is_refused_without_allow_own(home, own):
         home.tag("bracket-ge", add=["x"])
     with pytest.raises(ReadOnly):
         home.put_draft("bracket-ge", order)
-    assert own.save(order).revision == 2
+    assert own.save(order).revision == 3
 
 
 def test_derive_into_user_then_edit_versions_and_the_change_record(home):
     new = home.derive("bracket-ge", "my-bracket", "My bracket")
     assert home.category("my-bracket") == "user" and home.draft("my-bracket") is None
-    assert new.data["parent"]["lineage"] == "bracket-ge" and [m["id"] for m in new.data["metrics"]] == [m["id"] for m in home.load("bracket-ge").data["metrics"]]
+    assert new.data["parent"]["lineage"] == "bracket-ge" and [m["id"] for m in new.type["metrics"]] == [m["id"] for m in home.load("bracket-ge").type["metrics"]]
 
     def tighten(o):
         o.metric("M5")["value"] = {"at_most": 0.15}
@@ -61,7 +62,7 @@ def test_a_derive_that_fails_leaves_no_product(home):
         home.derive("bracket-ge", "half", change=broken)
     assert home.folder("half") is None and "half" not in home.lineages()
     with pytest.raises(SchemaError):                              # an order the schema refuses is no product either
-        home.derive("bracket-ge", "half", change=lambda o: o.data.__setitem__("metrics", "nonsense"))
+        home.derive("bracket-ge", "half", change=lambda o: o.type.__setitem__("metrics", "nonsense"))
     assert home.folder("half") is None
     home.derive("bracket-ge", "half")                              # and the name is free for a derive that works
     assert home.category("half") == "user"
@@ -194,3 +195,35 @@ def test_the_tree_reads_an_order_once_until_it_changes(home, monkeypatch):
     home.move("p3", "Trials")
     reads.clear()
     assert {r["lineage"]: r["group"] for r in home.tree(archived=True)}["p3"] == "Trials" and reads == ["order.json"]
+
+
+def test_a_version_saved_as_order_1_is_read_as_order_2_and_keeps_its_bytes(own, home_dir):
+    """bracket-mass@1 is saved as order 1: it reads in its order-2 form with the migration's notes, its hash and bytes unchanged;
+    an edit starts from its order-2 form, and the save writes order 2 as a new revision."""
+    first = own.history("bracket-mass")[0]
+    path = home_dir / "own" / "bracket-mass" / "versions" / f"{first['version']}.json"
+    before = path.read_bytes()
+    old = own.load("bracket-mass@1")
+    assert old.form == 1 and old.raw["schema"] == "order/1" and old.data["schema"] == "order/2"
+    assert old.content_hash() == sha256(canonical({k: v for k, v in json.loads(before).items() if k not in ("revision", "previous", "saved")}))
+    assert old.mandate("M13") == {"form": "interval", "to": "as_needed"} and old.change("O1") == "free" and old.change("O6") == "fixed"
+    assert old.notes == ["may_change named lug_thickness, fillet_radius, underside_angle: state which objects are free"]
+    draft = own.working("bracket-mass@1")
+    assert draft.form == 2 and draft.notes == old.notes
+    draft.set_change("O6", "free")
+    saved = own.save(draft, "from revision 1")
+    assert saved.revision == 5 and own.load("bracket-mass").form == 2
+    assert path.read_bytes() == before                                      # the saved order-1 version stays as it was
+    assert json.loads((home_dir / "own" / "bracket-mass" / "order.json").read_bytes())["schema"] == "order/2"
+
+
+def test_compare_shows_the_moves_as_moves(home):
+    """bracket-mass@1 (order 1) against its order-2 revision (3): the mandates and the brief moved, not lost and gained; what the
+    owner stated in the migration, the free objects, is the change."""
+    assert [c["text"] for c in home.compare("bracket-mass@1", "bracket-mass@3")] == [
+        "form: order 1 -> order 2: the mandates moved from the metrics to the order's section, the brief's text, objective and quantity "
+        "to the order's brief",
+        "object O6 (lug): fixed -> free", "object O7 (lug underside): fixed -> free", "object O9 (fillet lug mount): fixed -> free"]
+    assert [c["text"] for c in home.compare("bracket-mass@2", "bracket-mass@4")][1:] == [
+        "answering: park -> decline", "object O6 (lug): fixed -> free", "object O7 (lug underside): fixed -> free",
+        "object O9 (fillet lug mount): fixed -> free"]
