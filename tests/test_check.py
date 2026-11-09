@@ -21,7 +21,7 @@ def one(order, rule, **kw):
 def test_the_reference_products_pass_every_check(home):
     for lineage in ("plate", "l-bracket", "bracket-ge", "bracket-mass"):
         order = home.load(lineage)
-        assert check(order, features=home.features(order.data["design"])) == []
+        assert check(order, features=home.features(order.type["design"])) == []
 
 
 def test_singular(bracket):
@@ -81,7 +81,7 @@ def test_covered_a_need_no_metric_measures(bracket):
 
 def test_traceable(home, bracket):
     previous = home.load("bracket-ge")
-    bracket.data["metrics"] = [m for m in bracket.data["metrics"] if m["id"] != "M11"]
+    bracket.type["metrics"] = [m for m in bracket.type["metrics"] if m["id"] != "M11"]
     r = one(bracket, "traceable", previous=previous)
     assert r.item == "M11" and "mark it dropped instead of removing it" in r.text
     bracket.metric("M12")["carried_by"] = []
@@ -89,29 +89,29 @@ def test_traceable(home, bracket):
 
 
 def test_consistent_an_interval_on_the_wrong_side_of_the_ideal(bracket):
-    bracket.metric("M6")["mandate"] = {"form": "interval", "to": 0.5}
+    bracket.set_mandate("M6", {"form": "interval", "to": 0.5})
     r = one(bracket, "consistent")
     assert (r.item, r.text) == ("M6", "M6 (utilisation of the pin hole): the ideal is at most 0.6, so the far end lies above it; 0.5 does not.")
 
 
 def test_consistent_a_holds_metric_with_an_interval(bracket):
-    bracket.metric("M12")["mandate"] = {"form": "interval", "to": "as_needed"}
+    bracket.set_mandate("M12", {"form": "interval", "to": "as_needed"})
     r = one(bracket, "consistent")
     assert (r.item, r.text) == ("M12", "M12 (finish of the lug underside) either holds or it does not, so it has no interval: hold it or "
                                        "release it.")
 
 
 def test_consistent_a_wish_and_two_metrics_alike(bracket):
-    bracket.metric("M13")["mandate"] = {"form": "held"}
+    bracket.set_mandate("M13", {"form": "held"})
     assert "set its mandate to release" in one(bracket, "consistent").text
-    bracket.metric("M13")["mandate"] = {"form": "release"}
+    bracket.set_mandate("M13", {"form": "release"})
     bracket.metric("M7")["under"] = dict(bracket.metric("M6")["under"])
     r = one(bracket, "consistent")
     assert r.item == "M7" and "the same quantity on the same object under the same conditions as M6" in r.text
 
 
 def test_complete_a_heading_neither_covered_nor_stated(bracket):
-    del bracket.data["headings"]["transport"]
+    del bracket.type["headings"]["transport"]
     r = one(bracket, "complete")
     assert (r.item, r.text) == ("transport", "The heading Transport (limitations due to lifting gear, clearance, means of transport (height "
                                              "and weight), nature and conditions of despatch) has no metric: add one, or state that nothing "
@@ -145,6 +145,36 @@ def test_bound(home, bracket):
     b["features"] = b["features"][:3]
     assert "is bound to 3 of its 4 features" in one(bracket, "bound", features=features).text
     assert "whose feature list is not in the products home" in one(bracket, "bound").text
+
+
+def test_delegated(home, bracket):
+    bracket.mandates()["M99"] = {"form": "release"}
+    r = one(bracket, "delegated")
+    assert (r.item, r.text) == ("M99", "The order gives a mandate on M99, which the product does not have: remove the mandate, or give it "
+                                       "on one of the product's metrics.")
+    del bracket.mandates()["M99"]
+    bracket.metric("M11")["dropped"] = True
+    bracket.mandates()["M11"] = {"form": "interval", "to": 1.0}
+    assert "which is dropped: remove the mandate" in one(bracket, "delegated").text
+    bracket.drop("M11")                                          # dropping a metric takes its mandate with it
+    assert "M11" not in bracket.mandates() and refusals(bracket, rule="delegated") == []
+    del bracket.instance["answering"]
+    r = one(bracket, "delegated")
+    assert r.item == "order" and "choose park (it waits for your word) or decline" in r.text
+    bracket.instance["answering"] = "decline"
+    bracket.set_change("O1", "free")
+    assert refusals(bracket, rule="delegated") == []             # a free part with a design bound
+    bracket.type["design"] = None
+    r = one(bracket, "delegated")
+    assert r.item == "O1" and "is free, so its shape may change, and no design is bound" in r.text
+
+
+def test_the_new_rules_refuse_nothing_on_the_examples_and_the_rest_as_before(home):
+    """Every version of the examples, order 1 and order 2: no refusal of the rule `delegated`, and the others as before (none)."""
+    for lineage in ("plate", "l-bracket", "bracket-ge", "bracket-mass"):
+        for v in home.history(lineage):
+            order = home.load(f"{lineage}@{v['revision']}")
+            assert check(order, features=home.features(order.type["design"])) == [], (lineage, v["revision"])
 
 
 def test_every_rule_has_a_test():

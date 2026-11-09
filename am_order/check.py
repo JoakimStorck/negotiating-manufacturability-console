@@ -19,6 +19,9 @@ to fix. A save is refused while any check fails; the draft is kept.
 | named | every object, need and load object a metric names exists and is not dropped |
 | placed | a placed object within the envelope; a hole or slot clear of a wall; as many places as the count |
 | bound | with a design named, every object a carried metric names bound to as many features as its count |
+| delegated | the order's mandates each on a metric of the type that stands; the answering policy stated; a free part with a design bound |
+
+The rules read the type's requirements and, for the mandates, the order's (`order.mandate`).
 """
 from __future__ import annotations
 
@@ -29,7 +32,7 @@ from . import vocab as V
 from .order import Order
 
 RULES = ("singular", "unambiguous", "verifiable", "necessary", "covered", "traceable", "consistent", "complete", "named", "placed",
-         "bound")
+         "bound", "delegated")
 TOLERANCE = 1e-6
 
 
@@ -189,8 +192,8 @@ def covered(order: Order, **_) -> list[Refusal]:
 def traceable(order: Order, previous: Order | None = None, **_) -> list[Refusal]:
     out = []
     if previous is not None:
-        for kind, items, now in (("need", previous.data["needs"], order.need), ("object", previous.data["objects"], order.obj),
-                                 ("metric", previous.data["metrics"], order.metric)):
+        for kind, items, now in (("need", previous.type["needs"], order.need), ("object", previous.type["objects"], order.obj),
+                                 ("metric", previous.type["metrics"], order.metric)):
             for item in items:
                 if now(item["id"]) is None:
                     out.append(Refusal("traceable", item["id"], f"The {kind} {item['id']} of the version before is gone: an id is kept; "
@@ -260,7 +263,7 @@ def _interval_problem(form: str, v, to) -> str | None:
 
 def complete(order: Order, **_) -> list[Refusal]:
     used = {m.get("heading") for m in order.metrics()}
-    stated = {k for k, v in (order.data.get("headings") or {}).items() if (v or "").strip()}
+    stated = {k for k, v in (order.type.get("headings") or {}).items() if (v or "").strip()}
     out = []
     for h in V.headings():
         if h["id"] not in used and h["id"] not in stated:
@@ -343,7 +346,7 @@ def _envelope_box(order: Order):
 
 
 def bound(order: Order, features: dict | None = None, **_) -> list[Refusal]:
-    design = order.data.get("design")
+    design = order.type.get("design")
     if not design:
         return []
     if features is None:
@@ -371,8 +374,30 @@ def bound(order: Order, features: dict | None = None, **_) -> list[Refusal]:
     return out
 
 
+def delegated(order: Order, **_) -> list[Refusal]:
+    """What the order delegates: every mandate on a metric of the type that stands, the answering policy stated, and a free part
+    only with a design bound, since the shape is a design's to change."""
+    out = []
+    for mid in order.mandates():
+        m = order.metric(mid)
+        if m is None:
+            out.append(Refusal("delegated", mid, f"The order gives a mandate on {mid}, which the product does not have: remove the mandate, "
+                                                 "or give it on one of the product's metrics."))
+        elif m.get("dropped"):
+            out.append(Refusal("delegated", mid, f"The order gives a mandate on {describe(order, m)}, which is dropped: remove the mandate."))
+    if order.answering() not in ("park", "decline"):
+        out.append(Refusal("delegated", "order", "The order does not say what happens to a case its mandates do not cover: choose park "
+                                                 "(it waits for your word) or decline (the requester declines on the evidence)."))
+    part = order.part()
+    if part is not None and order.change(part) == "free" and not order.type.get("design"):
+        out.append(Refusal("delegated", part["id"], f"The part {part['id']} ({part['name']}) is free, so its shape may change, and no design "
+                                                    "is bound: bind a design version, or make the part fixed."))
+    return out
+
+
 CHECKS = {"singular": singular, "unambiguous": unambiguous, "verifiable": verifiable, "necessary": necessary, "covered": covered,
-          "traceable": traceable, "consistent": consistent, "complete": complete, "named": named, "placed": placed, "bound": bound}
+          "traceable": traceable, "consistent": consistent, "complete": complete, "named": named, "placed": placed, "bound": bound,
+          "delegated": delegated}
 
 
 def check(order, features: dict | None = None, previous=None, rules=RULES) -> list[Refusal]:
