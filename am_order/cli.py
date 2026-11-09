@@ -9,6 +9,10 @@
     from-features DESIGN [--lineage L] [--group G]    a skeleton for a design that has no order
     compare A B                                       two products, or PRODUCT@<revision> against another
     check PRODUCT                                     the refusals of the draft, or of the order as it stands
+    migrate PRODUCT[@REVISION] | --all [--free OBJECT ...] [--answering park|decline] [--save]
+                                                      an order-1 version as an order-2 draft, the migration's notes printed;
+                                                      --free states the objects the design may change around, --save saves
+                                                      the draft as a new revision once the notes are answered
     show PRODUCT [--mandate] [--format markdown|html] [--table T ...]
     history PRODUCT                                   the versions and the change record
     picture PRODUCT (--set FILE | --design | --clear)
@@ -37,7 +41,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import Home, HomeError, Refused, bind, check, confirm, export, import_xlsx, reject, render
+from . import Home, HomeError, Order, Refused, bind, check, confirm, export, import_xlsx, reject, render
 from . import runs as R
 from .frame import Frame, FrameError, maker_text, read_token, saved_version
 from .render import TABLES
@@ -69,8 +73,8 @@ def _addresses(host: str, port: int) -> str:
 
 def confirmed(order) -> bool:
     """An order version bound to a design with every binding confirmed: what may be placed."""
-    design = order.data.get("design")
-    bound = [f for b in order.data.get("bindings", []) if b["design"] == design for f in b["features"]] if design else []
+    design = order.type.get("design")
+    bound = [f for b in order.type.get("bindings", []) if b["design"] == design for f in b["features"]] if design else []
     return bool(bound) and all(f["confirmed"] for f in bound)
 
 
@@ -118,6 +122,12 @@ def main(argv=None) -> int:
     c.add_argument("b")
     ch = sub.add_parser("check")
     ch.add_argument("product")
+    mg = sub.add_parser("migrate")
+    mg.add_argument("product", nargs="?")
+    mg.add_argument("--all", action="store_true")
+    mg.add_argument("--free", action="append", default=[], help="an object the design may change around (its id)")
+    mg.add_argument("--answering", choices=["park", "decline"])
+    mg.add_argument("--save", action="store_true")
     s = sub.add_parser("show")
     s.add_argument("product")
     s.add_argument("--mandate", action="store_true")
@@ -227,11 +237,13 @@ def _run(args, home: Home, ap) -> int:
         return 0
     if cmd == "check":
         order = home.working(args.product)
-        refusals = check(order, features=home.features(order.data["design"]) if order.data.get("design") else None)
+        refusals = check(order, features=home.features(order.type["design"]) if order.type.get("design") else None)
         for r in refusals:
             print(r)
         print(f"{args.product}: {'every check passes' if not refusals else str(len(refusals)) + ' refusals'}")
         return 1 if refusals else 0
+    if cmd == "migrate":
+        return _migrate(args, home, ap)
     if cmd == "show":
         print(render(home.working(args.product), args.format, args.table or TABLES, mandate=args.mandate), end="")
         return 0
@@ -254,13 +266,13 @@ def _run(args, home: Home, ap) -> int:
         return 0
     if cmd == "bind":
         order = home.working(args.product)
-        design = args.design or order.data.get("design")
+        design = args.design or order.type.get("design")
         if not design:
             ap.error("bind: the order names no design; give --design")
         features = home.features(design)
         if features is None:
             raise HomeError(f"no feature list of {design} in the home")
-        previous = home.features(order.data["design"]) if order.data.get("design") and order.data["design"] != design else None
+        previous = home.features(order.type["design"]) if order.type.get("design") and order.type["design"] != design else None
         report = bind(order, features, previous)
         for item in args.confirm:
             obj, _, feature = item.partition("=")
@@ -288,7 +300,7 @@ def _run(args, home: Home, ap) -> int:
             return 0
         order = import_xlsx(Path(args.args[0]).read_bytes())
         if home.folder(order.lineage) is None:
-            home.create(order.lineage, order.data.get("title"), order.data["product"].get("purpose", ""), order.data.get("group"))
+            home.create(order.lineage, order.data.get("title"), order.type["product"].get("purpose", ""), order.data.get("group"))
         print(_saved(home.save(order, note=f"imported from {Path(args.args[0]).name}"), order.lineage))
         return 0
     if cmd == "reqif":
@@ -321,6 +333,45 @@ def _run(args, home: Home, ap) -> int:
             ap.error(f"{cmd}: give the frame with --frame URL (and --token-file FILE)")
         return _runs(args, frame, ap) if cmd == "runs" else _place(args, frame, home)
     return 1
+
+
+def _migrate(args, home: Home, ap) -> int:
+    """Each order-1 version named (`PRODUCT` its draft or latest, `PRODUCT@REVISION` that revision) migrated to an order-2 draft,
+    the notes printed; with --save the draft saved as a new revision."""
+    if bool(args.all) == bool(args.product):
+        ap.error("migrate: name a product, or give --all")
+    if args.all and args.free:
+        ap.error("migrate: --free names the objects of one product; migrate the products one by one to state them")
+    refs = [lin for lin in home.lineages() if home.category(lin) != "archive"] if args.all else [args.product]
+    code = 0
+    for ref in refs:
+        lineage = ref.partition("@")[0]
+        source = home.load(ref) if "@" in ref else (home.draft(lineage) or home.load(lineage))
+        if source.form == 2:
+            print(f"{ref}: order 2 already")
+            continue
+        order = Order.from_v1(source.raw)
+        for oid in args.free:
+            if order.obj(oid) is None:
+                raise HomeError(f"{lineage} has no object {oid}; its objects are {', '.join(o['id'] for o in order.objects())}")
+            order.set_change(oid, "free")
+        if args.answering:
+            order.instance["answering"] = args.answering
+        home.put_draft(lineage, order)
+        print(f"{ref}: migrated to order 2, a draft" + ("" if order.notes else "; nothing to state"))
+        for note in order.notes:
+            print(f"  {note}")
+        if args.free:
+            print(f"  free: {', '.join(f'{o} ({order.obj(o)['name']})' for o in args.free)}")
+        if args.save:
+            try:
+                saved = home.save(order, note=f"migrated from order 1 ({ref})" + (f"; free: {', '.join(args.free)}" if args.free else "")
+                                  + (f"; answering: {args.answering}" if args.answering else ""))
+            except Refused as e:
+                code = _refused(e)
+                continue
+            print(f"  {_saved(saved, lineage)}")
+    return code
 
 
 def _runs(args, frame: Frame, ap) -> int:
@@ -371,6 +422,9 @@ def _place(args, frame: Frame, home: Home) -> int:
     order = home.load(args.product)
     if not confirmed(order):
         raise HomeError(f"{args.product} is not confirmed: bind it to a design and confirm every binding before it is placed")
+    if order.form == 1:
+        raise HomeError(f"{args.product} is saved as order 1: migrate it (am-order migrate {lineage}), state what the notes ask and save, "
+                        "then place the order-2 revision")
     version, body = saved_version(home, lineage, order.data["revision"])
     answer = frame.place(body)
     print(f"{lineage}@{order.data['revision']} ({version[:12]}) placed at {frame.url}: the run {answer.get('run')}, {answer.get('state', 'placed')}")
