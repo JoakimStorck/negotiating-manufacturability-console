@@ -241,7 +241,10 @@ Here, in this order:
    tools as forms; the system operator choosing a role's decision maker, taking effect at its next waking (the frame's endpoint
    for it with this build); am-llm's interactive console goes with it.
 
-Each build is written as `probes/<name>-build.md` in am-llm, built, and reported, as the first version was.
+Each build is written, built and reported as the first version was. A build that touches the tool alone is written here in
+`builds/<name>-build.md`; one that touches both repositories (a contract, the frame and the tool) in am-llm's `probes/`, in a
+part per repository (decided 2026-11-09). The dialogue (build 6) is `../am-llm/probes/dialogue-build.md`; build 4 and the role
+view's tool side will be written in `builds/`.
 
 ## 7. How work is done here
 
@@ -251,3 +254,13 @@ written into both plans before it is built; no JavaScript build; the web app on 
 author: it must be reachable from another computer), without a login, so only on a network where that is meant; the record and the runs
 are read directly and read only where no frame serves them; a frame is read over HTTP only (build 7). Nothing in am-llm's working tree is touched
 from here.
+
+The two repositories are kept in step by what they share, not by where their documents lie:
+- every contract is a schema here, and am-llm reads it through the library;
+- am-llm runs against the tool at a pinned commit and moves the pin on purpose;
+- each side tests the contracts: am-llm validates what its frame serves against these schemas and reads a run through the tool
+  both ways;
+- the tool tests against a stub that serves the frame's own documents, the contract's examples am-llm writes from a scripted
+  frame and this repository copies at the pin (`tests/contract/`, from the dialogue's build on), so that a frame that changes
+  shows here as a failing test;
+- a change to a contract is written into both plans before it is built.
