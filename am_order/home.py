@@ -128,6 +128,12 @@ def _writer(method):
     return wrapped
 
 
+def _undecided(order: Order) -> dict:
+    """An order's content without what the approval writes: the requirements in force and the accepted plan."""
+    data = order.content()
+    return {**data, "order": {k: v for k, v in data["order"].items() if k not in ("in_force", "accepted")}}
+
+
 class Home:
     def __init__(self, root: Path | str | None = None, allow_own: bool = False):
         root = root or os.environ.get("AM_ORDER_HOME")
@@ -290,9 +296,11 @@ class Home:
         return order
 
     @_writer
-    def save(self, order: Order, note: str = "") -> Saved | None:
+    def save(self, order: Order, note: str = "", decided: bool = False) -> Saved | None:
         """Save a new version when the checks pass; refused, the draft is kept (`Refused`). Nothing changed, no version (None).
-        Every save writes order 2: an order read as order 1 is saved as its migration, a new version."""
+        Every save writes order 2: an order read as order 1 is saved as its migration, a new version. The requirements in force and
+        the accepted plan belong to the approved order: a version that changes anything else after an approval is a new order,
+        and starts without them; only the approval writes them (`decided`)."""
         if order.form == 1:
             order = Order.from_v1(order.raw)
         lineage = order.lineage
@@ -300,6 +308,9 @@ class Home:
         self._require_writable(lineage)
         order.validate()
         previous = self.load(lineage) if (folder / "order.json").exists() else None
+        if not decided and previous is not None and (previous.accepted() or previous.in_force()) \
+                and _undecided(previous) != _undecided(order):
+            order.instance["in_force"], order.instance["accepted"] = [], None
         refusals = check(order, features=self.features(order.type["design"]) if order.type.get("design") else None, previous=previous)
         if refusals:
             write_atomic(folder / "draft.json", canonical(order.data))
@@ -320,6 +331,28 @@ class Home:
         self._drop_draft(folder)
         order.data.update(revision=data["revision"], previous=data["previous"], saved=data["saved"])
         return Saved(lineage, version, data["revision"], changes)
+
+    @_writer
+    def approve(self, order: Order, dialogue: dict, run_id: str, note: str = "") -> Saved:
+        """The order approved for manufacturing: `order` (the version placed, its `order` section holding the plan accepted and
+        the requirements in force) saved as a new revision, and the run's dialogue kept beside it (`dialogue/<run>.json`), the
+        dialogue's log in the products home. Not a change of the requirements, and not placed again."""
+        saved = self.save(order, note or f"approved for manufacturing: {order.accepted()['plan']} for {order.accepted()['design']} in {run_id}",
+                          decided=True)
+        if saved is None:
+            raise HomeError(f"{order.lineage} is approved already on the run {run_id}")
+        write_atomic(self._folder(order.lineage) / "dialogue" / f"{run_id.replace('/', '--')}.json",
+                     json.dumps(dialogue, indent=1, ensure_ascii=False).encode("utf-8"))
+        return saved
+
+    def dialogues(self, lineage: str) -> list[str]:
+        """The runs whose dialogue the home keeps beside the order."""
+        d = self._folder(lineage) / "dialogue"
+        return sorted(p.stem.replace("--", "/") for p in d.glob("*.json")) if d.is_dir() else []
+
+    def dialogue(self, lineage: str, run_id: str) -> dict | None:
+        p = self._folder(lineage) / "dialogue" / f"{run_id.replace('/', '--')}.json"
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
     def _from_parent(self, order: Order) -> list[dict]:
         """A new product's first change record: created, and where it is derived, what differs from its parent."""
