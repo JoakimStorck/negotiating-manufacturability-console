@@ -5,6 +5,8 @@
     frame.runs()              # runs-1: the catalogue
     frame.events(run, after)  # events-1: a run as it stands and its events after a sequence number
     frame.place(document)     # an order version placed; the frame makes the run
+    frame.dialogue(run)       # dialogue/1: the run's dialogue and what waits for the owner's word
+    frame.say(run, word)      # word/1 given; said/1: the word as recorded and the run going on
 
 The frame is am-llm's (its design document 2.6); the contracts are this package's schemas, and every document the frame answers
 with is validated against its schema as it arrives. What can go wrong is one of four things, each `FrameError` with its `kind`:
@@ -28,7 +30,8 @@ from urllib.parse import quote
 
 import httpx
 
-from .schema import SchemaError, validate_events, validate_features, validate_presence, validate_runs
+from .schema import (SchemaError, validate_dialogue, validate_events, validate_features, validate_presence, validate_runs, validate_said,
+                     validate_word)
 
 TIMEOUT = 5.0
 TOKEN_ENV = "AM_FRAME_TOKEN"
@@ -194,6 +197,26 @@ class Frame:
             validate_presence(doc if isinstance(doc, dict) else {})
         except SchemaError as e:
             raise self._failed(FrameError("refused", "the frame's presence does not have the form of its schema", r.status_code, e.errors))
+        return doc
+
+    def dialogue(self, run_id: str) -> dict:
+        """The run's dialogue as the owner reads it (`GET /runs/<id>/dialogue`, `dialogue/1`): the thread, and what waits for the
+        owner's word, null when nothing does."""
+        return self._document(f"/runs/{self._run_path(run_id)}/dialogue", validate_dialogue, f"dialogue of {run_id}")
+
+    def say(self, run_id: str, word: dict) -> dict:
+        """The owner's word on what waits (`POST /runs/<id>/dialogue`, `word/1`): the word is validated before it is sent (a
+        `SchemaError` names what it lacks), and the frame's answer, `said/1` (the word as recorded, the run going on), as it arrives.
+        The frame's 409 (the run not parked, the word not on what waits) and 422 (the schema's reasons, or the tool's refusal in the
+        tool's words) come as `FrameError` in its words."""
+        validate_word(word)
+        r = self._request("POST", f"/runs/{self._run_path(run_id)}/dialogue", content=json.dumps(word).encode("utf-8"),
+                          headers={"Content-Type": "application/json"})
+        doc = self._body(r)
+        try:
+            validate_said(doc if isinstance(doc, dict) else {})
+        except SchemaError as e:
+            raise self._failed(FrameError("refused", "the frame's answer to the word does not have the form of its schema", r.status_code, e.errors))
         return doc
 
     def help_url(self) -> str:
