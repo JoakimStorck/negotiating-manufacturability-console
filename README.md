@@ -148,10 +148,10 @@ cd ../am-llm
 cp -r products/own products/groups.json ../am-order/examples/
 ```
 
-The frame's own documents and answers, as am-llm writes them from a frame with scripted roles (`python -m agents frame examples`), are copied into `tests/contract/` with the am-llm commit they came from in `SOURCE`; the tests run against a stub that serves them, so that a frame that changes shows here as a failing test. They are copied again whenever a contract or the frame's answers change:
+The frame's own documents and answers, as am-llm writes them from a frame with scripted roles (`python -m agents frame examples`), are copied into `tests/contract/` with the am-llm commit they came from in `SOURCE`: each a JSON document with the request that drew it, and beside the accepted version's picture and models their bytes. The tests run against a stub that serves them, so that a frame that changes shows here as a failing test. They are copied again whenever a contract or the frame's answers change:
 
 ```bash
-cp ../am-llm/products/frame-examples/*.json tests/contract/     # and the am-llm commit into tests/contract/SOURCE
+find tests/contract -type f ! -name SOURCE -delete && cp ../am-llm/products/frame-examples/* tests/contract/    # and the am-llm commit into tests/contract/SOURCE
 ```
 
 ## Licence

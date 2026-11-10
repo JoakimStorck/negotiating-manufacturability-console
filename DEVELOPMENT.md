@@ -286,5 +286,11 @@ The two repositories are kept in step by what they share, not by where their doc
   both ways;
 - the tool tests against a stub that serves the frame's own documents, the contract's examples am-llm writes from a scripted
   frame and this repository copies at the pin (`tests/contract/`, from the dialogue's build on), so that a frame that changes
-  shows here as a failing test;
+  shows here as a failing test. The stub serves presence, the catalogue, the events and the dialogue of the held mass order's
+  run as written at each of its states (being prepared, parked, parked again, accepted), the accepted version's feature list and
+  its picture and models with their content types, and the order placed; it computes in the frame's words the answers to a word,
+  to a decision maker placed (the refusal naming the alternatives its presence offers), to an order placed and to a run deleted,
+  and gives as recorded the one it cannot compute, an acceptance refused in the requester's tool's words. Built by hand still:
+  presence at the second parking (the first parking's, at the second's times), the events while the run is prepared (the log's
+  prefix the catalogue then counts) and a version's picture as the run drew it, for which the frame has no example;
 - a change to a contract is written into both plans before it is built.
