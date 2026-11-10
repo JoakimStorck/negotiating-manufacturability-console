@@ -1,6 +1,7 @@
 """The contract's examples, the frame's own documents and answers as am-llm wrote them (`tests/contract/`): each valid against its
-schema, a file the frame serves its bytes as recorded and the feature list names them, and the stub answering each recorded request
-with the recorded answer, so that the stub the other tests read cannot drift from the frame."""
+schema, a file the frame serves its bytes as recorded (the accepted version's as the feature list names them, the shown version's
+picture as the run drew it), and the stub answering each recorded request with the recorded answer, so that the stub the other
+tests read cannot drift from the frame."""
 import hashlib
 import json
 
@@ -9,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from am_order.schema import (validate_dialogue, validate_events, validate_features, validate_order, validate_presence, validate_runs,
                              validate_said)
-from stub_frame import CONTRACT, HELD, StubFrame, body, example, examples, held_mass
+from stub_frame import CONTRACT, HELD, StubFrame, body, drawn_picture, example, examples, held_mass
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 VALIDATE = {"presence-1": validate_presence, "runs-1": validate_runs, "events-1": validate_events, "features-1": validate_features,
@@ -20,9 +21,10 @@ SCENARIO = example("runs-delete-403")["request"]["path"].removeprefix("/runs/") 
 # the state of the held mass order's run each example was recorded in
 STATE = {"presence-empty": "empty", "presence-401": "empty", "roles-put-200": "empty", "roles-put-422": "empty", "orders-post-201": "empty",
          "orders-post-422": "empty", "presence-preparing": "preparing", "orders-post-409": "preparing", "dialogue-word-409-running": "preparing",
-         "runs-delete-409": "preparing", "runs-preparing": "preparing", "dialogue-parked-again": "parked-again",
+         "runs-delete-409": "preparing", "runs-preparing": "preparing", "events-preparing": "preparing", "dialogue-parked-again": "parked-again",
          "dialogue-word-accept-200": "parked-again", "dialogue-word-409-stale": "parked-again", "dialogue-word-409-question": "parked-again",
-         "runs-parked-again": "parked-again", "events-parked-again": "parked-again", "presence-ended": "accepted", "runs-accepted": "accepted",
+         "runs-parked-again": "parked-again", "events-parked-again": "parked-again", "presence-parked-again": "parked-again",
+         "designs-picture": "parked", "presence-ended": "accepted", "runs-accepted": "accepted",
          "events-accepted": "accepted", "features-accepted": "accepted", "features-accepted-picture": "accepted",
          "features-accepted-model-stl": "accepted", "features-accepted-model-3mf": "accepted", "dialogue-accepted": "accepted",
          "dialogue-word-409-ended": "accepted", "runs-delete-200": "accepted"}
@@ -41,12 +43,17 @@ def test_every_example_is_valid_against_its_schema(name):
     e = example(name)
     assert e["status"] == INDEX[name]["status"] and f"{e['request']['method']} {e['request']['path']}" in INDEX[name]["request"]
     schema = INDEX[name]["schema"]
-    if e.get("bytes"):                                        # a file the frame serves: its bytes as recorded, named by the feature list
+    if e.get("bytes"):                                        # a file the frame serves: its bytes as recorded
         data = (CONTRACT / e["bytes"]).read_bytes()
         assert e["body"] is None and (e["content_type"], e["length"]) == (INDEX[name]["content_type"], INDEX[name]["length"]) == \
             (e["content_type"], len(data)) and e["sha256"] == hashlib.sha256(data).hexdigest()
         features = body("features-accepted")
         named = {f["file"]: f["sha256"] for f in [features["picture"]] + features["models"]}
+        if name == "designs-picture":                         # the version shown at the first parking, as the run drew it
+            shown = body("dialogue-parked")["waits"]["entry"]["design"]
+            assert e["request"]["path"] == f"/runs/{HELD}/designs/{shown}/picture.png" and e["content_type"] == "image/png"
+            assert shown != features["design"] or e["sha256"] == named["picture.png"]     # the version accepted: the same picture
+            return
         assert e["request"]["path"] == f"/runs/{HELD}/features/{features['design']}/{e['request']['path'].rsplit('/', 1)[1]}"
         assert named[e["request"]["path"].rsplit("/", 1)[1]] == e["sha256"]
         return
@@ -116,3 +123,23 @@ def test_the_owners_words_take_the_run_through_its_parkings():
     assert runs[0]["outcome"] == "accepted" and runs[0]["last"] == 509
     events = client.get(f"/runs/{HELD}/events", params={"after": 330}, headers=auth).json()
     assert [e["seq"] for e in events["events"]] == list(range(331, 510))
+
+
+def test_the_shown_versions_picture_is_the_recorded_one_and_any_other_a_404_in_the_frames_words():
+    e = example("designs-picture")
+    design, data, content_type = drawn_picture()
+    assert (len(data), hashlib.sha256(data).hexdigest(), content_type) == (e["length"], e["sha256"], e["content_type"])
+    stub = held_mass("parked")
+    client = TestClient(stub.app())
+    auth = {"Authorization": f"Bearer {stub.token}"}
+    got = client.get(e["request"]["path"], headers=auth)
+    assert got.status_code == 200 and got.headers["content-type"] == "image/png" and got.content == data
+    first = body("events-parked")["events"][0]["id"]                # a version the run made, of which no picture is recorded
+    other = client.get(f"/runs/{HELD}/designs/{first}/picture.png", headers=auth)
+    assert other.status_code == 404 and other.json() == {"error": f"the run {HELD} made no design {first}"}
+    bad = client.get(f"/runs/{HELD}/designs/Not-a-version/picture.png", headers=auth)
+    assert bad.status_code == 404 and bad.json() == {"error": f"no design Not-a-version in the run {HELD}"}
+    nothing = example("events-404")["request"]["path"].split("/")[2]
+    assert client.get(f"/runs/{nothing}/designs/{design}/picture.png", headers=auth).json() == body("events-404")
+    preparing = held_mass("preparing")
+    assert TestClient(preparing.app()).get(e["request"]["path"], headers=auth).status_code == 404     # not yet made

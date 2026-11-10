@@ -12,7 +12,7 @@
   "design": "bracket-mass@v3",
   "lineage": "bracket-mass",
   "version": 3,
-  "sha256": "f790c57f02c1f8acd83eb0bf0de9af58dc0b5776cc0631092a3ca304fe24d200",
+  "sha256": "1effc64decbda8154266b25631599b8076877dbb7f48cda4583e0efdf223f15c",
   "parent": "bracket-mass@v2",
   "units": "mm",
   "material": "Prusament PLA",

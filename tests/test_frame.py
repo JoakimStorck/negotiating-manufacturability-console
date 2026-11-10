@@ -237,8 +237,8 @@ def test_a_run_page_from_the_frame(tool):
     assert 'data-skew="' in t and 'data-skew="0"' not in t
     view = tool.get(f"/frame/runs/{RUN}/view?at=300.5")
     assert view.status_code == 200 and view.text.lstrip().startswith('<div id="overview"')
-    pic = tool.get(f"/frame/runs/{RUN}/picture/bracket-mass@v2")
-    assert pic.status_code == 200 and pic.headers["content-type"] == "image/png"
+    pic = tool.get(f"/frame/runs/{RUN}/picture/bracket-mass@v2")        # the stub holds the pictures the examples recorded only
+    assert pic.status_code == 404 and f"the run {RUN} made no design bracket-mass@v2" in pic.text
     assert tool.get("/frame/runs/no-such-run").status_code == 404
 
 

@@ -1,0 +1,75 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/bracket-mass@2/events?after=0",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "body": {
+  "schema": "events/1",
+  "at": "2026-11-10T22:33:57.851824Z",
+  "run": {
+   "id": "bracket-mass@2",
+   "order": {
+    "lineage": "bracket-mass",
+    "revision": 2,
+    "sha256": "ae032df9d90fc00a50901e40cc20f6054469e6b3aa6cc3056d830ec99161ab4d"
+   },
+   "scenario": null,
+   "lineages": [
+    "bracket-mass"
+   ],
+   "settings": {
+    "answering": "owner",
+    "limits": {
+     "cost": 15.0,
+     "design_versions": 6,
+     "seconds": 10800
+    },
+    "negotiation": "open",
+    "reservation": "You would accept, beyond the brief, only what the order's mandates allow, and only once the design engineer shows it necessary: M6 to M9 (req-12 to req-15, now at most 0.6 each) relaxed to at most 0.85. M13 (req-20) you hold as given: a part that needs it relaxed is no use to you, and a showing that relaxes it ends the order, declined. The brief's bounds, M14 (at most 4560 s) and M15 (at most 25 g), hold: a plan beyond them you refuse, saying why. Any other relaxation, or a load case's force or direction changed, you refuse, saying why."
+   },
+   "version": "2005bd51ef459e37845d222254652addbbf756ab",
+   "status": "running",
+   "started": "2026-11-10T22:33:57.721370Z",
+   "ended": null,
+   "outcome": null,
+   "reason": null,
+   "result": null
+  },
+  "after": 0,
+  "last": 2,
+  "events": [
+   {
+    "seq": 1,
+    "time": "2026-11-09T19:06:18.628935Z",
+    "kind": "design",
+    "source": {
+     "table": "design",
+     "row": "bracket-mass@v1"
+    },
+    "id": "bracket-mass@v1",
+    "parent": null,
+    "made_by_role": "design_engineer",
+    "made_by_actor": "operator",
+    "sha256": "bf105dc219ff188e92ed363eb925b7d24a244d48dbd3cc222ae917ca2db14043"
+   },
+   {
+    "seq": 2,
+    "time": "2026-11-10T22:33:57.783732Z",
+    "kind": "design",
+    "source": {
+     "table": "design",
+     "row": "bracket-mass@v2"
+    },
+    "id": "bracket-mass@v2",
+    "parent": "bracket-mass@v1",
+    "made_by_role": "design_engineer",
+    "made_by_actor": "operator",
+    "sha256": "fafa014b1216dd8468239fd56b2d92b07b62bb0b88bf8d926f9a1d4c18279deb"
+   }
+  ]
+ }
+}

@@ -8,12 +8,12 @@
   "body": {
    "schema": "word/1",
    "word": "decline",
-   "showing": "call-01M71CZPSPS6RRS2G8H731TYNG",
+   "showing": "call-01M73SSM0ZE10HY6R9825JTK9R",
    "text": "The part is no use above 16 g."
   }
  },
  "status": 409,
  "body": {
-  "error": "the word is on showing call-01M71CZPSPS6RRS2G8H731TYNG, which does not wait: the showing call-01M71D2DKBXVGBY2H160DEJD96 waits for the owner's word since 2026-11-10T00:17:33.291647Z"
+  "error": "the word is on showing call-01M73SSM0ZE10HY6R9825JTK9R, which does not wait: the showing call-01M73SWCAKMR7EVKSP4F60JT3T waits for the owner's word since 2026-11-10T22:39:55.731319Z"
  }
 }

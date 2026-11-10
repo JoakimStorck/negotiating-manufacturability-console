@@ -15,7 +15,7 @@ from am_order.cli import main
 from am_order.frame import Frame
 from am_order.order import sha256
 from am_order.web.app import create_app
-from stub_frame import HELD, body, example, held_mass, renamed, served_files
+from stub_frame import HELD, body, drawn_picture, example, held_mass, renamed, served_files
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 RUN = "bracket-mass@4"
@@ -183,6 +183,9 @@ def test_the_parked_runs_showing_in_words(home_dir, tmp_path):
     word = page.split('<section class="word" id="word">', 1)[1].split("</section>", 1)[0]
     assert f"Your word: {WAITS}, on M13" in word
     assert 'src="/frame/runs/bracket-mass@4/picture/bracket-mass@v3"' in word and "The design engineer shows bracket-mass@v3" in word
+    _, drawn, _ = drawn_picture()                                  # the picture as the run drew it, through the tool
+    pic = tool(home_dir, tmp_path, stub_at("parked")).get("/frame/runs/bracket-mass@4/picture/bracket-mass@v3")
+    assert pic.status_code == 200 and pic.headers["content-type"] == "image/png" and pic.content == drawn
     assert "55 min print time, 19.9 g material, 19.85 g printed" in word
     assert "M8 at pin-hole at risk: the plan reaches 0.838 against the margin 0.6" in word
     assert "M13 (mass) unmet: the plan reaches 19.852 g" in word and "refuse instead" in word

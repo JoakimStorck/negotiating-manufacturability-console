@@ -4,9 +4,10 @@ a failing test.
 
 The documents are the contract's examples (`tests/contract/`), which am-llm writes from a frame with scripted roles
 (`python -m agents frame examples`) and this repository copies at the pin, each with the request that drew it: presence empty,
-being prepared, parked and ended; the catalogue and the held mass order's events being prepared, at each parking and accepted; its
-dialogue at each parking and accepted; the accepted version's feature list, picture and models; the answers to a word, to a
-decision maker placed, to an order placed and to a run deleted, with their refusals. `held_mass` stands the stub in the state an
+being prepared, at each parking and ended; the catalogue and the held mass order's events being prepared, at each parking and
+accepted; its dialogue at each parking and accepted; the picture of the version shown at the first parking, as the run drew it;
+the accepted version's feature list, picture and models; the answers to a word, to a decision maker placed, to an order placed
+and to a run deleted, with their refusals. `held_mass` stands the stub in the state an
 example was recorded in; a test that needs another state changes a copy (`renamed` for another order version, `shifted` for another
 clock). The frame's answers the stub computes are in the frame's words; the one whose words it cannot compute, an acceptance refused
 in the requester's tool's words, it gives as recorded for the request that drew it.
@@ -18,6 +19,7 @@ so that the same run can be read both ways and compared.
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -33,6 +35,7 @@ DIALOGUE = ("brief", "ask_requester", "answer_requester", "remark", "show_design
 CONTRACT = Path(__file__).resolve().parent / "contract"
 HELD = "bracket-mass@2"                      # the examples' run: the held mass order, placed as revision 2
 WORDS = {"accept": "accepted", "refuse": "remark", "decline": "declined", "answer": "answer"}
+DESIGN = re.compile(r"[a-z0-9][a-z0-9-]{0,63}@v[1-9][0-9]*")    # a design version's id, as the frame reads one
 
 
 def example(name: str) -> dict:
@@ -184,7 +187,8 @@ def run_document(folder: Path, run_id: str, scenario: tuple[str, str] | None, or
 class StubFrame:
     """The frame's endpoints over the documents a test gives it: `presence`; `runs`, run id -> its stages, each {run, events,
     dialogue, presence}, the first standing and the next taken when the owner's word is taken (`add_run`, `then`); the orders
-    placed; the accepted versions' feature lists and files, (run, design, file) -> (bytes, content type). `served` is how many
+    placed; the pictures of the versions the runs drew, (run, design) -> (bytes, content type); the accepted versions' feature lists
+and files, (run, design, file) -> (bytes, content type). `served` is how many
     events of each run may be served, for a run followed while it grows; `at` the frame's clock in the documents it composes
     (presence's `at` when None)."""
 
@@ -195,6 +199,7 @@ class StubFrame:
         self.runs: dict[str, dict] = {}
         self.served: dict[str, int] = {}
         self.orders: dict[str, dict] = {}              # ref -> {"sha256", "document"}
+        self.pictures: dict[tuple[str, str], tuple[bytes, str]] = {}
         self.features: dict[tuple[str, str], dict] = {}
         self.files: dict[tuple[str, str, str], tuple[bytes, str]] = {}
         self.asked: list[str] = []
@@ -360,9 +365,16 @@ class StubFrame:
 
         @api.get("/runs/{run_id:path}/designs/{design}/picture.png")
         def picture(run_id: str, design: str, request: Request):
+            self.asked.append(f"/runs/{run_id}/designs/{design}/picture.png")
             if (refused := authorised(request)) is not None:
                 return refused
-            return Response(b"\x89PNG\r\n\x1a\n" + design.encode(), media_type="image/png")
+            if run_id not in self.runs:
+                return no_run(run_id)
+            if (run_id, design) not in self.pictures:     # the frame's words for a version it has no picture of
+                said = f"the run {run_id} made no design {design}" if DESIGN.fullmatch(design) else f"no design {design} in the run {run_id}"
+                return JSONResponse({"error": said}, 404)
+            data, media = self.pictures[(run_id, design)]
+            return Response(data, media_type=media)
 
         @api.get("/runs/{run_id:path}/features/{design}/{name}")
         def feature_file(run_id: str, design: str, name: str, request: Request):
@@ -457,24 +469,15 @@ def _stage(name: str, run_id: str, order: dict | None, at: str | None) -> dict:
         doc["run"] = {k: v for k, v in doc["run"].items() if k not in ("makers", "last")}   # the run as events-1 names it
         doc = renamed(doc, run_id, order) if order else doc
         return shifted(doc, at, frm=FIRST) if at else doc
-    if name == "preparing":                              # the events the catalogue counts then: the log's first, as later served
-        run = body("runs-preparing")["runs"][0]
-        return fix({"run": run, "events": body("events-parked")["events"][:run["last"]], "dialogue": None, "presence": body("presence-preparing")})
+    if name == "preparing":
+        return fix({"run": body("runs-preparing")["runs"][0], "events": body("events-preparing")["events"], "dialogue": None,
+                    "presence": body("presence-preparing")})
     if name == "parked":
         return fix({"run": body("runs-parked")["runs"][0], "events": body("events-parked")["events"], "dialogue": body("dialogue-parked"),
                     "presence": body("presence-parked")})
-    if name == "parked-again":                           # presence at the second parking: the first's, at the second's times
-        again = body("dialogue-parked-again")
-        waits = again["waits"]
-        events = body("events-parked-again")["events"]
-        presence = body("presence-parked")
-        presence["at"] = again["at"]
-        for p in presence["parts"]:
-            p["seen"] = again["at"]
-            for w in (p.get("role") or {}).get("waits") or []:
-                w["since"] = waits["since"]
-        presence["runs"][0]["since"] = events[-1]["time"]
-        return fix({"run": body("runs-parked-again")["runs"][0], "events": events, "dialogue": again, "presence": presence})
+    if name == "parked-again":
+        return fix({"run": body("runs-parked-again")["runs"][0], "events": body("events-parked-again")["events"],
+                    "dialogue": body("dialogue-parked-again"), "presence": body("presence-parked-again")})
     if name == "accepted":
         return fix({"run": body("runs-accepted")["runs"][0], "events": body("events-accepted")["events"], "dialogue": body("dialogue-accepted"),
                     "presence": body("presence-ended")})
@@ -500,6 +503,9 @@ def held_mass(stage: str = "parked", run_id: str = HELD, order: dict | None = No
         for later in STAGES[STAGES.index(stage) + 1:]:
             s = _stage(later, run_id, order, at)
             stub.then(run_id, s["run"], s["events"], s["dialogue"], s["presence"])
+    if stage != "preparing":                             # the version shown at the first parking, its picture as the run drew it
+        design, data, content_type = drawn_picture()
+        stub.pictures[(run_id, design)] = (data, content_type)
     if order is None:                                    # the version placed, as the frame holds it
         placed = example("orders-post-201")["request"]["body"]
         stub.orders[HELD] = {"sha256": body("runs-parked")["runs"][0]["order"]["sha256"], "document": placed}
@@ -512,6 +518,13 @@ def held_mass(stage: str = "parked", run_id: str = HELD, order: dict | None = No
 
 
 FILES = ("features-accepted-picture", "features-accepted-model-stl", "features-accepted-model-3mf")
+
+
+def drawn_picture() -> tuple[str, bytes, str]:
+    """The picture of the version shown at the first parking as the run drew it: (design, bytes, content type), the bytes kept
+    beside the example."""
+    e = example("designs-picture")
+    return e["request"]["path"].split("/designs/", 1)[1].split("/", 1)[0], (CONTRACT / e["bytes"]).read_bytes(), e["content_type"]
 
 
 def served_files() -> list[tuple[str, bytes, str]]:

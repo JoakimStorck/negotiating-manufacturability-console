@@ -9,7 +9,7 @@
  "status": 200,
  "body": {
   "schema": "runs/1",
-  "at": "2026-11-10T00:17:34.500570Z",
+  "at": "2026-11-10T22:39:57.288493Z",
   "runs": [
    {
     "id": "bracket-mass@2",
@@ -32,9 +32,9 @@
      "negotiation": "open",
      "reservation": "You would accept, beyond the brief, only what the order's mandates allow, and only once the design engineer shows it necessary: M6 to M9 (req-12 to req-15, now at most 0.6 each) relaxed to at most 0.85. M13 (req-20) you hold as given: a part that needs it relaxed is no use to you, and a showing that relaxes it ends the order, declined. The brief's bounds, M14 (at most 4560 s) and M15 (at most 25 g), hold: a plan beyond them you refuse, saying why. Any other relaxation, or a load case's force or direction changed, you refuse, saying why."
     },
-    "version": "c9eaa24b75aef4fe6771d3a855322ab4de0ab87d",
+    "version": "2005bd51ef459e37845d222254652addbbf756ab",
     "status": "parked",
-    "started": "2026-11-10T00:15:44.499056Z",
+    "started": "2026-11-10T22:33:57.721370Z",
     "ended": null,
     "outcome": null,
     "reason": null,
@@ -45,12 +45,12 @@
      "requirements": [],
      "showing": null,
      "waits": {
-      "dialogue": "call-01M71D2DKBXVGBY2H160DEJD96",
+      "dialogue": "call-01M73SWCAKMR7EVKSP4F60JT3T",
       "for": "owner",
       "metrics": [
        "M13"
       ],
-      "since": "2026-11-10T00:17:33.291647Z",
+      "since": "2026-11-10T22:39:55.731319Z",
       "what": "showing"
      }
     },

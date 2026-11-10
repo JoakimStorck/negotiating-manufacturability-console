@@ -1,7 +1,15 @@
 {
- "about": "The standing frame's documents and answers, each with the request that drew it (agents/examples.py); written from a frame with scripted roles, the reference route's, on the held mass order bracket-mass@2. A file the frame serves (features-accepted-picture, -model-stl, -model-3mf) is recorded by its content type, length and sha256, its bytes kept beside the example where they are at most 1048576 bytes long (bytes: the file's name; null where they are longer and left out).",
- "version": "c9eaa24b75aef4fe6771d3a855322ab4de0ab87d",
+ "about": "The standing frame's documents and answers, each with the request that drew it (agents/examples.py); written from a frame with scripted roles, the reference route's, on the held mass order bracket-mass@2. A file the frame serves (designs-picture, the shown version's picture as the run drew it; features-accepted-picture, -model-stl, -model-3mf) is recorded by its content type, length and sha256, its bytes kept beside the example where they are at most 1048576 bytes long (bytes: the file's name; null where they are longer and left out).",
+ "version": "2005bd51ef459e37845d222254652addbbf756ab",
  "examples": {
+  "designs-picture": {
+   "request": "GET /runs/bracket-mass@2/designs/bracket-mass@v3/picture.png",
+   "status": 200,
+   "schema": null,
+   "content_type": "image/png",
+   "length": 133301,
+   "bytes": "designs-picture.png"
+  },
   "dialogue-accepted": {
    "request": "GET /runs/bracket-mass@2/dialogue",
    "status": 200,
@@ -18,7 +26,7 @@
    "schema": "dialogue-1 (dialogue/1)"
   },
   "dialogue-word-403": {
-   "request": "POST /runs/examples-plate-20261110T001740Z/open-01/dialogue",
+   "request": "POST /runs/examples-plate-20261110T224002Z/open-01/dialogue",
    "status": 403,
    "schema": null
   },
@@ -78,6 +86,11 @@
    "schema": "events-1"
   },
   "events-parked-again": {
+   "request": "GET /runs/bracket-mass@2/events?after=0",
+   "status": 200,
+   "schema": "events-1"
+  },
+  "events-preparing": {
    "request": "GET /runs/bracket-mass@2/events?after=0",
    "status": 200,
    "schema": "events-1"
@@ -156,6 +169,11 @@
    "status": 200,
    "schema": "presence-1"
   },
+  "presence-parked-again": {
+   "request": "GET /presence",
+   "status": 200,
+   "schema": "presence-1"
+  },
   "presence-preparing": {
    "request": "GET /presence",
    "status": 200,
@@ -182,7 +200,7 @@
    "schema": null
   },
   "runs-delete-403": {
-   "request": "DELETE /runs/examples-plate-20261110T001740Z/open-01",
+   "request": "DELETE /runs/examples-plate-20261110T224002Z/open-01",
    "status": 403,
    "schema": null
   },

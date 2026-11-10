@@ -9,20 +9,20 @@
  "status": 200,
  "body": {
   "schema": "presence/1",
-  "at": "2026-11-10T00:15:42.522609Z",
+  "at": "2026-11-10T22:33:55.784598Z",
   "down_after": 30.0,
   "frame": {
    "name": "examples",
-   "version": "c9eaa24b75aef4fe6771d3a855322ab4de0ab87d",
-   "since": "2026-11-10T00:15:42.468290Z",
+   "version": "2005bd51ef459e37845d222254652addbbf756ab",
+   "since": "2026-11-10T22:33:55.725175Z",
    "scenario": null
   },
   "parts": [
    {
     "id": "requester",
     "kind": "role",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "role": {
      "title": "Requester",
@@ -77,8 +77,8 @@
    {
     "id": "design_engineer",
     "kind": "role",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "role": {
      "title": "Design engineer",
@@ -133,8 +133,8 @@
    {
     "id": "process_planner",
     "kind": "role",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "role": {
      "title": "Process planner",
@@ -189,8 +189,8 @@
    {
     "id": "production_planner",
     "kind": "role",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "role": {
      "title": "Production planner",
@@ -245,8 +245,8 @@
    {
     "id": "quality_engineer",
     "kind": "role",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "role": {
      "title": "Quality engineer",
@@ -264,8 +264,8 @@
    {
     "id": "machine_operator",
     "kind": "role",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "role": {
      "title": "Machine operator",
@@ -320,8 +320,8 @@
    {
     "id": "maintenance_technician",
     "kind": "role",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "role": {
      "title": "Maintenance technician",
@@ -339,8 +339,8 @@
    {
     "id": "core-one-1",
     "kind": "machine",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "unavailable",
     "note": "no host is configured for its adapter",
     "machine": {
@@ -352,8 +352,8 @@
    {
     "id": "x1c-1",
     "kind": "machine",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "unavailable",
     "note": "no host is configured for its adapter",
     "machine": {
@@ -365,8 +365,8 @@
    {
     "id": "virtual-nominal",
     "kind": "machine",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "machine": {
      "class": "fff-3axis-0.4",
@@ -377,8 +377,8 @@
    {
     "id": "virtual-lower",
     "kind": "machine",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "machine": {
      "class": "fff-3axis-0.4",
@@ -389,8 +389,8 @@
    {
     "id": "virtual-falling",
     "kind": "machine",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "machine": {
      "class": "fff-3axis-0.4",
@@ -401,8 +401,8 @@
    {
     "id": "virtual-higher",
     "kind": "machine",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "machine": {
      "class": "fff-3axis-0.4",
@@ -413,8 +413,8 @@
    {
     "id": "virtual-offset",
     "kind": "machine",
-    "since": "2026-11-10T00:15:42.468290Z",
-    "seen": "2026-11-10T00:15:42.522609Z",
+    "since": "2026-11-10T22:33:55.725175Z",
+    "seen": "2026-11-10T22:33:55.784598Z",
     "state": "present",
     "machine": {
      "class": "fff-3axis-0.4",

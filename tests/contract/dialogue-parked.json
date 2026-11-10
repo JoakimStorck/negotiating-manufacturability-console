@@ -9,7 +9,7 @@
  "status": 200,
  "body": {
   "schema": "dialogue/1",
-  "at": "2026-11-10T00:16:06.200321Z",
+  "at": "2026-11-10T22:38:27.058916Z",
   "run": {
    "id": "bracket-mass@2",
    "order": {
@@ -21,14 +21,14 @@
   },
   "waits": {
    "what": "showing",
-   "since": "2026-11-10T00:16:04.406251Z",
-   "dialogue": "call-01M71CZPSPS6RRS2G8H731TYNG",
+   "since": "2026-11-10T22:38:25.311150Z",
+   "dialogue": "call-01M73SSM0ZE10HY6R9825JTK9R",
    "metrics": [
     "M13"
    ],
    "entry": {
-    "call": "call-01M71CZPSPS6RRS2G8H731TYNG",
-    "time": "2026-11-10T00:16:04.406251Z",
+    "call": "call-01M73SSM0ZE10HY6R9825JTK9R",
+    "time": "2026-11-10T22:38:25.311150Z",
     "kind": "showing",
     "role": "design_engineer",
     "actor": "agent",
@@ -53,7 +53,7 @@
         "margin": 0.6,
         "reaches": 0.838,
         "unit": "1",
-        "call": "call-01M71CZND2YP2Z7E8QD116SPS8"
+        "call": "call-01M73SS5HSJ65MQHRVDQDCWF3A"
        }
       ],
       "unmet": [
@@ -63,7 +63,7 @@
         "kind": "mass",
         "reaches": 19.852,
         "unit": "g",
-        "call": "call-01M71CZND2YP2Z7E8QD116SPS8"
+        "call": "call-01M73SS5HSJ65MQHRVDQDCWF3A"
        }
       ],
       "for_decision": []
@@ -77,15 +77,15 @@
      ],
      "lightest": "bracket-mass@v3",
      "cites": [
-      "call-01M71CZND2YP2Z7E8QD116SPS8"
+      "call-01M73SS5HSJ65MQHRVDQDCWF3A"
      ]
     }
    }
   },
   "thread": [
    {
-    "call": "call-01M71CZ3G4T6F4XRZ7R3CNYHCT",
-    "time": "2026-11-10T00:15:44.644443Z",
+    "call": "call-01M73SHF0WNX2PZC5RN2N5Q7Y0",
+    "time": "2026-11-10T22:33:58.043977Z",
     "kind": "brief",
     "role": "requester",
     "actor": "operator",
@@ -95,12 +95,12 @@
     "quantity": 10
    },
    {
-    "call": "call-01M71CZDZJKK333N3NZKWPKHHJ",
-    "time": "2026-11-10T00:15:55.378295Z",
+    "call": "call-01M73SNSGN121DEEY6NGD4F8KR",
+    "time": "2026-11-10T22:36:19.861624Z",
     "kind": "consent",
     "role": "brief",
     "actor": "brief",
-    "text": "bracket-mass@v3 changes fillet_radius, lug_thickness, underside_angle since bracket-mass@v2, all of which the brief call-01M71CZ3G4T6F4XRZ7R3CNYHCT lets change (lug_thickness, fillet_radius, underside_angle, shape): the brief is the requester's consent",
+    "text": "bracket-mass@v3 changes fillet_radius, lug_thickness, underside_angle since bracket-mass@v2, all of which the brief call-01M73SHF0WNX2PZC5RN2N5Q7Y0 lets change (lug_thickness, fillet_radius, underside_angle, shape): the brief is the requester's consent",
     "design": "bracket-mass@v3",
     "changes": [
      "fillet_radius",
@@ -109,8 +109,8 @@
     ]
    },
    {
-    "call": "call-01M71CZPSPS6RRS2G8H731TYNG",
-    "time": "2026-11-10T00:16:04.406251Z",
+    "call": "call-01M73SSM0ZE10HY6R9825JTK9R",
+    "time": "2026-11-10T22:38:25.311150Z",
     "kind": "showing",
     "role": "design_engineer",
     "actor": "agent",
@@ -135,7 +135,7 @@
         "margin": 0.6,
         "reaches": 0.838,
         "unit": "1",
-        "call": "call-01M71CZND2YP2Z7E8QD116SPS8"
+        "call": "call-01M73SS5HSJ65MQHRVDQDCWF3A"
        }
       ],
       "unmet": [
@@ -145,7 +145,7 @@
         "kind": "mass",
         "reaches": 19.852,
         "unit": "g",
-        "call": "call-01M71CZND2YP2Z7E8QD116SPS8"
+        "call": "call-01M73SS5HSJ65MQHRVDQDCWF3A"
        }
       ],
       "for_decision": []
@@ -159,7 +159,7 @@
      ],
      "lightest": "bracket-mass@v3",
      "cites": [
-      "call-01M71CZND2YP2Z7E8QD116SPS8"
+      "call-01M73SS5HSJ65MQHRVDQDCWF3A"
      ]
     }
    }

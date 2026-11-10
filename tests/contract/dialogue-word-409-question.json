@@ -8,12 +8,12 @@
   "body": {
    "schema": "word/1",
    "word": "answer",
-   "question": "call-01M71D2DKBXVGBY2H160DEJD96",
+   "question": "call-01M73SWCAKMR7EVKSP4F60JT3T",
    "text": "Yes."
   }
  },
  "status": 409,
  "body": {
-  "error": "the word is on question call-01M71D2DKBXVGBY2H160DEJD96, which does not wait: the showing call-01M71D2DKBXVGBY2H160DEJD96 waits for the owner's word since 2026-11-10T00:17:33.291647Z"
+  "error": "the word is on question call-01M73SWCAKMR7EVKSP4F60JT3T, which does not wait: the showing call-01M73SWCAKMR7EVKSP4F60JT3T waits for the owner's word since 2026-11-10T22:39:55.731319Z"
  }
 }
