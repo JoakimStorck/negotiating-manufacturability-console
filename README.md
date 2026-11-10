@@ -84,7 +84,8 @@ the tool in another, both on this machine or on two.
    4. When it parks, give **your word** on the order.
    5. When it is accepted, **Approve for manufacturing**.
 7. **To stop**, press Ctrl-C in the tool's terminal, then in the frame's. The frame leaves its parts `left`. A run it was preparing
-   is prepared again from where it stood when the frame is started with `--resume`.
+   is prepared again when the frame is started with `--resume`, the interrupted attempt kept beside it. A run parked for your word
+   is not interrupted: it waits.
 
 **On the network.**
 - **The tool for others:** serve it with `--host 0.0.0.0`. Others open `http://<this machine's address>:8770/`. The tool has no
