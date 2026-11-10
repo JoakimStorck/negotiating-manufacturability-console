@@ -23,6 +23,81 @@ python3.12 -m venv .venv
 .venv/bin/python -m pytest
 ```
 
+## The whole system, step by step
+
+The tool works alone on a products home. With am-llm it is the person's console of a standing frame: the frame in one terminal,
+the tool in another, both on this machine or on two.
+
+**Once.**
+
+1. **Install both.** am-llm as its README says: Python, PrusaSlicer, the API key in `~/.config/am-llm/anthropic.env`, and the
+   slicer shim. The tool as above.
+2. **A token**, which the frame accepts and the tool sends. Make one, and put the same line in both places:
+
+   ```bash
+   TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
+   mkdir -p ~/.config/am-llm ~/.config/am-order
+   echo "joakim=$TOKEN" >> ~/.config/am-llm/frame-tokens     # the tokens the frame accepts, one NAME=TOKEN a line
+   echo "joakim=$TOKEN" >  ~/.config/am-order/frame-token    # the token this tool sends
+   chmod 600 ~/.config/am-llm/frame-tokens ~/.config/am-order/frame-token
+   ```
+
+   For another person, add a line with their name and a token of their own to `frame-tokens`, and give them the token. The frame
+   reads the file at each request, so it need not be restarted.
+3. **A products home of your own.** `examples/` is the repository's copy of am-llm's reference products. Work in a copy of it:
+
+   ```bash
+   cp -r examples ~/am-order-home
+   export AM_ORDER_HOME=~/am-order-home      # or --home ~/am-order-home on every command
+   ```
+
+   The reference products (`own/`) open read only. To change one, derive an editable copy from the products page (*Derive*),
+   or open the home with `--allow-own` to change the reference itself.
+
+**Each time.**
+
+4. **The frame**, in the first terminal, with the decision maker of each role: a model key of am-llm's `agents/config.json`
+   (`haiku`, `sonnet`, `opus`, and the Ollama and Inferno keys), `scripted`, `reference`, `operator` or `none`:
+
+   ```bash
+   cd ~/code/am-llm
+   .venv/bin/python -m agents stand --roles requester=haiku design_engineer=haiku process_planner=haiku
+   # a rehearsal without the API: the reference policies with the cases' answers
+   .venv/bin/python -m agents stand --roles requester=reference design_engineer=reference process_planner=reference --answers experiments/h1-*.json
+   ```
+
+   Its help page is `http://127.0.0.1:8780/`. A model costs only when its role wakes. The decision makers can be changed later
+   from the tool.
+5. **The tool**, in the second terminal:
+
+   ```bash
+   cd ~/code/am-order
+   .venv/bin/am-order --frame http://127.0.0.1:8780 --token-file ~/.config/am-order/frame-token serve --log logs
+   ```
+
+   Open `http://127.0.0.1:8770/runs`: the frame as it stands, its roles waiting.
+6. **A round.**
+   1. On the Runs page, set who decides in each role by clicking the role's mark, as system operator.
+   2. Open a product, go to its tab **Order**, and follow the steps: fix what the checks refuse, bind and confirm, **Save**, then
+      **Place**.
+   3. **Follow the run.**
+   4. When it parks, give **your word** on the order.
+   5. When it is accepted, **Approve for manufacturing**.
+7. **To stop**, press Ctrl-C in the tool's terminal, then in the frame's. The frame leaves its parts `left`. A run it was preparing
+   is prepared again from where it stood when the frame is started with `--resume`.
+
+**On the network.**
+- **The tool for others:** serve it with `--host 0.0.0.0`. Others open `http://<this machine's address>:8770/`. The tool has no
+  login, so do this only on a network where that is meant.
+- **The frame on another machine:** start it with `--host 0.0.0.0`, and give the tool `--frame http://<the frame's
+  address>:8780`.
+- **Firewall:** it may have to let 8770 and 8780 through.
+
+**Where things land.**
+- **The frame:** its runs under am-llm's `runs/orders/<lineage>@<revision>/`, and its log in `runs/frames/<name>/frame.log`.
+- **The tool:** the interaction log under `logs/` with `--log logs`, and the products, their versions and the approved
+  results in the products home.
+
 ## Start
 
 ```bash
