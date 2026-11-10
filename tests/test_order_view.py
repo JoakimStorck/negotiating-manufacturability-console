@@ -15,13 +15,15 @@ from am_order.cli import main
 from am_order.frame import Frame
 from am_order.order import sha256
 from am_order.web.app import create_app
-from stub_frame import HELD, body, example, held_mass, renamed
+from stub_frame import HELD, body, example, held_mass, renamed, served_files
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 RUN = "bracket-mass@4"
 REV = {"lineage": "bracket-mass", "revision": 4, "sha256": "51293041b1667402a070f5719a76770f7a0b8e7252d208563c579b7c6bdd2ac8"}
 REV3 = {"lineage": "bracket-mass", "revision": 3, "sha256": "37180c0d1180a75d0c0d3f058831e25167ce31a63382c048d0c276c66ebe27be"}
 VIEW = "/products/bracket-mass/order"
+SINCE = body("dialogue-parked")["waits"]["since"]           # when the first showing began to wait, as the frame recorded it
+WAITS = f"a showing waits since {SINCE[:10]} {SINCE[11:19]}Z"
 
 
 def stub_at(stage: str, run_id: str = RUN, order: dict = REV):
@@ -98,7 +100,7 @@ def test_the_steps_at_the_frame_each_with_its_one_button(home_dir, tmp_path):
     assert "Placed at the frame: the run bracket-mass@4 (placed)" in placed
     assert reached(placed) == "placed" and button(placed) == "Follow the run -> /frame/runs/bracket-mass@4"
     expected = {"preparing": ("preparing", "Follow the run -> /frame/runs/bracket-mass@4"),
-                "parked": ("word", "Give your word: a showing waits since 22:30Z -> /products/bracket-mass/order#word"),
+                "parked": ("word", f"Give your word: a showing waits since {SINCE[11:16]}Z -> /products/bracket-mass/order#word"),
                 "accepted": ("accepted", "Approve for manufacturing -> POST /products/bracket-mass/order/approve")}
     for stage, (step, next_) in expected.items():
         page = tool(home_dir, tmp_path, stub_at(stage)).get(VIEW).text
@@ -179,13 +181,13 @@ def test_the_run_links_to_its_order_and_a_parked_run_says_where_the_word_is_give
 def test_the_parked_runs_showing_in_words(home_dir, tmp_path):
     page = html.unescape(tool(home_dir, tmp_path, stub_at("parked")).get(VIEW).text)
     word = page.split('<section class="word" id="word">', 1)[1].split("</section>", 1)[0]
-    assert "Your word: a showing waits since 2026-11-09 22:30:45Z, on M13" in word
+    assert f"Your word: {WAITS}, on M13" in word
     assert 'src="/frame/runs/bracket-mass@4/picture/bracket-mass@v3"' in word and "The design engineer shows bracket-mass@v3" in word
     assert "55 min print time, 19.9 g material, 19.85 g printed" in word
     assert "M8 at pin-hole at risk: the plan reaches 0.838 against the margin 0.6" in word
     assert "M13 (mass) unmet: the plan reaches 19.852 g" in word and "refuse instead" in word
     assert "The certificate of exhausted means:</b> Since the brief 1 version of bracket-mass made" in word
-    assert "(cites call-01M716YD776DR1KFN0M8MEFYNQ)" in word
+    assert f"(cites {body('dialogue-parked')['waits']['entry']['certificate']['cites'][0]})" in word
     assert 'name="relax:req-14" value="0.838"' in word and "accept the risk" not in word.lower()
     assert 'hx-confirm="Accept what was shown, relaxing the margin on M8 to 0.838?' in word
     again = html.unescape(tool(home_dir, tmp_path, stub_at("parked-again")).get(VIEW).text)
@@ -272,19 +274,8 @@ def test_the_log_holds_each_word_with_its_capacity(home_dir, tmp_path):
 
 # ------------------------------------------------------------------------ the approval
 
-def accepted_stub():
-    """The accepted run with its version's files served and its feature list naming their hashes, as the frame's would."""
-    stub = stub_at("accepted")
-    features = stub.features[(RUN, "bracket-mass@v3")]
-    for f in [features["picture"]] + features["models"]:
-        data = f"{f['file']} of bracket-mass@v3".encode()
-        stub.files[(RUN, "bracket-mass@v3", f["file"])] = data
-        f["sha256"] = sha256(data)
-    return stub
-
-
 def test_the_approval_writes_a_new_revision_the_features_and_the_dialogue(home_dir, tmp_path):
-    c = tool(home_dir, tmp_path, accepted_stub())
+    c = tool(home_dir, tmp_path, stub_at("accepted"))
     r = c.post("/products/bracket-mass/order/approve", data={"run": RUN})
     assert r.status_code == 200 and "Approved for manufacturing as revision 5: plan-bracket-mass-v3-mZ@v59 for bracket-mass@v3" in r.text
     h = Home(home_dir)
@@ -292,7 +283,8 @@ def test_the_approval_writes_a_new_revision_the_features_and_the_dialogue(home_d
     assert order.data["revision"] == 5 and order.form == 2
     accepted = order.accepted()
     assert accepted == {"run": RUN, "order": REV, "plan": "plan-bracket-mass-v3-mZ@v59", "design": "bracket-mass@v3",
-                        "design_sha256": body("features-accepted")["sha256"], "time": "2026-11-09T22:32:17.512145Z"}
+                        "design_sha256": body("features-accepted")["sha256"],
+                        "time": next(e["time"] for e in body("dialogue-accepted")["thread"] if e["kind"] == "accepted")}
     assert [(x["metric"], x["what"], x["from"], x["to"], x["by"]["actor"], x["within_mandate"]) for x in order.in_force()] == \
            [("M13", "value", 16.0, 20.0, "owner", False), ("M8", "margin", 0.6, 0.838, "owner", True)]
     assert all(x["run"] == RUN and x["showing"] == body("dialogue-parked-again")["waits"]["dialogue"] for x in order.in_force())
@@ -300,7 +292,12 @@ def test_the_approval_writes_a_new_revision_the_features_and_the_dialogue(home_d
     placed = h.load("bracket-mass@4")
     assert order.type == placed.type and order.mandates() == placed.mandates()
     assert h.features("bracket-mass@v3")["design"] == "bracket-mass@v3"
-    assert (home_dir / "features" / "bracket-mass@v3" / "model.stl").read_bytes() == b"model.stl of bracket-mass@v3"
+    # the picture and the models as the frame served them, each the hash the feature list names
+    features = body("features-accepted")
+    named = {f["file"]: f["sha256"] for f in [features["picture"]] + features["models"]}
+    for name, data, _ in served_files():
+        kept = (home_dir / "features" / "bracket-mass@v3" / name).read_bytes()
+        assert kept == data and sha256(kept) == named[name]
     assert h.dialogue("bracket-mass", RUN) == renamed(body("dialogue-accepted"), RUN, REV)
     page = r.text
     assert reached(page) == "approved" and button(page) == "" and '<section id="approved">' in page
@@ -323,7 +320,7 @@ def test_the_approval_only_at_its_step(home_dir, tmp_path):
     r = c.post("/products/bracket-mass/order/approve", data={"run": RUN})
     assert r.status_code == 409 and "Not approved: the order&#39;s step is your word, not accepted." in r.text
     assert Home(home_dir).load("bracket-mass").data["revision"] == 4
-    readonly = tool(home_dir, tmp_path, accepted_stub(), allow_own=False).post("/products/bracket-mass/order/approve", data={"run": RUN})
+    readonly = tool(home_dir, tmp_path, stub_at("accepted"), allow_own=False).post("/products/bracket-mass/order/approve", data={"run": RUN})
     assert readonly.status_code == 403 and "read only" in readonly.text
 
 
@@ -338,7 +335,7 @@ def test_the_command_line_reads_the_dialogue_gives_a_word_and_approves(home_dir,
     base = ["--frame", "http://frame.test", "--token-file", str(token)]
     assert main(base + ["dialogue", RUN]) == 0
     out = capsys.readouterr().out
-    assert "a showing waits since 2026-11-09 22:30:45Z" in out and "M8 at pin-hole at risk: the plan reaches 0.838 against the margin 0.6" in out
+    assert WAITS in out and "M8 at pin-hole at risk: the plan reaches 0.838 against the margin 0.6" in out
     assert "M13 (mass) unmet: the plan reaches 19.852 g" in out and "The certificate of exhausted means" in out
     assert main(base + ["say", RUN, "decline"]) == 1
     assert "a decline names what you hold" in capsys.readouterr().err
@@ -352,7 +349,7 @@ def test_the_command_line_reads_the_dialogue_gives_a_word_and_approves(home_dir,
     assert main(base + ["dialogue", RUN]) == 0
     assert "nothing waits for the owner's word" in capsys.readouterr().out
     # the run accepted: approved from the command line
-    accepted = accepted_stub()
+    accepted = stub_at("accepted")
     app = accepted.app()
     monkeypatch.setattr("am_order.cli._client", lambda url: TestClient(app, base_url=url))
     assert main(["--home", str(home_dir), "--allow-own"] + base + ["approve", "bracket-mass"]) == 0

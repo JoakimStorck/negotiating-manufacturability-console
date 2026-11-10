@@ -1,6 +1,6 @@
 {
- "about": "The standing frame's documents and answers, each with the request that drew it (agents/examples.py); written from a frame with scripted roles, the reference route's, on the held mass order bracket-mass@2.",
- "version": "50e2f6bc5315d4cabd6bd14b23ff4ef3a3fcc415",
+ "about": "The standing frame's documents and answers, each with the request that drew it (agents/examples.py); written from a frame with scripted roles, the reference route's, on the held mass order bracket-mass@2. A file the frame serves (features-accepted-picture, -model-stl, -model-3mf) is recorded by its content type, length and sha256, its bytes kept beside the example where they are at most 1048576 bytes long (bytes: the file's name; null where they are longer and left out).",
+ "version": "c9eaa24b75aef4fe6771d3a855322ab4de0ab87d",
  "examples": {
   "dialogue-accepted": {
    "request": "GET /runs/bracket-mass@2/dialogue",
@@ -18,11 +18,16 @@
    "schema": "dialogue-1 (dialogue/1)"
   },
   "dialogue-word-403": {
-   "request": "POST /runs/examples-plate-20261109T223223Z/open-01/dialogue",
+   "request": "POST /runs/examples-plate-20261110T001740Z/open-01/dialogue",
    "status": 403,
    "schema": null
   },
   "dialogue-word-409-ended": {
+   "request": "POST /runs/bracket-mass@2/dialogue",
+   "status": 409,
+   "schema": null
+  },
+  "dialogue-word-409-question": {
    "request": "POST /runs/bracket-mass@2/dialogue",
    "status": 409,
    "schema": null
@@ -72,6 +77,11 @@
    "status": 200,
    "schema": "events-1"
   },
+  "events-parked-again": {
+   "request": "GET /runs/bracket-mass@2/events?after=0",
+   "status": 200,
+   "schema": "events-1"
+  },
   "features-404": {
    "request": "GET /runs/bracket-mass@2/features/nothing@v1",
    "status": 404,
@@ -81,6 +91,30 @@
    "request": "GET /runs/bracket-mass@2/features/bracket-mass@v3",
    "status": 200,
    "schema": "features-1"
+  },
+  "features-accepted-model-3mf": {
+   "request": "GET /runs/bracket-mass@2/features/bracket-mass@v3/model.3mf",
+   "status": 200,
+   "schema": null,
+   "content_type": "model/3mf",
+   "length": 9466,
+   "bytes": "features-accepted-model-3mf.3mf"
+  },
+  "features-accepted-model-stl": {
+   "request": "GET /runs/bracket-mass@2/features/bracket-mass@v3/model.stl",
+   "status": 200,
+   "schema": null,
+   "content_type": "model/stl",
+   "length": 47884,
+   "bytes": "features-accepted-model-stl.stl"
+  },
+  "features-accepted-picture": {
+   "request": "GET /runs/bracket-mass@2/features/bracket-mass@v3/picture.png",
+   "status": 200,
+   "schema": null,
+   "content_type": "image/png",
+   "length": 133301,
+   "bytes": "features-accepted-picture.png"
   },
   "orders-get-200": {
    "request": "GET /orders/bracket-mass@2",
@@ -148,7 +182,7 @@
    "schema": null
   },
   "runs-delete-403": {
-   "request": "DELETE /runs/examples-plate-20261109T223223Z/open-01",
+   "request": "DELETE /runs/examples-plate-20261110T001740Z/open-01",
    "status": 403,
    "schema": null
   },
@@ -158,6 +192,16 @@
    "schema": null
   },
   "runs-parked": {
+   "request": "GET /runs",
+   "status": 200,
+   "schema": "runs-1"
+  },
+  "runs-parked-again": {
+   "request": "GET /runs",
+   "status": 200,
+   "schema": "runs-1"
+  },
+  "runs-preparing": {
    "request": "GET /runs",
    "status": 200,
    "schema": "runs-1"

@@ -1,0 +1,15 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/bracket-mass@2/features/bracket-mass@v3/picture.png",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "content_type": "image/png",
+ "length": 133301,
+ "sha256": "b89828646f93381fec370f344b39383f3c26ee312a91857e6ccc26c832cc8849",
+ "bytes": "features-accepted-picture.png",
+ "body": null
+}

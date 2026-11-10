@@ -1,0 +1,15 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/bracket-mass@2/features/bracket-mass@v3/model.3mf",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "content_type": "model/3mf",
+ "length": 9466,
+ "sha256": "6d6e243bf05bff5aaac001d96ed6b8dddba1b9375ba859c3d76e957ab7e3b749",
+ "bytes": "features-accepted-model-3mf.3mf",
+ "body": null
+}

@@ -1,6 +1,7 @@
 """The contract's examples, the frame's own documents and answers as am-llm wrote them (`tests/contract/`): each valid against its
-schema, and the stub answering each recorded request with the recorded answer, so that the stub the other tests read cannot drift
-from the frame."""
+schema, a file the frame serves its bytes as recorded and the feature list names them, and the stub answering each recorded request
+with the recorded answer, so that the stub the other tests read cannot drift from the frame."""
+import hashlib
 import json
 
 import pytest
@@ -14,18 +15,23 @@ pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 VALIDATE = {"presence-1": validate_presence, "runs-1": validate_runs, "events-1": validate_events, "features-1": validate_features,
             "order-1": validate_order, "dialogue-1 (dialogue/1)": validate_dialogue, "dialogue-1 (said/1)": validate_said}
 INDEX = json.loads((CONTRACT / "index.json").read_text(encoding="utf-8"))["examples"]
-SCENARIO = "examples-plate-20261109T223223Z/open-01"
+SCENARIO = example("runs-delete-403")["request"]["path"].removeprefix("/runs/")       # an experiment's run, not an order's
 
 # the state of the held mass order's run each example was recorded in
 STATE = {"presence-empty": "empty", "presence-401": "empty", "roles-put-200": "empty", "roles-put-422": "empty", "orders-post-201": "empty",
          "orders-post-422": "empty", "presence-preparing": "preparing", "orders-post-409": "preparing", "dialogue-word-409-running": "preparing",
-         "runs-delete-409": "preparing", "dialogue-parked-again": "parked-again", "dialogue-word-accept-200": "parked-again",
-         "dialogue-word-409-stale": "parked-again", "presence-ended": "accepted", "runs-accepted": "accepted", "events-accepted": "accepted",
-         "features-accepted": "accepted", "dialogue-accepted": "accepted", "dialogue-word-409-ended": "accepted", "runs-delete-200": "accepted"}
+         "runs-delete-409": "preparing", "runs-preparing": "preparing", "dialogue-parked-again": "parked-again",
+         "dialogue-word-accept-200": "parked-again", "dialogue-word-409-stale": "parked-again", "dialogue-word-409-question": "parked-again",
+         "runs-parked-again": "parked-again", "events-parked-again": "parked-again", "presence-ended": "accepted", "runs-accepted": "accepted",
+         "events-accepted": "accepted", "features-accepted": "accepted", "features-accepted-picture": "accepted",
+         "features-accepted-model-stl": "accepted", "features-accepted-model-3mf": "accepted", "dialogue-accepted": "accepted",
+         "dialogue-word-409-ended": "accepted", "runs-delete-200": "accepted"}
 
 
 def test_the_examples_are_the_index_and_the_source_names_the_commit():
     assert examples() == sorted(p.stem for p in CONTRACT.glob("*.json") if p.stem != "index")
+    beside = sorted(p.name for p in CONTRACT.iterdir() if p.suffix not in (".json", "") and p.name != "SOURCE")
+    assert beside == sorted(INDEX[n]["bytes"] for n in INDEX if INDEX[n].get("bytes"))
     source = (CONTRACT / "SOURCE").read_text(encoding="utf-8")
     assert INDEX and source.split()[1] == json.loads((CONTRACT / "index.json").read_text())["version"]
 
@@ -35,6 +41,15 @@ def test_every_example_is_valid_against_its_schema(name):
     e = example(name)
     assert e["status"] == INDEX[name]["status"] and f"{e['request']['method']} {e['request']['path']}" in INDEX[name]["request"]
     schema = INDEX[name]["schema"]
+    if e.get("bytes"):                                        # a file the frame serves: its bytes as recorded, named by the feature list
+        data = (CONTRACT / e["bytes"]).read_bytes()
+        assert e["body"] is None and (e["content_type"], e["length"]) == (INDEX[name]["content_type"], INDEX[name]["length"]) == \
+            (e["content_type"], len(data)) and e["sha256"] == hashlib.sha256(data).hexdigest()
+        features = body("features-accepted")
+        named = {f["file"]: f["sha256"] for f in [features["picture"]] + features["models"]}
+        assert e["request"]["path"] == f"/runs/{HELD}/features/{features['design']}/{e['request']['path'].rsplit('/', 1)[1]}"
+        assert named[e["request"]["path"].rsplit("/", 1)[1]] == e["sha256"]
+        return
     if schema is None:
         assert e["status"] >= 400 or name.startswith(("orders-post", "runs-delete")), name
         assert isinstance(e["body"], dict)
@@ -71,6 +86,9 @@ def test_the_stub_answers_each_recorded_request_with_the_recorded_answer(name):
     kwargs = {"content": json.dumps(q["body"]).encode()} if "body" in q else {}
     answer = client.request(q["method"], q["path"], headers=headers, **kwargs)
     assert answer.status_code == e["status"], answer.text
+    if e.get("bytes"):
+        assert answer.headers["content-type"] == e["content_type"] and answer.content == (CONTRACT / e["bytes"]).read_bytes()
+        return
     got = answer.json()
     if name.startswith("presence-") and name != "presence-401":
         assert got == e["body"]

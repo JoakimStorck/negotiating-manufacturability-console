@@ -1,0 +1,15 @@
+{
+ "request": {
+  "method": "GET",
+  "path": "/runs/bracket-mass@2/features/bracket-mass@v3/model.stl",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  }
+ },
+ "status": 200,
+ "content_type": "model/stl",
+ "length": 47884,
+ "sha256": "bb6767f46aee30d88dea2643989d2fa891e30669a9d8d577c9377f1cb46edfdf",
+ "bytes": "features-accepted-model-stl.stl",
+ "body": null
+}

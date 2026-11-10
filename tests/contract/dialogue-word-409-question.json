@@ -1,0 +1,19 @@
+{
+ "request": {
+  "method": "POST",
+  "path": "/runs/bracket-mass@2/dialogue",
+  "headers": {
+   "Authorization": "Bearer <token>"
+  },
+  "body": {
+   "schema": "word/1",
+   "word": "answer",
+   "question": "call-01M71D2DKBXVGBY2H160DEJD96",
+   "text": "Yes."
+  }
+ },
+ "status": 409,
+ "body": {
+  "error": "the word is on question call-01M71D2DKBXVGBY2H160DEJD96, which does not wait: the showing call-01M71D2DKBXVGBY2H160DEJD96 waits for the owner's word since 2026-11-10T00:17:33.291647Z"
+ }
+}

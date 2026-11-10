@@ -1,6 +1,7 @@
-am-llm 50e2f6bc5315d4cabd6bd14b23ff4ef3a3fcc415
+am-llm c9eaa24b75aef4fe6771d3a855322ab4de0ab87d
 
 The standing frame's documents and answers, each with the request that drew it, as am-llm wrote them at the commit above
 (`python -m agents frame examples --out products/frame-examples`; the frame's version in index.json and in the documents), committed
-in am-llm 27f665b and copied here unchanged from am-llm's products/frame-examples/ at 67704a0. They are copied again, and this file
+in am-llm 5de079d and copied here unchanged from am-llm's products/frame-examples/ at 3b28ef6: the JSON examples and, beside the
+three files the frame serves (features-accepted-picture, -model-stl, -model-3mf), their bytes. They are copied again, and this file
 with them, whenever a contract or the frame's answers change.

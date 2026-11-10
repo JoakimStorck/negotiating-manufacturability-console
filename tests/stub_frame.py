@@ -4,12 +4,12 @@ a failing test.
 
 The documents are the contract's examples (`tests/contract/`), which am-llm writes from a frame with scripted roles
 (`python -m agents frame examples`) and this repository copies at the pin, each with the request that drew it: presence empty,
-being prepared, parked and ended; the catalogue; the held mass order's events, parked and gone on to accepted; its dialogue at each
-parking and accepted; the answers to a word, to a decision maker placed, to an order placed and to a run deleted, with their
-refusals. `held_mass` stands the stub in the state an example was recorded in; a test that needs another state changes a copy
-(`renamed` for another order version, `shifted` for another clock). The frame's answers the stub computes are in the frame's words;
-the two whose words it cannot compute (a word refused in the requester's tool's words, the alternatives a role's refusal names) it
-gives as recorded for the request that drew them.
+being prepared, parked and ended; the catalogue and the held mass order's events being prepared, at each parking and accepted; its
+dialogue at each parking and accepted; the accepted version's feature list, picture and models; the answers to a word, to a
+decision maker placed, to an order placed and to a run deleted, with their refusals. `held_mass` stands the stub in the state an
+example was recorded in; a test that needs another state changes a copy (`renamed` for another order version, `shifted` for another
+clock). The frame's answers the stub computes are in the frame's words; the one whose words it cannot compute, an acceptance refused
+in the requester's tool's words, it gives as recorded for the request that drew it.
 
 `record_events` turns a run folder made by `test_runs.make_run` into the events the frame would serve for it, numbered in the
 order the record writes its rows (a waking's start as it starts and its end as it ends, a turn as it ends, a call as it answers),
@@ -184,8 +184,9 @@ def run_document(folder: Path, run_id: str, scenario: tuple[str, str] | None, or
 class StubFrame:
     """The frame's endpoints over the documents a test gives it: `presence`; `runs`, run id -> its stages, each {run, events,
     dialogue, presence}, the first standing and the next taken when the owner's word is taken (`add_run`, `then`); the orders
-    placed; the accepted versions' feature lists and files. `served` is how many events of each run may be served, for a run
-    followed while it grows; `at` the frame's clock in the documents it composes (presence's `at` when None)."""
+    placed; the accepted versions' feature lists and files, (run, design, file) -> (bytes, content type). `served` is how many
+    events of each run may be served, for a run followed while it grows; `at` the frame's clock in the documents it composes
+    (presence's `at` when None)."""
 
     def __init__(self, presence: dict | None = None, token: str = "s3cret"):
         self.presence = presence if presence is not None else body("presence-empty")
@@ -195,14 +196,14 @@ class StubFrame:
         self.served: dict[str, int] = {}
         self.orders: dict[str, dict] = {}              # ref -> {"sha256", "document"}
         self.features: dict[tuple[str, str], dict] = {}
-        self.files: dict[tuple[str, str, str], bytes] = {}
+        self.files: dict[tuple[str, str, str], tuple[bytes, str]] = {}
         self.asked: list[str] = []
         self.words: list[tuple[str, dict]] = []        # the words taken, with their run
         self.refuse_with: list[str] | None = None      # the reasons of a 422 to an order placed, when set
         self.broken: str | None = None                 # a document served out of its schema's form
         self.preparing = False                         # a run being prepared: a maker placed stands as `next`
-        # the answers whose words the stub cannot compute, as recorded for the request that drew them
-        self.recorded = [example(n) for n in ("dialogue-word-422", "roles-put-422")]
+        # the answer whose words the stub cannot compute, as recorded for the request that drew it
+        self.recorded = [example("dialogue-word-422")]
 
     def add_run(self, run: dict, events: list[dict], makers: dict | None = None, dialogue: dict | None = None,
                 presence: dict | None = None) -> None:
@@ -367,13 +368,9 @@ class StubFrame:
         def feature_file(run_id: str, design: str, name: str, request: Request):
             if (refused := authorised(request)) is not None:
                 return refused
-            if (run_id, design, name) in self.files:
-                data = self.files[(run_id, design, name)]
-            elif name == "picture.png":
-                data = b"\x89PNG\r\n\x1a\n" + design.encode()
-            else:
-                data = b"solid " + design.encode()
-            media = {"png": "image/png", "stl": "model/stl", "3mf": "model/3mf"}.get(name.rsplit(".", 1)[-1], "application/octet-stream")
+            if (run_id, design, name) not in self.files:
+                return JSONResponse({"error": f"no {name} of an accepted version {design} in the run {run_id}"}, 404)
+            data, media = self.files[(run_id, design, name)]
             return Response(data, media_type=media)
 
         @api.get("/runs/{run_id:path}/features/{design}")
@@ -411,8 +408,7 @@ class StubFrame:
             maker = json.loads(await request.body())
             r = part["role"]
             if maker != r["maker"] and maker not in r.get("alternatives", []):
-                if (refused := self._recorded("PUT", f"/roles/{role}", maker)) is not None:
-                    return refused
+                # the alternatives presence offers the role, each once, as the frame names them
                 names = ", ".join(f"{m['kind']} {m['name']}" if m.get("name") else m["kind"] for m in r.get("alternatives", []))
                 return JSONResponse({"error": "the schema refuses the document",
                                      "reasons": [f"maker: {maker.get('kind')} {maker.get('name')} is not among the alternatives of the {role}: {names}"]}, 422)
@@ -461,19 +457,16 @@ def _stage(name: str, run_id: str, order: dict | None, at: str | None) -> dict:
         doc["run"] = {k: v for k, v in doc["run"].items() if k not in ("makers", "last")}   # the run as events-1 names it
         doc = renamed(doc, run_id, order) if order else doc
         return shifted(doc, at, frm=FIRST) if at else doc
-    if name == "preparing":
-        run = {**body("runs-parked")["runs"][0], "status": "running", "ended": None, "outcome": None, "reason": None, "result": None}
-        events = [e for e in body("events-parked")["events"] if e["kind"] not in ("parked",) and e["seq"] < 329]
-        return fix({"run": run, "events": events, "dialogue": None, "presence": body("presence-preparing")})
+    if name == "preparing":                              # the events the catalogue counts then: the log's first, as later served
+        run = body("runs-preparing")["runs"][0]
+        return fix({"run": run, "events": body("events-parked")["events"][:run["last"]], "dialogue": None, "presence": body("presence-preparing")})
     if name == "parked":
         return fix({"run": body("runs-parked")["runs"][0], "events": body("events-parked")["events"], "dialogue": body("dialogue-parked"),
                     "presence": body("presence-parked")})
-    if name == "parked-again":
+    if name == "parked-again":                           # presence at the second parking: the first's, at the second's times
         again = body("dialogue-parked-again")
-        run = body("runs-parked")["runs"][0]
         waits = again["waits"]
-        run["result"]["waits"].update(since=waits["since"], dialogue=waits["dialogue"])
-        events = [e for e in body("events-accepted")["events"] if e["seq"] <= 459]
+        events = body("events-parked-again")["events"]
         presence = body("presence-parked")
         presence["at"] = again["at"]
         for p in presence["parts"]:
@@ -481,7 +474,7 @@ def _stage(name: str, run_id: str, order: dict | None, at: str | None) -> dict:
             for w in (p.get("role") or {}).get("waits") or []:
                 w["since"] = waits["since"]
         presence["runs"][0]["since"] = events[-1]["time"]
-        return fix({"run": run, "events": events, "dialogue": again, "presence": presence})
+        return fix({"run": body("runs-parked-again")["runs"][0], "events": events, "dialogue": again, "presence": presence})
     if name == "accepted":
         return fix({"run": body("runs-accepted")["runs"][0], "events": body("events-accepted")["events"], "dialogue": body("dialogue-accepted"),
                     "presence": body("presence-ended")})
@@ -513,7 +506,22 @@ def held_mass(stage: str = "parked", run_id: str = HELD, order: dict | None = No
     if stage == "accepted":
         features = body("features-accepted")
         stub.features[(run_id, features["design"])] = features
+        for name, data, content_type in served_files():
+            stub.files[(run_id, features["design"], name)] = (data, content_type)
     return stub
+
+
+FILES = ("features-accepted-picture", "features-accepted-model-stl", "features-accepted-model-3mf")
+
+
+def served_files() -> list[tuple[str, bytes, str]]:
+    """The accepted version's picture and models as the frame served them: (file, bytes, content type), the bytes kept beside
+    each example."""
+    out = []
+    for n in FILES:
+        e = example(n)
+        out.append((e["request"]["path"].rsplit("/", 1)[1], (CONTRACT / e["bytes"]).read_bytes(), e["content_type"]))
+    return out
 
 
 def wake(stub: StubFrame, role: str) -> None:

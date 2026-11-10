@@ -8,7 +8,7 @@
   "body": {
    "schema": "word/1",
    "word": "refuse",
-   "showing": "call-01M716YVRCMC4VZ7QNAVGAS8CB",
+   "showing": "call-01M71CZPSPS6RRS2G8H731TYNG",
    "conditions": [
     {
      "replaces": "req-20",
@@ -25,7 +25,7 @@
   "schema": "said/1",
   "run": "bracket-mass@2",
   "word": "refuse",
-  "call": "call-01M716YYVWWVN0AXMMCVNWDVQE",
+  "call": "call-01M71CZSRCF49YT9W784T6RX17",
   "status": "running"
  }
 }
