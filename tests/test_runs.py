@@ -384,4 +384,4 @@ def test_what_happened_last_shows_the_latest_first_and_the_page_keeps_the_reader
     clocks = re.findall(r'<span class="clock">([0-9:]+)</span>', events)
     assert len(clocks) > 2 and clocks == sorted(clocks, reverse=True)
     page = client.get(f"/runs/{RUN_ID}?at=45").text
-    assert "newSide.scrollTop = sideTop" in page and "P.turnsAtEnd" in page and ".side .wakings { max-height: 45vh; overflow-y: auto;" in page
+    assert "newSide.scrollTop = sideTop" in page and "P.turnsAtEnd" in page and "img.replaceWith(old)" in page and "window.scrollTo(window.scrollX, pageTop)" in page and ".side .wakings { max-height: 45vh; overflow-y: auto;" in page

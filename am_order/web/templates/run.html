@@ -130,15 +130,36 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
         const html = await r.text();
         const holder = document.createElement("div"); holder.innerHTML = html;
         const open = new Set(Array.from(document.querySelectorAll("#overview details[open]")).map(d => d.id));
-        // the reader's place kept across the fetch: the side column where it was, the turns at their end if they were there
+        // the reader's place kept across the fetch: the side column where it was, the page where it was (a narrow window
+        // scrolls the page, not the column), the turns at their end if they were there
         const side = document.querySelector("#overview .side"), oldTurns = document.querySelector("#overview .wakings");
-        const sideTop = side ? side.scrollTop : 0;
+        const sideTop = side ? side.scrollTop : 0, pageTop = window.scrollY;
         P.turnsAtEnd = !oldTurns || oldTurns.scrollHeight - oldTurns.scrollTop - oldTurns.clientHeight < 8;
         const turnsTop = oldTurns ? oldTurns.scrollTop : 0;
-        document.getElementById("overview").replaceWith(holder.firstElementChild);
+        // a picture already loaded is moved into the new view, not loaded again: a picture loading has no height yet, which
+        // would shorten the column and pull the reader's place towards its top
+        const loaded = new Map();
+        for (const img of document.querySelectorAll("#overview img")) if (img.complete && img.naturalHeight) loaded.set(img.getAttribute("src"), img);
+        const fresh = holder.firstElementChild;
+        for (const img of fresh.querySelectorAll("img")) {
+          const old = loaded.get(img.getAttribute("src"));
+          if (old) { loaded.delete(img.getAttribute("src")); img.replaceWith(old); }
+        }
+        document.getElementById("overview").replaceWith(fresh);
         const newSide = document.querySelector("#overview .side"), newTurns = document.querySelector("#overview .wakings");
-        if (newSide) newSide.scrollTop = sideTop;
-        if (newTurns && !P.turnsAtEnd) newTurns.scrollTop = turnsTop;
+        const place = function () {
+          if (newSide) newSide.scrollTop = sideTop;
+          if (newTurns && !P.turnsAtEnd) newTurns.scrollTop = turnsTop;
+          window.scrollTo(window.scrollX, pageTop);
+        };
+        place();
+        // a new picture (another design version) sets the place again once it has its height, unless the reader has scrolled
+        for (const img of fresh.querySelectorAll("img")) {
+          if (img.complete) continue;
+          img.addEventListener("load", function () {
+            if ((!newSide || newSide.scrollTop <= sideTop) && window.scrollY <= pageTop) place();
+          }, { once: true });
+        }
         if (window.htmx) htmx.process(document.getElementById("overview"));   // the marks' selectors in the new picture
         for (const id of open) { const d = document.getElementById(id); if (d) d.open = true; }
         const playing = P.playing, speed = P.speed, follow = P.follow;
