@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# The order tool's web app from a menu: started as a user service (systemd), so that it outlives the terminal and the
+# connection. It is always connected to am-llm's standing frame; while the frame is down the pages say so, and the
+# products home is worked on as usual.
+# ./menu         the menu
+# ./menu status  one choice without the menu (start, start-network, stop, status, log)
+set -u
+cd "$(dirname "$(readlink -f "$0")")"
+UNIT=am-order-web.service
+ENV="$HOME/.config/am-order/web.env"
+PRODUCTS="${AM_ORDER_HOME:-$HOME/am-order-home}"
+FRAME="${AM_FRAME:-http://127.0.0.1:8780}"
+TOKEN_FILE="$HOME/.config/am-order/frame-token"
+RUNS="$HOME/code/am-llm/runs/experiments"
+PORT=8770
+
+install_unit() {
+  mkdir -p "$HOME/.config/systemd/user" "$HOME/.config/am-order"
+  if ! cmp -s "ops/$UNIT" "$HOME/.config/systemd/user/$UNIT"; then
+    cp "ops/$UNIT" "$HOME/.config/systemd/user/$UNIT" && systemctl --user daemon-reload
+  fi
+  [ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" = yes ] || loginctl enable-linger "$USER" \
+    || echo "the web app stops at logout until: loginctl enable-linger $USER" >&2
+}
+
+running() { systemctl --user is-active --quiet "$UNIT"; }
+
+addresses() {
+  if grep -q -- "--host 0.0.0.0" "$ENV" 2>/dev/null; then
+    for a in $(hostname -I); do case "$a" in *:*) ;; *) echo "  http://$a:$PORT/" ;; esac; done
+  else
+    echo "  http://127.0.0.1:$PORT/  (this machine only)"
+  fi
+}
+
+start() {   # start [--host 0.0.0.0]
+  if running; then echo "the web app is up already; stop it first"; return 1; fi
+  [ -d "$PRODUCTS" ] || { echo "no products home at $PRODUCTS: cp -r examples $PRODUCTS (README, the whole system)"; return 1; }
+  install_unit
+  local args="--home $PRODUCTS --frame $FRAME"
+  [ -s "$TOKEN_FILE" ] && args="$args --token-file $TOKEN_FILE"
+  args="$args serve --log logs $*"
+  [ -d "$RUNS" ] && args="$args --runs $RUNS"
+  echo "WEB_ARGS=$args" > "$ENV"
+  systemctl --user start "$UNIT" || return 1
+  for _ in $(seq 1 30); do
+    curl -s -m 2 -o /dev/null "http://127.0.0.1:$PORT/" && { status; return 0; }
+    running || { echo "the web app did not start:"; journalctl --user -u "$UNIT" -n 20 --no-pager; return 1; }
+    sleep 1
+  done
+  echo "the web app did not answer within 30 s"; return 1
+}
+
+stop() {
+  running || { echo "the web app is not running"; return 0; }
+  systemctl --user stop "$UNIT" && echo "the web app stopped"
+}
+
+status() {
+  if running; then echo "the web app is up, at:"; addresses; else echo "the web app is not running"; fi
+  if curl -s -m 2 -o /dev/null "$FRAME/"; then echo "the frame answers at $FRAME"; else echo "the frame does not answer at $FRAME (the tool works on the products home alone)"; fi
+  echo "products home: $PRODUCTS"
+}
+
+choose() {
+  case "$1" in
+    1|start) start ;;
+    2|start-network) start --host 0.0.0.0 ;;
+    3|stop) stop ;;
+    4|status) status ;;
+    5|log) journalctl --user -u "$UNIT" -n 40 --no-pager ;;
+    q|quit) exit 0 ;;
+    *) echo "no such choice: $1" ;;
+  esac
+}
+
+[ $# -gt 0 ] && { choose "$1"; exit; }
+while true; do
+  echo
+  running && echo "am-order: the web app is up" || echo "am-order: the web app is not running"
+  cat <<'EOF'
+  1  Start the web app, for this machine
+  2  Start the web app, reachable from other computers (on the network and the tailnet)
+  3  Stop the web app
+  4  Status: the addresses, the frame, the products home
+  5  The web app's log
+  q  Quit (the web app goes on)
+EOF
+  read -rp "> " c || exit 0
+  choose "$c"
+done

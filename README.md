@@ -54,6 +54,8 @@ the tool in another, both on this machine or on two.
    The reference products (`own/`) open read only. To change one, derive an editable copy from the products page (*Derive*),
    or open the home with `--allow-own` to change the reference itself.
 
+**Each time, by the menus.** `./menu` in each repository starts its part as a user service (systemd), which outlives the terminal and a broken connection: am-llm's frame (its decision makers chosen in its menu), and here the web app, always connected to the frame and showing am-llm's recorded runs; while the frame is down the pages say so and the products home is worked on as usual. The web app for this machine only, or reachable from other computers (on the network and the tailnet); `./menu status` gives the addresses. The steps below do the same by hand.
+
 **Each time.**
 
 4. **The frame**, in the first terminal, with the decision maker of each role: a model key of am-llm's `agents/config.json`

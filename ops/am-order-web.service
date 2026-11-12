@@ -1,0 +1,15 @@
+[Unit]
+Description=am-order web app (am-order serve)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/code/am-order
+EnvironmentFile=%h/.config/am-order/web.env
+ExecStart=/bin/sh -c 'exec %h/code/am-order/.venv/bin/am-order $WEB_ARGS'
+KillSignal=SIGINT
+TimeoutStopSec=30
+Restart=no
+
+[Install]
+WantedBy=default.target
