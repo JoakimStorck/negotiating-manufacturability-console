@@ -376,3 +376,12 @@ def test_the_strip_is_drawn_in_percent_of_its_width(client):
     assert head and 0 < float(head.group(1)) < 100
     late = client.get(f"/runs/{RUN_ID}/view?at=590").text
     assert 'id="clock"' in late and 'text-anchor="end"' in late.split('id="clock"')[1].split(">")[0]
+
+
+def test_what_happened_last_shows_the_latest_first_and_the_page_keeps_the_readers_place(client):
+    view = client.get(f"/runs/{RUN_ID}/view?at=600").text
+    events = view.split("What happened last", 1)[1].split("</ul>", 1)[0]
+    clocks = re.findall(r'<span class="clock">([0-9:]+)</span>', events)
+    assert len(clocks) > 2 and clocks == sorted(clocks, reverse=True)
+    page = client.get(f"/runs/{RUN_ID}?at=45").text
+    assert "newSide.scrollTop = sideTop" in page and "P.turnsAtEnd" in page and ".side .wakings { max-height: 45vh; overflow-y: auto;" in page

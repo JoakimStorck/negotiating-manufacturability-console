@@ -24,6 +24,7 @@ main.wide > section { height: 100%; display: flex; flex-direction: column; min-h
 .org { min-width: 0; min-height: 0; display: flex; align-items: flex-start; justify-content: center; }
 .org svg#diagram { width: 100%; height: 100%; }
 .side { min-width: 0; min-height: 0; overflow-y: auto; padding-right: .3rem; font-size: .9rem; }
+.side .wakings { max-height: 45vh; overflow-y: auto; padding-right: .2rem; }   /* the turns in a box of their own, the latest kept in view */
 .side h2 { margin: .2rem 0 .3rem; font-size: 1rem; } .side .picture { display: block; max-width: 100%; }
 .wakings h2 .muted { font-weight: normal; font-size: .85rem; }
 .wakings .nobody { margin: .2rem 0 .6rem; }
@@ -54,7 +55,7 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
 @keyframes pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
 @media (max-width: 1199px) {
   html, body { height: auto; } body { overflow: auto; } main.wide > section { height: auto; }
-  .top { grid-template-columns: minmax(0, 1fr); } .org svg#diagram { height: auto; } .side { overflow: visible; }
+  .top { grid-template-columns: minmax(0, 1fr); } .org svg#diagram { height: auto; } .side { overflow: visible; } .side .wakings { max-height: none; }
 }
 </style>
 <p class="muted crumbs"><a href="/runs">Runs</a> › {% if run.entry.source == "frame" %}the frame{% if run.entry.experiment != "orders" %} › {{ run.entry.experiment }}{% endif %}{% else %}<a href="/runs?experiment={{ run.entry.experiment }}">{{ run.entry.experiment }}</a>{% endif %} › {{ run.entry.condition }}</p>
@@ -86,7 +87,8 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
     for (const a of document.querySelectorAll("#overview a[data-seconds]")) {
       a.addEventListener("click", function (ev) { ev.preventDefault(); goTo(parseFloat(a.dataset.seconds)); });
     }
-    for (const w of document.querySelectorAll("#overview .wakings")) w.scrollTop = w.scrollHeight;
+    const turns = document.querySelector("#overview .wakings");
+    if (turns && P.turnsAtEnd !== false) turns.scrollTop = turns.scrollHeight;   // the latest turn in view, unless the reader scrolled up
     // the run's end, once the clock has reached it: said where the clock is, and a run followed live stops there
     P.ended = d.ended || "";
     document.getElementById("ending").textContent = P.ended ? "The run has ended: " + P.ended : "";
@@ -128,7 +130,15 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
         const html = await r.text();
         const holder = document.createElement("div"); holder.innerHTML = html;
         const open = new Set(Array.from(document.querySelectorAll("#overview details[open]")).map(d => d.id));
+        // the reader's place kept across the fetch: the side column where it was, the turns at their end if they were there
+        const side = document.querySelector("#overview .side"), oldTurns = document.querySelector("#overview .wakings");
+        const sideTop = side ? side.scrollTop : 0;
+        P.turnsAtEnd = !oldTurns || oldTurns.scrollHeight - oldTurns.scrollTop - oldTurns.clientHeight < 8;
+        const turnsTop = oldTurns ? oldTurns.scrollTop : 0;
         document.getElementById("overview").replaceWith(holder.firstElementChild);
+        const newSide = document.querySelector("#overview .side"), newTurns = document.querySelector("#overview .wakings");
+        if (newSide) newSide.scrollTop = sideTop;
+        if (newTurns && !P.turnsAtEnd) newTurns.scrollTop = turnsTop;
         if (window.htmx) htmx.process(document.getElementById("overview"));   // the marks' selectors in the new picture
         for (const id of open) { const d = document.getElementById(id); if (d) d.open = true; }
         const playing = P.playing, speed = P.speed, follow = P.follow;

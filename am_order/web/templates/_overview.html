@@ -51,9 +51,9 @@
   {% if picture %}<img class="picture" src="{{ run.entry.href }}/picture/{{ pic.design }}" alt="{{ pic.design }}">{% else %}<p class="muted">No picture of this version beside the run.</p>{% endif %}
   {% else %}<h2>No design yet</h2>{% endif %}
 <div class="events">
-<h2>What happened last</h2>
+<h2>What happened last <span class="muted" style="font-weight: normal; font-size: .8rem">latest first</span></h2>
 <ul>
-{% for s in pic.sentences %}
+{% for s in pic.sentences|reverse %}
 <li style="border-color: {{ s.colour }}"><span class="clock">{{ s.clock }}</span><span class="{% if s.decision %}decision{% endif %}">{{ s.head }}</span>{% if s.text %} <span class="muted">— {{ s.text }}</span>{% endif %}
 {% for note in s.notes %}<div class="note">{{ note }}</div>{% endfor %}
 {% if s.certificate %}<div class="certificate"><b>The certificate of exhausted means:</b> {{ s.certificate.text }}{% if s.certificate.cites %} <span class="muted">(cites {{ s.certificate.cites|join(", ") }})</span>{% endif %}</div>{% endif %}</li>
