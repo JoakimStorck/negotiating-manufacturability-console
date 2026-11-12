@@ -39,7 +39,7 @@
 {% if t.acts %}<p class="acts">{% for a in t.acts %}<a href="{{ run.entry.href }}?at={{ a.seconds }}" data-seconds="{{ a.seconds }}" {% if a.future %}class="future"{% endif %}>{{ a.word }}{% if a.count > 1 %} ×{{ a.count }}{% endif %}{% if a.detail %} <span class="muted">{{ a.detail }}</span>{% endif %}</a>{% endfor %}</p>{% endif %}
 </li>
 {% endfor %}
-{% if w.now %}<li class="now"><span class="clock">{{ ax.clock }}</span> {{ w.now }}</li>{% endif %}
+{% if w.now %}<li class="now"><span class="clock">{{ ax.clock }}</span> <b>turn {{ w.now.n }}</b> <span class="muted">· {{ w.now.what }}</span></li>{% endif %}
 </ol>
 {% else %}
 <p class="nobody muted">Nobody at work: {% if pic.outcome %}the run has ended.{% else %}the roles sleep; a message or an answer wakes the next.{% endif %}</p>

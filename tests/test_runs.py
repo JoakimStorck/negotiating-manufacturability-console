@@ -264,11 +264,11 @@ def test_the_turns_can_be_stepped_and_inspected(root, client):
     # the panel at a time: the turns ended by then, and where the role stands
     at = lambda s: overview(run, R.state(run, T0 + timedelta(seconds=s)))["wakings"]
     w = at(12)[0]
-    assert w["role"] == "process_planner" and [t["n"] for t in w["turns"]] == [1, 2] and w["now"] == "turn 2: the tools answer"
+    assert w["role"] == "process_planner" and [t["n"] for t in w["turns"]] == [1, 2] and w["now"] == {"n": 2, "what": "the tools answer"}
     assert w["turns"][1]["acts"][0]["word"] == "analysing" and w["turns"][1]["acts"][0]["count"] == 3
-    assert at(30)[0]["now"] == "turn 3: thinking, 10 s so far"
-    assert at(45)[0]["now"] == "at work for 2 s, nothing written yet"
-    assert at(3.1)[0]["now"] == "turn 1: the tools answer"
+    assert at(30)[0]["now"] == {"n": 3, "what": "thinking, 10 s so far"}
+    assert at(45)[0]["now"] == {"n": 4, "what": "at work for 2 s, nothing written yet"}
+    assert at(3.1)[0]["now"] == {"n": 1, "what": "the tools answer"}
     assert at(400) == []
     page = client.get("/runs/h1-bracket-mass-20261103T044650Z/open-01?at=12")
     assert "Process planner at work" in page.text and "Three plans to compare on time." in page.text and 'data-next-turn="40.000000"' in page.text

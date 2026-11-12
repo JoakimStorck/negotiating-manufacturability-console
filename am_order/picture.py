@@ -570,13 +570,13 @@ def wakings(run: Run, st: State) -> list[dict]:
                             "clock": _clock(a.start, start), "future": a.start > st.at} for a in t.acts]}
                  for i, t in enumerate(done, 1)]
         current = next((t for t in b.turns if t.start <= st.at < t.end), None)
-        if current is not None:
-            now = f"turn {b.turns.index(current) + 1}: thinking, {_span(st.at - current.start)} so far"
+        if current is not None:          # the turn in hand, as a written turn reads: its number, then what it is doing
+            now = {"n": b.turns.index(current) + 1, "what": f"thinking, {_span(st.at - current.start)} so far"}
         elif done and done[-1].results_end and st.at < done[-1].results_end:
-            now = f"turn {len(done)}: the tools answer"
+            now = {"n": len(done), "what": "the tools answer"}
         else:
             last_end = (done[-1].results_end or done[-1].end) if done else b.start
-            now = f"at work for {_span(st.at - last_end)}, nothing written yet" if st.at > last_end else None
+            now = {"n": len(done) + 1, "what": f"at work for {_span(st.at - last_end)}, nothing written yet"} if st.at > last_end else None
         out.append({"role": role, "title": TITLES.get(role, role), "since": _clock(b.start, start), "model": b.model, "prompt": _fold(b.prompt),
                     "turns": turns, "now": now})
     return out
