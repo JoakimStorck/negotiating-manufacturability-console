@@ -145,6 +145,9 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
           const old = loaded.get(img.getAttribute("src"));
           if (old) { loaded.delete(img.getAttribute("src")); img.replaceWith(old); }
         }
+        // what the reader opened stays open, before the new view is placed: a long text closed would shorten the column
+        // and pull the place towards its top
+        for (const id of open) { const d = fresh.querySelector("#" + CSS.escape(id)); if (d) d.open = true; }
         document.getElementById("overview").replaceWith(fresh);
         const newSide = document.querySelector("#overview .side"), newTurns = document.querySelector("#overview .wakings");
         const place = function () {
@@ -161,7 +164,6 @@ details.more summary::before { content: "… "; color: var(--muted); } details.m
           }, { once: true });
         }
         if (window.htmx) htmx.process(document.getElementById("overview"));   // the marks' selectors in the new picture
-        for (const id of open) { const d = document.getElementById(id); if (d) d.open = true; }
         const playing = P.playing, speed = P.speed, follow = P.follow;
         readData(); if (!P.ended || P.live) { P.playing = playing; P.follow = follow; } P.speed = speed;
       }
