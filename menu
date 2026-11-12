@@ -75,6 +75,7 @@ choose() {
 }
 
 [ $# -gt 0 ] && { choose "$1"; exit; }
+status
 while true; do
   echo
   running && echo "am-order: the web app is up" || echo "am-order: the web app is not running"
